@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shortsmap/Plan/page/PlanPage.dart';
+import 'package:shortsmap/Shorts/page/ShortsPage.dart';
 
 
 Widget BottomNavBar(BuildContext context, String page) {
@@ -22,15 +24,15 @@ Widget BottomNavBar(BuildContext context, String page) {
           onTap: () async {
             HapticFeedback.lightImpact();
             if (page != 'shorts') {
-              // Navigator.pushReplacement(
-              //   context,
-              //   PageRouteBuilder(
-              //     pageBuilder: (context, animation1, animation2) =>
-              //     const VideoPage(),
-              //     transitionDuration: Duration.zero,
-              //     reverseTransitionDuration: Duration.zero,
-              //   ),
-              // );
+              Navigator.pushReplacement(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation1, animation2) =>
+                  const ShortsPage(),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
             }
           },
           child: Column(
@@ -49,7 +51,7 @@ Widget BottomNavBar(BuildContext context, String page) {
               Text(
                 'Explore',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: (page == 'shorts') ? Colors.white : Colors.grey,
                   fontSize: 12,
                 ),
               ),
@@ -60,16 +62,16 @@ Widget BottomNavBar(BuildContext context, String page) {
         InkWell(
           onTap: () async {
             HapticFeedback.lightImpact();
-            if (page != 'search') {
-              // Navigator.pushReplacement(
-              //   context,
-              //   PageRouteBuilder(
-              //     pageBuilder: (context, animation1, animation2) =>
-              //     const VideoPage(),
-              //     transitionDuration: Duration.zero,
-              //     reverseTransitionDuration: Duration.zero,
-              //   ),
-              // );
+            if (page != 'plan') {
+              Navigator.pushReplacement(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation1, animation2) =>
+                  const PlanPage(),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
             }
           },
           child: Column(
@@ -82,14 +84,14 @@ Widget BottomNavBar(BuildContext context, String page) {
                 child: Icon(
                   // Icons.supervisor_account,
                   Icons.calendar_month,
-                  color: (page == 'map') ? Colors.black : Colors.grey,
+                  color: (page == 'plan') ? Colors.black : Colors.grey,
                   size: MediaQuery.of(context).size.height * (25 / 812),
                 ),
               ),
               Text(
                 'Plan',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: (page == 'plan') ? Colors.black : Colors.grey,
                   fontSize: 12,
                 ),
               ),
@@ -129,7 +131,7 @@ Widget BottomNavBar(BuildContext context, String page) {
               Text(
                 'Reserve',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: (page == 'map') ? Colors.black : Colors.grey,
                   fontSize: 12,
                 ),
               ),
@@ -169,7 +171,7 @@ Widget BottomNavBar(BuildContext context, String page) {
               Text(
                 'Community',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: (page == 'profile') ? Colors.black : Colors.grey,
                   fontSize: 12,
                 ),
               ),

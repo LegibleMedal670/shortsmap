@@ -22,6 +22,10 @@ class _MyAppState extends State<MyApp> {
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,
         primaryColor: Colors.black,
+        bottomSheetTheme: BottomSheetThemeData(
+          dragHandleColor: Colors.grey[400],
+          dragHandleSize: Size(50, 5)
+        ),
         useMaterial3: false,
       ),
       builder: (context, child) => MediaQuery(
