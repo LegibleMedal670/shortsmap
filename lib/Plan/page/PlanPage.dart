@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shortsmap/Widgets/BottomNavBar.dart';
 import 'PlanPage2.dart';
 
+// 테스트용 주석
 class PlanPage extends StatefulWidget {
   const PlanPage({super.key});
 
