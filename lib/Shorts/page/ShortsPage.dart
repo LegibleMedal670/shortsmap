@@ -5,6 +5,8 @@ import 'package:shortsmap/Shorts/widget/ShortFormWidget.dart';
 import 'package:shortsmap/Widgets/BottomNavBar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+//dmafmsdkmfaksmf
+
 class ShortsPage extends StatefulWidget {
   const ShortsPage({super.key});
 
@@ -212,7 +214,7 @@ class _ShortsPageState extends State<ShortsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.black,
       body: Column(
         children: [
           Expanded(
@@ -241,7 +243,6 @@ class _ShortsPageState extends State<ShortsPage> {
                       storeCaption: shortFormData.description,
                       storeLocation: 'location',
                       averagePrice: shortFormData.averagePrice,
-                      sourceURL: shortFormData['siteURL'],
                       openTime: shortFormData['openTime'],
                       closeTime: shortFormData['closeTime'],
                       rating: 4.5,

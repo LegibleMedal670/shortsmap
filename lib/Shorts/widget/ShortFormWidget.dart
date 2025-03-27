@@ -9,7 +9,6 @@ class ShortFormWidget extends StatefulWidget {
   final String videoURL;
   final String storeCaption;
   final String storeLocation;
-  final String sourceURL;
   final String openTime;
   final String closeTime;
   final double rating;
@@ -22,7 +21,6 @@ class ShortFormWidget extends StatefulWidget {
     required this.videoURL,
     required this.storeCaption,
     required this.storeLocation,
-    required this.sourceURL,
     required this.openTime,
     required this.closeTime,
     required this.rating,
