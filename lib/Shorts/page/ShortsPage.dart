@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:shortsmap/Shorts/model/Location.dart';
 import 'package:shortsmap/Shorts/widget/ShimmerWidget.dart';
 import 'package:shortsmap/Shorts/widget/ShortFormWidget.dart';
 import 'package:shortsmap/Widgets/BottomNavBar.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+//dmafmsdkmfaksmf
+//gggg
+//tetstse
 
 class ShortsPage extends StatefulWidget {
   const ShortsPage({super.key});
@@ -140,6 +146,19 @@ class _ShortsPageState extends State<ShortsPage> {
     },
   ];
 
+  String? selectedRegion; // 예: 'Seoul'
+  String? selectedCategory; // 예: 'Food'
+  double? selectedAvgPrice; // 예: 20.0
+
+  /// 거리 필터 관련
+  bool filterByDistance = false;
+  double? userLat; // 내 위치 위도
+  double? userLon; // 내 위치 경도
+  double? distanceInKm; // 특정 거리(단위: km)
+
+  /// Supabase client
+  final _supabase = Supabase.instance.client;
+
   Future<List<dynamic>> tempFuture() async {
     ///TODO Supabase로 데이터 가져올거임
 
@@ -157,6 +176,42 @@ class _ShortsPageState extends State<ShortsPage> {
     return tempData;
   }
 
+  /// Supabase RPC 호출: search_locations
+  Future<List<LocationData>> _fetchDataFromSupabase() async {
+    // 거리(km)를 미터로 변환
+    final distanceInMeters = distanceInKm == null ? null : distanceInKm! * 1000;
+
+    try {
+      // RPC 파라미터 구성
+      final response = await _supabase.rpc(
+        'search_locations',
+        params: {
+          '_region': null,
+          '_category': null,
+          '_avg_price': null,
+          '_lat': null,
+          '_lon': null,
+          '_distance': filterByDistance ? distanceInMeters : null,
+        },
+      );
+
+      // final initialPosts = (response as List<dynamic>).map((postJson) {
+      //   return PostTile.fromJson(postJson as Map<String, dynamic>);
+      // }).toList();
+
+      final locationData = (response as List<dynamic>).map((locationJson) {
+        return LocationData.fromJson(locationJson as Map<String, dynamic>);
+      }).toList();
+
+      print(locationData);
+
+      return locationData;
+
+    } on PostgrestException catch (e) {
+      throw Exception("Error fetching posts: ${e.code}, ${e.message}");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -166,9 +221,10 @@ class _ShortsPageState extends State<ShortsPage> {
         children: [
           Expanded(
             child: FutureBuilder(
-              future: tempFuture(),
+              future: _fetchDataFromSupabase(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
+                  print(snapshot);
                   return ShimmerWidget(mode: 'error');
                 }
 
@@ -182,14 +238,13 @@ class _ShortsPageState extends State<ShortsPage> {
                   scrollDirection: Axis.vertical,
                   itemCount: data.length,
                   itemBuilder: (context, index) {
-                    Map<String, dynamic> shortFormData = data[index];
+                    final shortFormData = data[index];
                     return ShortFormWidget(
-                      storeName: shortFormData['name'],
-                      videoURL: shortFormData['videoURL'],
-                      storeCaption: shortFormData['description'],
-                      storeLocation: shortFormData['siteURL'],
-                      averagePrice: 15,
-                      sourceURL: shortFormData['siteURL'],
+                      storeName: shortFormData.name,
+                      videoURL: shortFormData.videoUrl,
+                      storeCaption: shortFormData.description,
+                      storeLocation: 'location',
+                      averagePrice: shortFormData.averagePrice,
                       openTime: shortFormData['openTime'],
                       closeTime: shortFormData['closeTime'],
                       rating: 4.5,
