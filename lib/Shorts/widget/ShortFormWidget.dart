@@ -14,7 +14,6 @@ class ShortFormWidget extends StatefulWidget {
   final double rating;
   final String category;
   final double averagePrice;
-  final int index;
 
   const ShortFormWidget({
     required this.storeName,
@@ -26,7 +25,6 @@ class ShortFormWidget extends StatefulWidget {
     required this.rating,
     required this.category,
     required this.averagePrice,
-    required this.index,
     super.key,
   });
 

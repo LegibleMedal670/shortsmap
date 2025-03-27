@@ -6,7 +6,13 @@ class FilterProvider extends ChangeNotifier{
   String? filterCategory;
   double? filterPrice;
 
-  void setVideoCategory(String? region, String? category, String? price){
+  void setVideoCategory(String? region, String? category, double? price){
+
+    filterRegion = region;
+    filterCategory = category;
+    filterPrice = price;
+
+    notifyListeners();
 
   }
 
