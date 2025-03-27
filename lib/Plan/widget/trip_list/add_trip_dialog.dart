@@ -46,7 +46,7 @@ class _AddTripDialogState extends State<AddTripDialog> {
             },
             child: Text(
               startDate != null && endDate != null
-                  ? "${startDate!.toLocal()} ~ ${endDate!.toLocal()}"
+                  ? "${_formatDate(startDate!)} ~ ${_formatDate(endDate!)}"
                   : 'Select Date Range',
             ),
           ),
@@ -77,5 +77,9 @@ class _AddTripDialogState extends State<AddTripDialog> {
         ),
       ],
     );
+  }
+
+  String _formatDate(DateTime date) {
+    return "${date.year}-${date.month}-${date.day}";
   }
 }
