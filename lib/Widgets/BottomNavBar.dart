@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shortsmap/Plan/page/PlanPage.dart';
+import 'package:shortsmap/Plan/screens/plan_page.dart';
 import 'package:shortsmap/Shorts/page/ShortsPage.dart';
 
 
