@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../widget/ trip_detail/place_card.dart';
 import '../widget/ trip_detail/category_section.dart';
 import '../widget/ trip_detail/map_placeholder.dart';
-
+import '../widget/ trip_detail/timeline_item.dart';
 
 class PlanDetailPage extends StatefulWidget {
   final String tripName;
@@ -95,24 +95,34 @@ class _PlanDetailPageState extends State<PlanDetailPage>
           children: [
             const MapPlaceholder(),
             const SizedBox(height: 12),
-            PlaceCard(
-              title: '08:00 · Breakfast - Café Scent',
+            TimelineItem(
+              time: '08:00',
+              title: 'Breakfast - Café Scent',
+              description: '아침 식사',
               onDelete: () {},
             ),
-            PlaceCard(
-              title: '10:00 · Gyeongbok Palace',
+            TimelineItem(
+              time: '10:00',
+              title: 'Gyeongbok Palace',
+              description: '주요 관광지',
               onDelete: () {},
             ),
-            PlaceCard(
-              title: '13:00 · Lunch - Kimchi House',
+            TimelineItem(
+              time: '13:00',
+              title: 'Lunch - Kimchi House',
+              description: '한국 전통 음식',
               onDelete: () {},
             ),
-            PlaceCard(
-              title: '15:00 · Shopping - Myeongdong',
+            TimelineItem(
+              time: '15:00',
+              title: 'Shopping - Myeongdong',
+              description: '쇼핑 명소',
               onDelete: () {},
             ),
-            PlaceCard(
-              title: '19:00 · Hotel Check-in',
+            TimelineItem(
+              time: '19:00',
+              title: 'Hotel Check-in',
+              description: '숙소',
               onDelete: () {},
             ),
           ],
@@ -136,7 +146,7 @@ class _PlanDetailPageState extends State<PlanDetailPage>
             TextField(
               decoration: const InputDecoration(labelText: 'Trip Name'),
               controller: TextEditingController(text: tripName),
-              onChanged: (val) => tripName = val,
+              onChanged: (val) => setState(() => tripName = val),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
