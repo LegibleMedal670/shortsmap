@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shortsmap/Shorts/model/LocationData.dart';
+import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
 import 'package:shortsmap/Shorts/widget/ShimmerWidget.dart';
 import 'package:shortsmap/Shorts/widget/ShortFormWidget.dart';
 import 'package:shortsmap/Widgets/BottomNavBar.dart';
@@ -23,7 +25,7 @@ class _ShortsPageState extends State<ShortsPage> {
       'siteURL': 'www.seoulvibes.com',
       'description': 'Cultural activity in trendy Seoul',
       'videoURL':
-      'https://shortsmap.xyz/shortsmap_video/seongsu%3Abangintaco.mp4',
+          'https://shortsmap.xyz/shortsmap_video/seongsu%3Abangintaco.mp4',
       'openTime': '11:00',
       'closeTime': '20:00',
     },
@@ -36,7 +38,7 @@ class _ShortsPageState extends State<ShortsPage> {
       'siteURL': 'www.sunsetjeju.kr',
       'description': 'Enjoy breathtaking sunsets on the cliff',
       'videoURL':
-      'https://shortsmap.xyz/shortsmap_video/seongsu%3Ahddpizza.mp4',
+          'https://shortsmap.xyz/shortsmap_video/seongsu%3Ahddpizza.mp4',
       'openTime': '17:00',
       'closeTime': '21:00',
     },
@@ -49,7 +51,7 @@ class _ShortsPageState extends State<ShortsPage> {
       'siteURL': 'www.sushigwangan.co.kr',
       'description': 'Fresh sushi with a view of the bridge',
       'videoURL':
-      'https://shortsmap.xyz/shortsmap_video/seongsu%3Akyukattjung.mp4',
+          'https://shortsmap.xyz/shortsmap_video/seongsu%3Akyukattjung.mp4',
       'openTime': '12:00',
       'closeTime': '22:00',
     },
@@ -74,7 +76,7 @@ class _ShortsPageState extends State<ShortsPage> {
       'siteURL': 'www.dgmuseum.or.kr',
       'description': 'Modern and traditional art exhibition',
       'videoURL':
-      'https://shortsmap.xyz/shortsmap_video/seongsu%3Afregoclub.mp4',
+          'https://shortsmap.xyz/shortsmap_video/seongsu%3Afregoclub.mp4',
       'openTime': '09:00',
       'closeTime': '18:00',
     },
@@ -111,7 +113,7 @@ class _ShortsPageState extends State<ShortsPage> {
       'siteURL': 'www.raftinggangwon.kr',
       'description': 'Thrilling ride on the mountain rivers',
       'videoURL':
-      'https://shortsmap.xyz/shortsmap_video/seongsu%3Anamjinrt.mp4',
+          'https://shortsmap.xyz/shortsmap_video/seongsu%3Anamjinrt.mp4',
       'openTime': '09:00',
       'closeTime': '16:00',
     },
@@ -136,21 +138,11 @@ class _ShortsPageState extends State<ShortsPage> {
       'siteURL': 'www.ulsanbbq.com',
       'description': 'Authentic Korean BBQ in Ulsan',
       'videoURL':
-      'https://shortsmap.xyz/shortsmap_video/seongsu%3Abdbugger.mp4',
+          'https://shortsmap.xyz/shortsmap_video/seongsu%3Abdbugger.mp4',
       'openTime': '11:30',
       'closeTime': '22:30',
     },
   ];
-
-  String? selectedRegion; // 예: 'Seoul'
-  String? selectedCategory; // 예: 'Food'
-  double? selectedAvgPrice; // 예: 20.0
-
-  /// 거리 필터 관련
-  bool filterByDistance = false;
-  double? userLat; // 내 위치 위도
-  double? userLon; // 내 위치 경도
-  double? distanceInKm; // 특정 거리(단위: km)
 
   /// Supabase client
   final _supabase = Supabase.instance.client;
@@ -173,9 +165,17 @@ class _ShortsPageState extends State<ShortsPage> {
   }
 
   /// Supabase RPC 호출: search_locations
-  Future<List<LocationData>> _fetchDataFromSupabase() async {
+  Future<List<LocationData>> _fetchDataFromSupabase(
+    String? region,
+    String? category,
+    double? avg_price,
+    double? lat,
+    double? lon,
+    double? distanceInKm,
+    bool filterByDistance,
+  ) async {
     // 거리(km)를 미터로 변환
-    final distanceInMeters = distanceInKm == null ? null : distanceInKm! * 1000;
+    final distanceInMeters = distanceInKm == null ? null : distanceInKm * 1000;
 
     try {
       // RPC 파라미터 구성
@@ -183,22 +183,22 @@ class _ShortsPageState extends State<ShortsPage> {
         'search_locations',
         params: {
           '_region': null,
-          '_category': 'we',
-          '_avg_price': 50,
-          '_lat': null,
-          '_lon': null,
-          '_distance': filterByDistance ? distanceInMeters : null,
+          '_category': null,
+          '_avg_price': null,
+          '_lat': 137.54760705333279,
+          '_lon': 227.04689449653692,
+          '_distance': distanceInMeters,
         },
       );
 
-      final locationData = (response as List<dynamic>).map((locationJson) {
-        return LocationData.fromJson(locationJson as Map<String, dynamic>);
-      }).toList();
+      final locationData =
+          (response as List<dynamic>).map((locationJson) {
+            return LocationData.fromJson(locationJson as Map<String, dynamic>);
+          }).toList();
 
       await Future.delayed(const Duration(milliseconds: 700));
 
       return locationData;
-
     } on PostgrestException catch (e) {
       throw Exception("Error fetching posts: ${e.code}, ${e.message}");
     }
@@ -212,35 +212,51 @@ class _ShortsPageState extends State<ShortsPage> {
       body: Column(
         children: [
           Expanded(
-            child: FutureBuilder(
-              future: _fetchDataFromSupabase(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  print(snapshot);
-                  return ShimmerWidget(mode: 'error');
-                }
+            child: Consumer<FilterProvider>(
+              builder: (context, provider, child) {
+                return FutureBuilder(
+                  future: _fetchDataFromSupabase(
+                    provider.filterRegion,
+                    provider.filterCategory,
+                    provider.filterPrice,
+                    provider.filterLat,
+                    provider.filterLon,
+                    provider.filterDistanceInKm,
+                    provider.filterByDistance,
+                  ),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return ShimmerWidget(mode: 'error');
+                    }
 
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return ShimmerWidget(mode: 'loading');
-                }
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return ShimmerWidget(mode: 'loading');
+                    }
 
-                List<dynamic> data = snapshot.data!;
+                    List<dynamic> data = snapshot.data!;
 
-                return PageView.builder(
-                  scrollDirection: Axis.vertical,
-                  itemCount: data.length,
-                  itemBuilder: (context, index) {
-                    final shortFormData = data[index];
-                    return ShortFormWidget(
-                      storeName: shortFormData.name,
-                      videoURL: shortFormData.videoUrl,
-                      storeCaption: shortFormData.description,
-                      storeLocation: shortFormData.region,
-                      averagePrice: shortFormData.averagePrice,
-                      openTime: shortFormData.openTime,
-                      closeTime: shortFormData.closeTime,
-                      rating: shortFormData.rating,
-                      category: shortFormData.category,
+                    if (data.isEmpty) {
+                      print('비었음');
+                      return ShimmerWidget(mode: 'error');
+                    }
+
+                    return PageView.builder(
+                      scrollDirection: Axis.vertical,
+                      itemCount: data.length,
+                      itemBuilder: (context, index) {
+                        final shortFormData = data[index];
+                        return ShortFormWidget(
+                          storeName: shortFormData.name,
+                          videoURL: shortFormData.videoUrl,
+                          storeCaption: shortFormData.description,
+                          storeLocation: shortFormData.region,
+                          averagePrice: shortFormData.averagePrice,
+                          openTime: shortFormData.openTime,
+                          closeTime: shortFormData.closeTime,
+                          rating: shortFormData.rating,
+                          category: shortFormData.category,
+                        );
+                      },
                     );
                   },
                 );

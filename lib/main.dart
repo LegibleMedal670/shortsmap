@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
 import 'package:shortsmap/Welcome/SplashScreen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -24,25 +26,30 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Shorts',
-      theme: ThemeData(
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
-        primaryColor: Colors.black,
-        bottomSheetTheme: BottomSheetThemeData(
-          dragHandleColor: Colors.grey[400],
-          dragHandleSize: Size(50, 5)
-        ),
-        useMaterial3: false,
-      ),
-      builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: TextScaler.noScaling,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => FilterProvider()),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Shorts',
+        theme: ThemeData(
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          primaryColor: Colors.black,
+          bottomSheetTheme: BottomSheetThemeData(
+            dragHandleColor: Colors.grey[400],
+            dragHandleSize: Size(50, 5)
           ),
-          child: child!),
-      home: const SplashScreen(),
+          useMaterial3: false,
+        ),
+        builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.noScaling,
+            ),
+            child: child!),
+        home: const SplashScreen(),
+      ),
     );
   }
 }
