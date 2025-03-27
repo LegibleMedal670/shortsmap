@@ -6,6 +6,7 @@ import 'package:shortsmap/Widgets/BottomNavBar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 //dmafmsdkmfaksmf
+//gggg
 
 class ShortsPage extends StatefulWidget {
   const ShortsPage({super.key});
