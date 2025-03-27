@@ -9,12 +9,11 @@ class ShortFormWidget extends StatefulWidget {
   final String videoURL;
   final String storeCaption;
   final String storeLocation;
-  final String sourceURL;
   final String openTime;
   final String closeTime;
   final double rating;
   final String category;
-  final int averagePrice;
+  final double averagePrice;
   final int index;
 
   const ShortFormWidget({
@@ -22,7 +21,6 @@ class ShortFormWidget extends StatefulWidget {
     required this.videoURL,
     required this.storeCaption,
     required this.storeLocation,
-    required this.sourceURL,
     required this.openTime,
     required this.closeTime,
     required this.rating,
@@ -44,6 +42,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
   bool _isExpanded = false;
 
   final List<String> regionOptions = [
+    '내 주변',
     '서울',
     '부산',
     '세글자',
@@ -57,8 +56,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     '대전',
     '다섯글자임',
   ];
-  final List<String> categoryOptions = ['한식', '양식', '일식', '중식', '카페'];
-  final List<String> priceOptions = ['1만원 미만', '1~2만원', '2만원 이상'];
+  final List<String> categoryOptions = ['All', '한식', '양식', '일식', '중식', '카페'];
+  final List<String> priceOptions = ['All', '1만원 미만', '1~2만원', '2만원 이상'];
 
   // 현재 선택된 값(단일 선택)
   String? selectedRegion;

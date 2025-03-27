@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shortsmap/Shorts/model/Location.dart';
 import 'package:shortsmap/Shorts/widget/ShimmerWidget.dart';
 import 'package:shortsmap/Shorts/widget/ShortFormWidget.dart';
 import 'package:shortsmap/Widgets/BottomNavBar.dart';
