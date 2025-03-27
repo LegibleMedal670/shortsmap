@@ -258,7 +258,7 @@ class _PlanPageState extends State<PlanPage> {
           // trips / saved 탭 선택
           Container(
             color: Colors.grey[100],
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: Row(
               children: [
                 _buildTabButton('Trips', !isSavedTab),

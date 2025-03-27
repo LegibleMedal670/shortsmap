@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shortsmap/Shorts/page/ShortsPage.dart';
+import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:video_player/video_player.dart';
 
 class ShortFormWidget extends StatefulWidget {
@@ -926,26 +927,19 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
   ///우측 버튼들
   Widget ItemButton({IconData icon = Icons.bookmark, String? value}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-      child: Column(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              // 배경을 투명하게 두되, 가운데부터 투명해지는 RadialGradient 적용
-              gradient: RadialGradient(
-                colors: [
-                  Colors.black.withValues(alpha: 0.3), // 중앙이 좀 더 어두운 영역
-                  Colors.transparent, // 가장자리로 갈수록 투명
-                ],
-                center: Alignment.center,
-                radius: 0.6, // 0 ~ 1 사이에서 조절 (값을 높이면 더 넓게 퍼짐)
-              ),
-            ),
-            child: Icon(icon, size: 40, color: shortPageWhite),
+    return GestureDetector(
+      onTap: (){
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const LoginPage(),
           ),
-          const SizedBox(height: 5),
-          if (value != null)
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+        child: Column(
+          children: [
             Container(
               decoration: BoxDecoration(
                 // 배경을 투명하게 두되, 가운데부터 투명해지는 RadialGradient 적용
@@ -958,16 +952,33 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                   radius: 0.6, // 0 ~ 1 사이에서 조절 (값을 높이면 더 넓게 퍼짐)
                 ),
               ),
-              child: Text(
-                value,
-                style: TextStyle(
-                  color: shortPageWhite,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+              child: Icon(icon, size: 40, color: shortPageWhite),
+            ),
+            const SizedBox(height: 5),
+            if (value != null)
+              Container(
+                decoration: BoxDecoration(
+                  // 배경을 투명하게 두되, 가운데부터 투명해지는 RadialGradient 적용
+                  gradient: RadialGradient(
+                    colors: [
+                      Colors.black.withValues(alpha: 0.3), // 중앙이 좀 더 어두운 영역
+                      Colors.transparent, // 가장자리로 갈수록 투명
+                    ],
+                    center: Alignment.center,
+                    radius: 0.6, // 0 ~ 1 사이에서 조절 (값을 높이면 더 넓게 퍼짐)
+                  ),
+                ),
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    color: shortPageWhite,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
