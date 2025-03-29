@@ -50,8 +50,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
   final _supabase = Supabase.instance.client;
 
   final List<String> regionOptions = [
-    '내 주변',
     'All',
+    'Around Me',
     '서울',
     '부산',
     '세글자',
@@ -624,7 +624,6 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
               ),
             ),
           );
-          print('Bookmark inserted successfully.');
         } catch (e) {
           // 예외가 발생하면 에러 메시지를 출력합니다.
           print('Insert 에러: $e');
@@ -662,7 +661,6 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
               ),
             ),
           );
-          print('Bookmark deleted successfully.');
         } catch (e) {
           print('Delete 에러: $e');
         }
@@ -897,15 +895,31 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ) {
                           return GestureDetector(
                             onTap: () {
-                              filterProvider.setBasicVideoCategory(
-                                (selectedRegion == 'All')
-                                    ? null
-                                    : selectedRegion,
-                                (selectedCategory == 'All')
+
+                              if (selectedRegion == 'Around Me') {
+                                filterProvider.setAroundVideoCategory(
+                                  context,
+                                  (selectedCategory == 'All')
                                     ? null
                                     : selectedCategory,
-                                (selectedPrice == 'All') ? null : selectedPrice,
-                              );
+                                  (selectedPrice == 'All')
+                                      ? null
+                                      : selectedPrice,
+                                );
+                              } else {
+                                filterProvider.setBasicVideoCategory(
+                                  (selectedRegion == 'All')
+                                      ? null
+                                      : selectedRegion,
+                                  (selectedCategory == 'All')
+                                      ? null
+                                      : selectedCategory,
+                                  (selectedPrice == 'All')
+                                      ? null
+                                      : selectedPrice,
+                                );
+                              }
+
                               Navigator.pop(context);
                             },
                             child: Container(

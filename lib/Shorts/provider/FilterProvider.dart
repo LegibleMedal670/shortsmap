@@ -12,24 +12,21 @@ class FilterProvider extends ChangeNotifier {
   bool filterByDistance = false;
 
   void setBasicVideoCategory(String? region, String? category, String? price) {
-
     double? priceToDouble;
-
     if (price != null) {
       switch (price) {
-        case '1만원 미만' :
+        case '1만원 미만':
           priceToDouble = 10;
           break;
-        case '1~2만원' :
+        case '1~2만원':
           priceToDouble = 20;
           break;
-        case '2만원 이상' :
+        case '2만원 이상':
           priceToDouble = 50;
           break;
-        default :
+        default:
           priceToDouble = 50;
           break;
-
       }
     }
 
@@ -38,34 +35,40 @@ class FilterProvider extends ChangeNotifier {
     filterPrice = priceToDouble;
 
     print('$filterRegion + $filterCategory + $filterPrice');
-
     notifyListeners();
   }
 
-  Future<void> setNearVideoCategory(String? category, String? price,) async {
-
-    final position = await Geolocator.getCurrentPosition();
-
+  Future<void> setAroundVideoCategory(BuildContext context, String? category, String? price) async {
     double? priceToDouble;
-
     if (price != null) {
       switch (price) {
-        case '1만원 미만' :
+        case '1만원 미만':
           priceToDouble = 10;
           break;
-        case '1~2만원' :
+        case '1~2만원':
           priceToDouble = 20;
           break;
-        case '2만원 이상' :
+        case '2만원 이상':
           priceToDouble = 50;
           break;
-        default :
+        default:
           priceToDouble = 50;
           break;
-
       }
     }
 
+    // 바로 시스템 권한 요청
+    final permission = await Geolocator.requestPermission();
+    if (permission != LocationPermission.always &&
+        permission != LocationPermission.whileInUse) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("위치 권한이 거부되었습니다.")),
+      );
+      return;
+    }
+
+    // 권한이 허용된 경우 현재 위치 가져오기
+    final position = await Geolocator.getCurrentPosition();
     filterLat = position.latitude;
     filterLon = position.longitude;
     filterRegion = null;
@@ -74,6 +77,5 @@ class FilterProvider extends ChangeNotifier {
     filterByDistance = true;
 
     notifyListeners();
-
   }
 }
