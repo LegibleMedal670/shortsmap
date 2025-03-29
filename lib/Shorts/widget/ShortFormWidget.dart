@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
+import 'package:shortsmap/UserDataProvider.dart';
+import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
 
@@ -324,12 +326,12 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                   size: 26,
                 ),
                 Consumer<FilterProvider>(
-                  builder: (providerContext, provider, child) {
+                  builder: (providerContext, filterProvider, child) {
                     return Container(
                       padding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                       color: Colors.transparent,
                       child: Text(
-                        '${provider.filterRegion ?? 'All'} · ${provider.filterCategory ?? 'All'} · ${provider.filterPrice == null ? 'All' : '\$${provider.filterPrice}'}',
+                        '${filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory ?? 'All'} · ${filterProvider.filterPrice == null ? 'All' : '\$${filterProvider.filterPrice}'}',
                         style: TextStyle(
                           fontSize: 21,
                           fontWeight: FontWeight.w600,
@@ -348,21 +350,26 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
         Positioned(
           right: MediaQuery.of(context).size.width * 0.03,
           bottom: MediaQuery.of(context).size.height * 0.02,
-          child: Column(
-            // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ItemButton(
-                icon:
-                    _isBookmarked
-                        ? CupertinoIcons.bookmark_fill
-                        : CupertinoIcons.bookmark,
-                value: '18',
-                action: saveBookmarkInfo,
-              ),
-              ItemButton(icon: CupertinoIcons.bubble_right, value: '32'),
-              ItemButton(icon: CupertinoIcons.paperplane, value: 'Share'),
-              ItemButton(icon: Icons.travel_explore_outlined, value: 'Map'),
-            ],
+          child: Consumer<UserDataProvider>(
+            builder: (userDataProviderContext, userDataProvider, child) {
+              return Column(
+                // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ItemButton(
+                    icon:
+                        _isBookmarked
+                            ? CupertinoIcons.bookmark_fill
+                            : CupertinoIcons.bookmark,
+                    value: '18',
+                    action:
+                        () => saveBookmarkInfo(userDataProvider.currentUserUID),
+                  ),
+                  ItemButton(icon: CupertinoIcons.bubble_right, value: '32'),
+                  ItemButton(icon: CupertinoIcons.paperplane, value: 'Share'),
+                  ItemButton(icon: Icons.travel_explore_outlined, value: 'Map'),
+                ],
+              );
+            },
           ),
         ),
 
@@ -572,30 +579,118 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     );
   }
 
-  void saveBookmarkInfo() async {
+  Future<void> saveBookmarkInfo(String? currentUserUid) async {
+    if (currentUserUid != null) {
+      // 눌렀을 때 진동
+      HapticFeedback.lightImpact();
 
-    /// 눌렀을 때 진동
-    HapticFeedback.lightImpact();
+      // 먼저 캐시에 저장
+      SharedPreferences preferences = await SharedPreferences.getInstance();
+      List<String> bookMarkList =
+          preferences.getStringList('bookMarkList') ?? [];
 
-    /// 먼저 캐시에 저장
-    SharedPreferences preferences = await SharedPreferences.getInstance();
+      if (!bookMarkList.contains(widget.videoId)) {
+        bookMarkList.add(widget.videoId);
 
-    List<String> bookMarkList = preferences.getStringList('bookMarkList') ?? [];
+        setState(() {
+          _isBookmarked = true;
+        });
 
-    if (!bookMarkList.contains(widget.videoId)) {
-      bookMarkList.add(widget.videoId);
-      setState(() {
-        _isBookmarked = true;
-      });
+        await preferences.setStringList('bookMarkList', bookMarkList);
+
+        try {
+          await _supabase.from('bookmarks').insert({
+            'user_id': currentUserUid,
+            'location_id': widget.videoId,
+            'category': widget.category,
+            'bookmarked_at': DateTime.now().toIso8601String(),
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.lightBlueAccent,
+              content: Text('Successfully added bookmark'),
+              action: SnackBarAction(
+                label: 'Plan',
+                textColor: Color(0xff121212),
+                onPressed: () {
+                  print('plan');
+                },
+              ),
+              behavior: SnackBarBehavior.floating,
+              margin: EdgeInsets.only(
+                bottom: MediaQuery.of(context).size.height * 0.06,
+                left: 20.0,
+                right: 20.0,
+              ),
+            ),
+          );
+          print('Bookmark inserted successfully.');
+        } catch (e) {
+          // 예외가 발생하면 에러 메시지를 출력합니다.
+          print('Insert 에러: $e');
+        }
+      } else {
+        bookMarkList.remove(widget.videoId);
+
+        setState(() {
+          _isBookmarked = false;
+        });
+
+        await preferences.setStringList('bookMarkList', bookMarkList);
+
+        try {
+          await _supabase.from('bookmarks').delete().match({
+            'user_id': currentUserUid,
+            'location_id': widget.videoId,
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.lightBlueAccent,
+              content: Text('Successfully deleted bookmark'),
+              action: SnackBarAction(
+                label: 'Plan',
+                textColor: Color(0xff121212),
+                onPressed: () {
+                  print('plan');
+                },
+              ),
+              behavior: SnackBarBehavior.floating,
+              margin: EdgeInsets.only(
+                bottom: MediaQuery.of(context).size.height * 0.06,
+                left: 20.0,
+                right: 20.0,
+              ),
+            ),
+          );
+          print('Bookmark deleted successfully.');
+        } catch (e) {
+          print('Delete 에러: $e');
+        }
+      }
     } else {
-      bookMarkList.remove(widget.videoId);
-      setState(() {
-        _isBookmarked = false;
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.lightBlueAccent,
+          content: Text('Login To Bookmark Location'),
+          action: SnackBarAction(
+            label: 'Login',
+            textColor: Color(0xff121212),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => LoginPage()),
+              );
+            },
+          ),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.only(
+            bottom: MediaQuery.of(context).size.height * 0.06,
+            left: 20.0,
+            right: 20.0,
+          ),
+        ),
+      );
     }
-
-    preferences.setStringList('bookMarkList', bookMarkList);
-
   }
 
   void showLocationModal(BuildContext context) {
@@ -795,22 +890,14 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                     ),
                     SafeArea(
                       child: Consumer<FilterProvider>(
-                        builder: (providerContext, provider, child) {
+                        builder: (
+                          filterProviderContext,
+                          filterProvider,
+                          child,
+                        ) {
                           return GestureDetector(
                             onTap: () {
-                              // setState(() {});
-                              // Navigator.pop(context);
-                              // Navigator.pushReplacement(
-                              //   context,
-                              //   PageRouteBuilder(
-                              //     pageBuilder:
-                              //         (context, animation1, animation2) =>
-                              //             const ShortsPage(),
-                              //     transitionDuration: Duration.zero,
-                              //     reverseTransitionDuration: Duration.zero,
-                              //   ),
-                              // );
-                              provider.setBasicVideoCategory(
+                              filterProvider.setBasicVideoCategory(
                                 (selectedRegion == 'All')
                                     ? null
                                     : selectedRegion,
@@ -820,9 +907,6 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 (selectedPrice == 'All') ? null : selectedPrice,
                               );
                               Navigator.pop(context);
-                              // print(
-                              //   '$selectedCategory + $selectedPrice + $selectedRegion',
-                              // );
                             },
                             child: Container(
                               padding: EdgeInsets.symmetric(vertical: 12),
