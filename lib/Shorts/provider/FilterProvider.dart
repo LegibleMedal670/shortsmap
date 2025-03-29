@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
+/// 동영상을 필터링하는데 쓰이는 요소들을 관리하기 위한 프로바이더
 class FilterProvider extends ChangeNotifier {
   String? filterRegion;
   String? filterCategory;
