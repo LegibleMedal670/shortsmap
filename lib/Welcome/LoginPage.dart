@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:provider/provider.dart';
+import 'package:shortsmap/UserDataProvider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 
@@ -15,28 +17,30 @@ class _LoginPageState extends State<LoginPage> {
   final _supabase = Supabase.instance.client;
 
   Future<void> _googleSignIn() async {
-
+    // 로딩 다이얼로그 표시
     showDialog(
-        barrierDismissible: false,
-        context: context,
-        builder: (context) {
-          return Center(
-            child: SizedBox(
-              width: MediaQuery.of(context).size.width * (50 / 375),
-              height: MediaQuery.of(context).size.height * (50 / 812),
-              child: const CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
-                strokeWidth: 4.0, // 선 두께 설정 (기본값: 4.0)
-              ),
+      barrierDismissible: false,
+      context: context,
+      builder: (context) {
+        return Center(
+          child: SizedBox(
+            width: MediaQuery.of(context).size.width * (50 / 375),
+            height: MediaQuery.of(context).size.height * (50 / 812),
+            child: const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+              strokeWidth: 4.0,
             ),
-          );
-        });
+          ),
+        );
+      },
+    );
 
     try {
       GoogleSignIn _googleSignIn = GoogleSignIn();
       GoogleSignInAccount? _account = await _googleSignIn.signIn();
       if (_account != null) {
-        GoogleSignInAuthentication _authentication = await _account.authentication;
+        GoogleSignInAuthentication _authentication =
+        await _account.authentication;
 
         final accessToken = _authentication.accessToken;
         final idToken = _authentication.idToken;
@@ -47,26 +51,36 @@ class _LoginPageState extends State<LoginPage> {
         if (idToken == null) {
           throw 'No ID Token found.';
         }
+
+        // Supabase 로그인 시도
         await _supabase.auth.signInWithIdToken(
           provider: OAuthProvider.google,
           idToken: idToken,
           accessToken: accessToken,
         );
 
+        // 로그인 성공 시
         if (_supabase.auth.currentUser != null) {
-          Navigator.pop(context);
-          Navigator.pop(context);
+          final uid = _supabase.auth.currentUser!.id;
+          // Provider를 사용해 로그인 상태 업데이트
+          Provider.of<UserDataProvider>(context, listen: false).login(uid);
+
+          Navigator.pop(context); // 로딩 다이얼로그 제거
+          Navigator.pop(context); // 이전 화면으로 이동 (필요에 따라 조정)
         } else {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Something went wrong. Try again later.'),
-          ));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Something went wrong. Try again later.'),
+            ),
+          );
         }
-      } else{
+      } else {
         Navigator.pop(context);
       }
     } catch (e) {
       print(e);
+      Navigator.pop(context); // 에러 발생 시 다이얼로그 제거
     }
   }
 
