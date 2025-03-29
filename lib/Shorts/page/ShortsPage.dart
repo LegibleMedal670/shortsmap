@@ -15,160 +15,15 @@ class ShortsPage extends StatefulWidget {
 }
 
 class _ShortsPageState extends State<ShortsPage> {
-  List<Map<String, dynamic>> tempData = [
-    {
-      'region': 'Seoul',
-      'detailRegion': 'Seong-Su',
-      'category': 'Activity',
-      'price': 10,
-      'name': 'Seoul Vibes',
-      'siteURL': 'www.seoulvibes.com',
-      'description': 'Cultural activity in trendy Seoul',
-      'videoURL':
-          'https://shortsmap.xyz/shortsmap_video/seongsu%3Abangintaco.mp4',
-      'openTime': '11:00',
-      'closeTime': '20:00',
-    },
-    {
-      'region': 'Jeju',
-      'detailRegion': null,
-      'category': 'Nature',
-      'price': 0,
-      'name': 'Sunset Cliffs',
-      'siteURL': 'www.sunsetjeju.kr',
-      'description': 'Enjoy breathtaking sunsets on the cliff',
-      'videoURL':
-          'https://shortsmap.xyz/shortsmap_video/seongsu%3Ahddpizza.mp4',
-      'openTime': '17:00',
-      'closeTime': '21:00',
-    },
-    {
-      'region': 'Busan',
-      'detailRegion': 'Gwangan',
-      'category': 'Food',
-      'price': 18,
-      'name': 'Gwangan Sushi',
-      'siteURL': 'www.sushigwangan.co.kr',
-      'description': 'Fresh sushi with a view of the bridge',
-      'videoURL':
-          'https://shortsmap.xyz/shortsmap_video/seongsu%3Akyukattjung.mp4',
-      'openTime': '12:00',
-      'closeTime': '22:00',
-    },
-    {
-      'region': 'Seoul',
-      'detailRegion': 'Itaewon',
-      'category': 'Nightlife',
-      'price': 22,
-      'name': 'Midnight Lounge',
-      'siteURL': 'www.mnightlounge.kr',
-      'description': 'Chill out with cocktails and music',
-      'videoURL': 'https://shortsmap.xyz/shortsmap_video/seongsu%3Asobamae.mp4',
-      'openTime': '20:00',
-      'closeTime': '03:00',
-    },
-    {
-      'region': 'Daegu',
-      'detailRegion': null,
-      'category': 'Culture',
-      'price': 5,
-      'name': 'Daegu Museum',
-      'siteURL': 'www.dgmuseum.or.kr',
-      'description': 'Modern and traditional art exhibition',
-      'videoURL':
-          'https://shortsmap.xyz/shortsmap_video/seongsu%3Afregoclub.mp4',
-      'openTime': '09:00',
-      'closeTime': '18:00',
-    },
-    {
-      'region': 'Gyeonggi',
-      'detailRegion': 'Paju',
-      'category': 'Shopping',
-      'price': 0,
-      'name': 'Paju Premium Outlets',
-      'siteURL': 'www.pajuoutlets.kr',
-      'description': 'Luxury shopping at discounted prices',
-      'videoURL': 'https://shortsmap.xyz/shortsmap_video/seongsu%3A5to7.mp4',
-      'openTime': '10:00',
-      'closeTime': '21:00',
-    },
-    {
-      'region': 'Seoul',
-      'detailRegion': 'Hongdae',
-      'category': 'Street Performance',
-      'price': 0,
-      'name': 'Live Hongdae',
-      'siteURL': 'www.livehongdae.com',
-      'description': 'Street music and vibrant crowd',
-      'videoURL': 'https://shortsmap.xyz/shortsmap_video/seongsu%3Ajail.mp4',
-      'openTime': '15:00',
-      'closeTime': '23:00',
-    },
-    {
-      'region': 'Gangwon',
-      'detailRegion': null,
-      'category': 'Activity',
-      'price': 12,
-      'name': 'River Rafting',
-      'siteURL': 'www.raftinggangwon.kr',
-      'description': 'Thrilling ride on the mountain rivers',
-      'videoURL':
-          'https://shortsmap.xyz/shortsmap_video/seongsu%3Anamjinrt.mp4',
-      'openTime': '09:00',
-      'closeTime': '16:00',
-    },
-    {
-      'region': 'Incheon',
-      'detailRegion': 'Songdo',
-      'category': 'Cafe',
-      'price': 9,
-      'name': 'Sky Garden Café',
-      'siteURL': 'www.skygarden.kr',
-      'description': 'Modern rooftop café with skyline view',
-      'videoURL': 'https://shortsmap.xyz/seongsu%3Atamgwang.mp4',
-      'openTime': '10:00',
-      'closeTime': '20:00',
-    },
-    {
-      'region': 'Ulsan',
-      'detailRegion': null,
-      'category': 'Food',
-      'price': 14,
-      'name': 'Ulsan BBQ',
-      'siteURL': 'www.ulsanbbq.com',
-      'description': 'Authentic Korean BBQ in Ulsan',
-      'videoURL':
-          'https://shortsmap.xyz/shortsmap_video/seongsu%3Abdbugger.mp4',
-      'openTime': '11:30',
-      'closeTime': '22:30',
-    },
-  ];
 
   /// Supabase client
   final _supabase = Supabase.instance.client;
-
-  Future<List<dynamic>> tempFuture() async {
-    ///TODO Supabase로 데이터 가져올거임
-
-    // DocumentSnapshot documentSnapshot =
-    // await _firestore.collection('shortsmap_seongsu').doc('map').get();
-    //
-    // Map<String, dynamic> documents = documentSnapshot.data() as Map<String,dynamic>;
-    //
-    // List<dynamic> data = documents['dataMapList'];
-
-    await Future.delayed(const Duration(milliseconds: 1000));
-
-    tempData.shuffle();
-
-    return tempData;
-  }
 
   /// Supabase RPC 호출: search_locations
   Future<List<LocationData>> _fetchDataFromSupabase(
     String? region,
     String? category,
-    double? avg_price,
+    double? avgPrice,
     double? lat,
     double? lon,
     double? distanceInKm,
@@ -182,12 +37,12 @@ class _ShortsPageState extends State<ShortsPage> {
       final response = await _supabase.rpc(
         'search_locations',
         params: {
-          '_region': null,
-          '_category': null,
-          '_avg_price': null,
-          '_lat': 137.54760705333279,
-          '_lon': 227.04689449653692,
-          '_distance': distanceInMeters,
+          '_region': region,
+          '_category': category,
+          '_avg_price': avgPrice,
+          '_lat': lat,
+          '_lon': lon,
+          '_distance': filterByDistance ? distanceInMeters : null,
         },
       );
 
@@ -255,6 +110,7 @@ class _ShortsPageState extends State<ShortsPage> {
                           closeTime: shortFormData.closeTime,
                           rating: shortFormData.rating,
                           category: shortFormData.category,
+                          videoId: shortFormData.locationId.toString(),
                         );
                       },
                     );

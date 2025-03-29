@@ -1,7 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:shortsmap/Shorts/page/ShortsPage.dart';
-import 'package:shortsmap/Welcome/LoginPage.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
 
 class ShortFormWidget extends StatefulWidget {
@@ -14,6 +17,7 @@ class ShortFormWidget extends StatefulWidget {
   final double rating;
   final String category;
   final double averagePrice;
+  final String videoId;
 
   const ShortFormWidget({
     required this.storeName,
@@ -25,6 +29,7 @@ class ShortFormWidget extends StatefulWidget {
     required this.rating,
     required this.category,
     required this.averagePrice,
+    required this.videoId,
     super.key,
   });
 
@@ -39,8 +44,12 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
   IconData restaurantCategory = Icons.restaurant_outlined;
   bool _isExpanded = false;
 
+  /// Supabase client
+  final _supabase = Supabase.instance.client;
+
   final List<String> regionOptions = [
     '내 주변',
+    'All',
     '서울',
     '부산',
     '세글자',
@@ -55,7 +64,15 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     '다섯글자임',
   ];
   final List<String> categoryOptions = ['All', '한식', '양식', '일식', '중식', '카페'];
-  final List<String> priceOptions = ['All', '1만원 미만', '1~2만원', '2만원 이상'];
+  final List<String> priceOptions = [
+    'All',
+    '\$10',
+    '\$20',
+    '\$30',
+    '\$40',
+    '\$50',
+    '\$50~',
+  ];
 
   // 현재 선택된 값(단일 선택)
   String? selectedRegion;
@@ -64,10 +81,13 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
   Color shortPageWhite = Colors.grey[200] as Color;
 
+  bool _isBookmarked = false;
+
   @override
   void initState() {
     super.initState();
     getRestaurantCategory(widget.category);
+    getBookmarkInfoFromCache();
     _playerController = VideoPlayerController.networkUrl(
         Uri.parse(widget.videoURL),
       )
@@ -96,7 +116,6 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
   @override
   void dispose() {
-    // _logData();
     _playerController.dispose();
     super.dispose();
   }
@@ -172,6 +191,16 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
         });
         break;
     }
+  }
+
+  void getBookmarkInfoFromCache() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+
+    List<String> bookMarkList = preferences.getStringList('bookMarkList') ?? [];
+
+    setState(() {
+      _isBookmarked = bookMarkList.contains(widget.videoId);
+    });
   }
 
   @override
@@ -294,17 +323,21 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                   color: shortPageWhite,
                   size: 26,
                 ),
-                Container(
-                  padding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                  color: Colors.transparent,
-                  child: Text(
-                    'Seoul · Food · \$10',
-                    style: TextStyle(
-                      fontSize: 21,
-                      fontWeight: FontWeight.w600,
-                      color: shortPageWhite,
-                    ),
-                  ),
+                Consumer<FilterProvider>(
+                  builder: (providerContext, provider, child) {
+                    return Container(
+                      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                      color: Colors.transparent,
+                      child: Text(
+                        '${provider.filterRegion ?? 'All'} · ${provider.filterCategory ?? 'All'} · ${provider.filterPrice == null ? 'All' : '\$${provider.filterPrice}'}',
+                        style: TextStyle(
+                          fontSize: 21,
+                          fontWeight: FontWeight.w600,
+                          color: shortPageWhite,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -318,7 +351,14 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
           child: Column(
             // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              ItemButton(icon: CupertinoIcons.bookmark, value: '18'),
+              ItemButton(
+                icon:
+                    _isBookmarked
+                        ? CupertinoIcons.bookmark_fill
+                        : CupertinoIcons.bookmark,
+                value: '18',
+                action: saveBookmarkInfo,
+              ),
               ItemButton(icon: CupertinoIcons.bubble_right, value: '32'),
               ItemButton(icon: CupertinoIcons.paperplane, value: 'Share'),
               ItemButton(icon: Icons.travel_explore_outlined, value: 'Map'),
@@ -532,6 +572,32 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     );
   }
 
+  void saveBookmarkInfo() async {
+
+    /// 눌렀을 때 진동
+    HapticFeedback.lightImpact();
+
+    /// 먼저 캐시에 저장
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+
+    List<String> bookMarkList = preferences.getStringList('bookMarkList') ?? [];
+
+    if (!bookMarkList.contains(widget.videoId)) {
+      bookMarkList.add(widget.videoId);
+      setState(() {
+        _isBookmarked = true;
+      });
+    } else {
+      bookMarkList.remove(widget.videoId);
+      setState(() {
+        _isBookmarked = false;
+      });
+    }
+
+    preferences.setStringList('bookMarkList', bookMarkList);
+
+  }
+
   void showLocationModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -549,14 +615,14 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     );
   }
 
+  ///영상 필터 ModalBottomSheet
   void showFilterModel(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       enableDrag: true,
       showDragHandle: true,
-      backgroundColor: Colors.black,
-      // backgroundColor: Colors.black,
+      backgroundColor: Color(0xff121212),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(20.0),
@@ -612,12 +678,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                           ),
                                         ),
                                         selectedColor: shortPageWhite,
-                                        backgroundColor: Color.fromRGBO(
-                                          30,
-                                          30,
-                                          30,
-                                          1,
-                                        ),
+                                        backgroundColor: Color(0xff222222),
                                         padding: EdgeInsets.symmetric(
                                           horizontal: 10,
                                           vertical: 6,
@@ -652,25 +713,20 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 spacing: 8.0,
                                 runSpacing: 1.0,
                                 children:
-                                    categoryOptions.map((region) {
+                                    categoryOptions.map((category) {
                                       return ChoiceChip(
-                                        selected: selectedCategory == region,
+                                        selected: selectedCategory == category,
                                         label: Text(
-                                          region,
+                                          category,
                                           style: TextStyle(
                                             color:
-                                                (selectedCategory == region)
+                                                (selectedCategory == category)
                                                     ? Colors.black
                                                     : shortPageWhite,
                                           ),
                                         ),
                                         selectedColor: shortPageWhite,
-                                        backgroundColor: Color.fromRGBO(
-                                          30,
-                                          30,
-                                          30,
-                                          1,
-                                        ),
+                                        backgroundColor: Color(0xff222222),
                                         padding: EdgeInsets.symmetric(
                                           horizontal: 10,
                                           vertical: 6,
@@ -678,7 +734,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                         onSelected: (bool selected) {
                                           filterState(() {
                                             selectedCategory =
-                                                selected ? region : null;
+                                                selected ? category : null;
                                           });
                                         },
                                       );
@@ -704,25 +760,20 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 spacing: 8.0,
                                 runSpacing: 1.0,
                                 children:
-                                    priceOptions.map((region) {
+                                    priceOptions.map((price) {
                                       return ChoiceChip(
-                                        selected: selectedPrice == region,
+                                        selected: selectedPrice == price,
                                         label: Text(
-                                          region,
+                                          price,
                                           style: TextStyle(
                                             color:
-                                                (selectedPrice == region)
+                                                (selectedPrice == price)
                                                     ? Colors.black
                                                     : shortPageWhite,
                                           ),
                                         ),
                                         selectedColor: shortPageWhite,
-                                        backgroundColor: Color.fromRGBO(
-                                          30,
-                                          30,
-                                          30,
-                                          1,
-                                        ),
+                                        backgroundColor: Color(0xff222222),
                                         padding: EdgeInsets.symmetric(
                                           horizontal: 10,
                                           vertical: 6,
@@ -730,7 +781,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                         onSelected: (bool selected) {
                                           filterState(() {
                                             selectedPrice =
-                                                selected ? region : null;
+                                                selected ? price : null;
                                           });
                                         },
                                       );
@@ -743,42 +794,56 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                       ),
                     ),
                     SafeArea(
-                      child: GestureDetector(
-                        onTap: () {
-                          // setState(() {});
-                          // Navigator.pop(context);
-                          Navigator.pushReplacement(
-                            context,
-                            PageRouteBuilder(
-                              pageBuilder:
-                                  (context, animation1, animation2) =>
-                                      const ShortsPage(),
-                              transitionDuration: Duration.zero,
-                              reverseTransitionDuration: Duration.zero,
-                            ),
-                          );
-                          print(
-                            '$selectedCategory + $selectedPrice + $selectedRegion',
-                          );
-                        },
-                        child: Container(
-                          width: MediaQuery.of(context).size.width * 0.8,
-                          height: 70,
-                          decoration: BoxDecoration(
-                            color: Colors.green,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'Update Filter',
-                              style: TextStyle(
-                                color: Colors.black87,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 24,
+                      child: Consumer<FilterProvider>(
+                        builder: (providerContext, provider, child) {
+                          return GestureDetector(
+                            onTap: () {
+                              // setState(() {});
+                              // Navigator.pop(context);
+                              // Navigator.pushReplacement(
+                              //   context,
+                              //   PageRouteBuilder(
+                              //     pageBuilder:
+                              //         (context, animation1, animation2) =>
+                              //             const ShortsPage(),
+                              //     transitionDuration: Duration.zero,
+                              //     reverseTransitionDuration: Duration.zero,
+                              //   ),
+                              // );
+                              provider.setBasicVideoCategory(
+                                (selectedRegion == 'All')
+                                    ? null
+                                    : selectedRegion,
+                                (selectedCategory == 'All')
+                                    ? null
+                                    : selectedCategory,
+                                (selectedPrice == 'All') ? null : selectedPrice,
+                              );
+                              Navigator.pop(context);
+                              // print(
+                              //   '$selectedCategory + $selectedPrice + $selectedRegion',
+                              // );
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              width: MediaQuery.of(context).size.width * 0.8,
+                              decoration: BoxDecoration(
+                                color: Color(0xff309053),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'Update Filter',
+                                  style: TextStyle(
+                                    color: shortPageWhite,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 24,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -791,7 +856,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     );
   }
 
-  ///More 버튼을 누르면 나오는 BottomModalSheet
+  ///More 버튼을 누르면 나오는 ModalBottomSheet
   void showInfoModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -923,21 +988,22 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
   }
 
   ///우측 버튼들
-  Widget ItemButton({IconData icon = Icons.bookmark, String? value}) {
-    return GestureDetector(
-      onTap: (){
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const LoginPage(),
-          ),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-        child: Column(
-          children: [
-            Container(
+  Widget ItemButton({
+    IconData icon = Icons.bookmark,
+    String? value,
+    VoidCallback? action,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: () {
+              if (action != null) {
+                action();
+              }
+            },
+            child: Container(
               decoration: BoxDecoration(
                 // 배경을 투명하게 두되, 가운데부터 투명해지는 RadialGradient 적용
                 gradient: RadialGradient(
@@ -951,31 +1017,31 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
               ),
               child: Icon(icon, size: 40, color: shortPageWhite),
             ),
-            const SizedBox(height: 5),
-            if (value != null)
-              Container(
-                decoration: BoxDecoration(
-                  // 배경을 투명하게 두되, 가운데부터 투명해지는 RadialGradient 적용
-                  gradient: RadialGradient(
-                    colors: [
-                      Colors.black.withValues(alpha: 0.3), // 중앙이 좀 더 어두운 영역
-                      Colors.transparent, // 가장자리로 갈수록 투명
-                    ],
-                    center: Alignment.center,
-                    radius: 0.6, // 0 ~ 1 사이에서 조절 (값을 높이면 더 넓게 퍼짐)
-                  ),
-                ),
-                child: Text(
-                  value,
-                  style: TextStyle(
-                    color: shortPageWhite,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+          ),
+          const SizedBox(height: 5),
+          if (value != null)
+            Container(
+              decoration: BoxDecoration(
+                // 배경을 투명하게 두되, 가운데부터 투명해지는 RadialGradient 적용
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.black.withValues(alpha: 0.3), // 중앙이 좀 더 어두운 영역
+                    Colors.transparent, // 가장자리로 갈수록 투명
+                  ],
+                  center: Alignment.center,
+                  radius: 0.6, // 0 ~ 1 사이에서 조절 (값을 높이면 더 넓게 퍼짐)
                 ),
               ),
-          ],
-        ),
+              child: Text(
+                value,
+                style: TextStyle(
+                  color: shortPageWhite,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

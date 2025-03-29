@@ -44,6 +44,8 @@ dependencies:
   provider: ^6.1.4
   # 이용자의 현재 위치를 가져오기 위한 패키지
   geolocator: ^13.0.3
+  # 캐시 이용을 위한 패키지
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:
