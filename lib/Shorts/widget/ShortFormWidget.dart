@@ -20,6 +20,7 @@ class ShortFormWidget extends StatefulWidget {
   final String category;
   final double averagePrice;
   final String videoId;
+  final int bookmarkCount;
 
   const ShortFormWidget({
     required this.storeName,
@@ -32,6 +33,7 @@ class ShortFormWidget extends StatefulWidget {
     required this.category,
     required this.averagePrice,
     required this.videoId,
+    required this.bookmarkCount,
     super.key,
   });
 
@@ -45,6 +47,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
   double _pauseIconOpacity = 0.0;
   IconData restaurantCategory = Icons.restaurant_outlined;
   bool _isExpanded = false;
+
+  late int _bookmarkCount;
 
   /// Supabase client
   final _supabase = Supabase.instance.client;
@@ -90,6 +94,9 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     super.initState();
     getRestaurantCategory(widget.category);
     getBookmarkInfoFromCache();
+
+    _bookmarkCount = widget.bookmarkCount;
+
     _playerController = VideoPlayerController.networkUrl(
         Uri.parse(widget.videoURL),
       )
@@ -331,7 +338,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                       padding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                       color: Colors.transparent,
                       child: Text(
-                        '${filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory ?? 'All'} · ${filterProvider.filterPrice == null ? 'All' : '\$${filterProvider.filterPrice}'}',
+                        '${filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory ?? 'All'} ',
                         style: TextStyle(
                           fontSize: 21,
                           fontWeight: FontWeight.w600,
@@ -360,7 +367,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         _isBookmarked
                             ? CupertinoIcons.bookmark_fill
                             : CupertinoIcons.bookmark,
-                    value: '18',
+                    value: _bookmarkCount.toString(),
                     action:
                         () => saveBookmarkInfo(userDataProvider.currentUserUID),
                   ),
@@ -594,6 +601,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
         setState(() {
           _isBookmarked = true;
+          _bookmarkCount++;
         });
 
         await preferences.setStringList('bookMarkList', bookMarkList);
@@ -633,6 +641,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
         setState(() {
           _isBookmarked = false;
+          _bookmarkCount--;
         });
 
         await preferences.setStringList('bookMarkList', bookMarkList);
@@ -902,9 +911,6 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                   (selectedCategory == 'All')
                                     ? null
                                     : selectedCategory,
-                                  (selectedPrice == 'All')
-                                      ? null
-                                      : selectedPrice,
                                 );
                               } else {
                                 filterProvider.setBasicVideoCategory(
@@ -914,9 +920,6 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                   (selectedCategory == 'All')
                                       ? null
                                       : selectedCategory,
-                                  (selectedPrice == 'All')
-                                      ? null
-                                      : selectedPrice,
                                 );
                               }
 
