@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shortsmap/Plan/page/PlanPage.dart';
+import 'package:shortsmap/Plan/screens/plan_page.dart';
 import 'package:shortsmap/Shorts/page/ShortsPage.dart';
 
 
@@ -14,7 +14,7 @@ Widget BottomNavBar(BuildContext context, String page) {
         ? MediaQuery.of(context).size.height * (75 / 812)
         : MediaQuery.of(context).size.height * (60 / 812),
     decoration: BoxDecoration(
-        color: (page == 'shorts') ? Colors.black : Colors.white,
+        color: (page == 'shorts') ? Color(0xff121212) : Color(0xffF0F2F5),
         border: Border(top: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),)
     ),
     child: Row(
@@ -84,14 +84,14 @@ Widget BottomNavBar(BuildContext context, String page) {
                 child: Icon(
                   // Icons.supervisor_account,
                   Icons.calendar_month,
-                  color: (page == 'plan') ? Colors.black : Colors.grey,
+                  color: (page == 'plan') ? Color(0xff121212) : Colors.grey,
                   size: MediaQuery.of(context).size.height * (25 / 812),
                 ),
               ),
               Text(
                 'Plan',
                 style: TextStyle(
-                  color: (page == 'plan') ? Colors.black : Colors.grey,
+                  color: (page == 'plan') ? Color(0xff121212) : Colors.grey,
                   fontSize: 12,
                 ),
               ),
@@ -124,14 +124,14 @@ Widget BottomNavBar(BuildContext context, String page) {
                 child: Icon(
                   // Icons.supervisor_account,
                   CupertinoIcons.tickets,
-                  color: (page == 'map') ? Colors.black : Colors.grey,
+                  color: (page == 'map') ? Color(0xff121212) : Colors.grey,
                   size: MediaQuery.of(context).size.height * (25 / 812),
                 ),
               ),
               Text(
                 'Reserve',
                 style: TextStyle(
-                  color: (page == 'map') ? Colors.black : Colors.grey,
+                  color: (page == 'map') ? Color(0xff121212) : Colors.grey,
                   fontSize: 12,
                 ),
               ),
@@ -164,14 +164,14 @@ Widget BottomNavBar(BuildContext context, String page) {
                 child: Icon(
                   // Icons.supervisor_account,
                   Icons.forum_outlined,
-                  color: (page == 'profile') ? Colors.black : Colors.grey,
+                  color: (page == 'profile') ? Color(0xff121212) : Colors.grey,
                   size: MediaQuery.of(context).size.height * (25 / 812),
                 ),
               ),
               Text(
                 'Community',
                 style: TextStyle(
-                  color: (page == 'profile') ? Colors.black : Colors.grey,
+                  color: (page == 'profile') ? Color(0xff121212) : Colors.grey,
                   fontSize: 12,
                 ),
               ),

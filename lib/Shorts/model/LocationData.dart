@@ -35,7 +35,7 @@ class LocationData {
     this.coordinates,
   });
 
-  // JSON 데이터를 LocationTile 객체로 변환하는 팩토리 생성자
+  // JSON 데이터를 LocationData 객체로 변환하는 팩토리 생성자
   factory LocationData.fromJson(Map<String, dynamic> json) {
     Map<String, double>? coords;
     // location 컬럼이 "POINT(lon lat)" 형식의 문자열로 들어온다고 가정
