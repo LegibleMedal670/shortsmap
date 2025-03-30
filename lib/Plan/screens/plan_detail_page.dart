@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import '../widget/ trip_detail/place_card.dart';
+import '../widget/ trip_detail/unifiedPlaceCard.dart';
 import '../widget/ trip_detail/category_section.dart';
 import '../widget/ trip_detail/map_placeholder.dart';
-import '../widget/ trip_detail/timeline_item.dart';
+import '../widget/ trip_detail/planner_page.dart';
+import '../models/place.dart';
 
 class PlanDetailPage extends StatefulWidget {
   final String tripName;
@@ -23,166 +24,287 @@ class _PlanDetailPageState extends State<PlanDetailPage>
   late TabController _tabController;
   String tripName = '';
   DateTimeRange? selectedRange;
-  String viewMode = 'category'; // 'category' or 'timeline'
 
-  // 각 카테고리별 장소 목록을 관리하는 상태 변수들
-  List<String> tourismPlaces = ['Tourist Spot A', 'Tourist Spot B'];
-  List<String> restaurantPlaces = ['Restaurant 1', 'Restaurant 2'];
-  List<String> accommodationPlaces = ['Hotel ABC'];
+  // 장소 목록을 관리하는 상태 변수
+  List<Place> places = [
+    Place(
+      name: 'Tourist Spot A',
+      description: '관광지 A',
+      imageUrl: 'https://via.placeholder.com/150',
+      category: 'tourism',
+      time: '09:00',
+    ),
+    Place(
+      name: 'Restaurant 1',
+      description: '맛있는 식당',
+      imageUrl: 'https://via.placeholder.com/150',
+      category: 'restaurant',
+      time: '12:00',
+    ),
+    Place(
+      name: 'Hotel ABC',
+      description: '호텔',
+      imageUrl: 'https://via.placeholder.com/150',
+      category: 'accommodation',
+      time: '20:00',
+    ),
+    Place(
+      name: 'Tourist Spot B',
+      description: '관광지 B',
+      imageUrl: 'https://via.placeholder.com/150',
+      category: 'tourism',
+      time: '10:00',
+    ),
+    Place(
+      name: 'Restaurant 2',
+      description: '저녁 식당',
+      imageUrl: 'https://via.placeholder.com/150',
+      category: 'restaurant',
+      time: '18:00',
+    ),
+  ];
 
   @override
   void initState() {
     super.initState();
     tripName = widget.tripName;
-    _tabController = TabController(length: widget.days.length, vsync: this);
+    _tabController = TabController(length: widget.days.length + 1, vsync: this);
     selectedRange = DateTimeRange(
       start: widget.days.first,
       end: widget.days.last,
     );
   }
 
-  Widget _buildDayContent(int dayIndex) {
-    if (viewMode == 'category') {
-      return SingleChildScrollView(
-        child: Column(
+  // 카테고리별로 필터링된 장소 목록을 반환하는 함수
+  List<Place> getPlacesByCategory(String category) {
+    return places.where((place) => place.category == category).toList();
+  }
+
+  Widget _buildCategoryView() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          const MapPlaceholder(),
+          const SizedBox(height: 12),
+          CategorySection(
+            title: '관광지',
+            count: getPlacesByCategory('tourism').length,
+            icon: Icons.map_outlined,
+            items: getPlacesByCategory('tourism').asMap().entries.map((entry) {
+              return UnifiedPlaceCard(
+                key: ValueKey('tourism_${entry.key}'),
+                place: entry.value,
+                index: entry.key,
+                onDelete: () {
+                  setState(() {
+                    places.remove(entry.value);
+                  });
+                },
+              );
+            }).toList(),
+            onAddItem: () {
+              setState(() {
+                places.add(Place(
+                  name: 'New Tourist Spot',
+                  description: '새 관광지',
+                  imageUrl: 'https://via.placeholder.com/150',
+                  category: 'tourism',
+                ));
+              });
+            },
+            onReorder: (oldIndex, newIndex) {
+              setState(() {
+                final categoryPlaces = getPlacesByCategory('tourism');
+                if (newIndex > oldIndex) {
+                  newIndex -= 1;
+                }
+                final item = categoryPlaces[oldIndex];
+                // 원래 리스트에서 삭제
+                places.remove(item);
+                // 새 위치에 삽입 (카테고리 리스트 기준이 아닌 전체 리스트 기준으로)
+                final tourismPlaces = getPlacesByCategory('tourism');
+                final insertIndex = places.indexOf(
+                  newIndex < tourismPlaces.length
+                      ? tourismPlaces[newIndex]
+                      : tourismPlaces.last,
+                );
+                places.insert(insertIndex >= 0 ? insertIndex : places.length, item);
+              });
+            },
+          ),
+          CategorySection(
+            title: '식당',
+            count: getPlacesByCategory('restaurant').length,
+            icon: Icons.restaurant,
+            items: getPlacesByCategory('restaurant').asMap().entries.map((entry) {
+              return UnifiedPlaceCard(
+                key: ValueKey('restaurant_${entry.key}'),
+                place: entry.value,
+                index: entry.key,
+                onDelete: () {
+                  setState(() {
+                    places.remove(entry.value);
+                  });
+                },
+              );
+            }).toList(),
+            onAddItem: () {
+              setState(() {
+                places.add(Place(
+                  name: 'New Restaurant',
+                  description: '새 식당',
+                  imageUrl: 'https://via.placeholder.com/150',
+                  category: 'restaurant',
+                ));
+              });
+            },
+            onReorder: (oldIndex, newIndex) {
+              setState(() {
+                final categoryPlaces = getPlacesByCategory('restaurant');
+                if (newIndex > oldIndex) {
+                  newIndex -= 1;
+                }
+                final item = categoryPlaces[oldIndex];
+                // 원래 리스트에서 삭제
+                places.remove(item);
+                // 새 위치에 삽입
+                final restaurantPlaces = getPlacesByCategory('restaurant');
+                final insertIndex = places.indexOf(
+                  newIndex < restaurantPlaces.length
+                      ? restaurantPlaces[newIndex]
+                      : restaurantPlaces.last,
+                );
+                places.insert(insertIndex >= 0 ? insertIndex : places.length, item);
+              });
+            },
+          ),
+          CategorySection(
+            title: '숙소',
+            count: getPlacesByCategory('accommodation').length,
+            icon: Icons.hotel,
+            items: getPlacesByCategory('accommodation').asMap().entries.map((entry) {
+              return UnifiedPlaceCard(
+                key: ValueKey('accommodation_${entry.key}'),
+                place: entry.value,
+                index: entry.key,
+                onDelete: () {
+                  setState(() {
+                    places.remove(entry.value);
+                  });
+                },
+              );
+            }).toList(),
+            onAddItem: () {
+              setState(() {
+                places.add(Place(
+                  name: 'New Hotel',
+                  description: '새 호텔',
+                  imageUrl: 'https://via.placeholder.com/150',
+                  category: 'accommodation',
+                ));
+              });
+            },
+            onReorder: (oldIndex, newIndex) {
+              setState(() {
+                final categoryPlaces = getPlacesByCategory('accommodation');
+                if (newIndex > oldIndex) {
+                  newIndex -= 1;
+                }
+                final item = categoryPlaces[oldIndex];
+                // 원래 리스트에서 삭제
+                places.remove(item);
+                // 새 위치에 삽입
+                final accommodationPlaces = getPlacesByCategory('accommodation');
+                final insertIndex = places.indexOf(
+                  newIndex < accommodationPlaces.length
+                      ? accommodationPlaces[newIndex]
+                      : accommodationPlaces.last,
+                );
+                places.insert(insertIndex >= 0 ? insertIndex : places.length, item);
+              });
+            },
+          ),
+          // 추가 버튼 (새 장소 추가)
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.add),
+              label: const Text('새 장소 추가하기'),
+              onPressed: () {
+                // 새 장소 추가 로직 구현
+                _showAddPlaceDialog();
+              },
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size.fromHeight(50),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddPlaceDialog() {
+    // 간단한 구현: 카테고리 선택 후 기본 장소 추가
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('새 장소 추가'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const MapPlaceholder(),
-            CategorySection(
-              title: 'Tourism',
-              count: tourismPlaces.length,
-              icon: Icons.map_outlined,
-              items: tourismPlaces.asMap().entries.map((entry) {
-                return PlaceCard(
-                  key: ValueKey('tourism_${entry.key}'),
-                  title: entry.value,
-                  index: entry.key,
-                  onDelete: () {
-                    setState(() {
-                      tourismPlaces.removeAt(entry.key);
-                    });
-                  },
-                );
-              }).toList(),
-              onAddItem: () {
+            ElevatedButton(
+              onPressed: () {
                 setState(() {
-                  tourismPlaces.add('New Tourist Spot');
+                  places.add(Place(
+                    name: 'New Tourist Spot',
+                    description: '새 관광지',
+                    imageUrl: 'https://via.placeholder.com/150',
+                    category: 'tourism',
+                  ));
                 });
+                Navigator.pop(context);
               },
-              onReorder: (oldIndex, newIndex) {
-                setState(() {
-                  if (newIndex > oldIndex) {
-                    newIndex -= 1;
-                  }
-                  final item = tourismPlaces.removeAt(oldIndex);
-                  tourismPlaces.insert(newIndex, item);
-                });
-              },
+              child: const Text('관광지 추가'),
             ),
-            CategorySection(
-              title: 'Restaurant',
-              count: restaurantPlaces.length,
-              icon: Icons.restaurant,
-              items: restaurantPlaces.asMap().entries.map((entry) {
-                return PlaceCard(
-                  key: ValueKey('restaurant_${entry.key}'),
-                  title: entry.value,
-                  index: entry.key,
-                  onDelete: () {
-                    setState(() {
-                      restaurantPlaces.removeAt(entry.key);
-                    });
-                  },
-                );
-              }).toList(),
-              onAddItem: () {
+            ElevatedButton(
+              onPressed: () {
                 setState(() {
-                  restaurantPlaces.add('New Restaurant');
+                  places.add(Place(
+                    name: 'New Restaurant',
+                    description: '새 식당',
+                    imageUrl: 'https://via.placeholder.com/150',
+                    category: 'restaurant',
+                  ));
                 });
+                Navigator.pop(context);
               },
-              onReorder: (oldIndex, newIndex) {
-                setState(() {
-                  if (newIndex > oldIndex) {
-                    newIndex -= 1;
-                  }
-                  final item = restaurantPlaces.removeAt(oldIndex);
-                  restaurantPlaces.insert(newIndex, item);
-                });
-              },
+              child: const Text('식당 추가'),
             ),
-            CategorySection(
-              title: 'Accommodation',
-              count: accommodationPlaces.length,
-              icon: Icons.hotel,
-              items: accommodationPlaces.asMap().entries.map((entry) {
-                return PlaceCard(
-                  key: ValueKey('accommodation_${entry.key}'),
-                  title: entry.value,
-                  index: entry.key,
-                  onDelete: () {
-                    setState(() {
-                      accommodationPlaces.removeAt(entry.key);
-                    });
-                  },
-                );
-              }).toList(),
-              onAddItem: () {
+            ElevatedButton(
+              onPressed: () {
                 setState(() {
-                  accommodationPlaces.add('New Hotel');
+                  places.add(Place(
+                    name: 'New Hotel',
+                    description: '새 호텔',
+                    imageUrl: 'https://via.placeholder.com/150',
+                    category: 'accommodation',
+                  ));
                 });
+                Navigator.pop(context);
               },
-              onReorder: (oldIndex, newIndex) {
-                setState(() {
-                  if (newIndex > oldIndex) {
-                    newIndex -= 1;
-                  }
-                  final item = accommodationPlaces.removeAt(oldIndex);
-                  accommodationPlaces.insert(newIndex, item);
-                });
-              },
+              child: const Text('숙소 추가'),
             ),
           ],
         ),
-      );
-    } else {
-      return SingleChildScrollView(
-        child: Column(
-          children: [
-            const MapPlaceholder(),
-            const SizedBox(height: 12),
-            TimelineItem(
-              time: '08:00',
-              title: 'Breakfast - Café Scent',
-              description: '아침 식사',
-              onDelete: () {},
-            ),
-            TimelineItem(
-              time: '10:00',
-              title: 'Gyeongbok Palace',
-              description: '주요 관광지',
-              onDelete: () {},
-            ),
-            TimelineItem(
-              time: '13:00',
-              title: 'Lunch - Kimchi House',
-              description: '한국 전통 음식',
-              onDelete: () {},
-            ),
-            TimelineItem(
-              time: '15:00',
-              title: 'Shopping - Myeongdong',
-              description: '쇼핑 명소',
-              onDelete: () {},
-            ),
-            TimelineItem(
-              time: '19:00',
-              title: 'Hotel Check-in',
-              description: '숙소',
-              onDelete: () {},
-            ),
-          ],
-        ),
-      );
-    }
+      ),
+    );
+  }
+
+  void _addPlace(Place place) {
+    setState(() {
+      places.add(place);
+    });
   }
 
   @override
@@ -223,30 +345,6 @@ class _PlanDetailPageState extends State<PlanDetailPage>
                     : 'Select Date Range',
               ),
             ),
-            const SizedBox(height: 16),
-            const Text('Display Mode'),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                ChoiceChip(
-                  label: const Text('Category'),
-                  selected: viewMode == 'category',
-                  onSelected: (_) {
-                    setState(() => viewMode = 'category');
-                    Navigator.pop(context);
-                  },
-                ),
-                const SizedBox(width: 8),
-                ChoiceChip(
-                  label: const Text('Timeline'),
-                  selected: viewMode == 'timeline',
-                  onSelected: (_) {
-                    setState(() => viewMode = 'timeline');
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-            ),
           ],
         ),
       ),
@@ -275,18 +373,24 @@ class _PlanDetailPageState extends State<PlanDetailPage>
         ],
         bottom: TabBar(
           controller: _tabController,
-          isScrollable: widget.days.length >= 5,
-          tabs: List.generate(widget.days.length, (index) {
-            return Tab(text: 'Day ${index + 1}');
-          }),
+          isScrollable: true,
+          tabs: [
+            const Tab(text: 'Planner'),
+            ...List.generate(widget.days.length, (index) {
+              return Tab(text: 'Day ${index + 1}');
+            }),
+          ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
-        children: List.generate(
-          widget.days.length,
-          (index) => _buildDayContent(index),
-        ),
+        children: [
+          PlannerPage(onAddPlace: _addPlace),
+          ...List.generate(
+            widget.days.length,
+            (index) => _buildCategoryView(),
+          ),
+        ],
       ),
     );
   }
