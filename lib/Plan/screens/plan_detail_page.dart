@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
+import '../widget/ trip_detail/place_card.dart';
+import '../widget/ trip_detail/category_section.dart';
+import '../widget/ trip_detail/map_placeholder.dart';
+import '../widget/ trip_detail/timeline_item.dart';
 
-class PlanPage2 extends StatefulWidget {
+class PlanDetailPage extends StatefulWidget {
   final String tripName;
   final List<DateTime> days;
 
-  const PlanPage2({required this.tripName, required this.days, super.key});
+  const PlanDetailPage({
+    required this.tripName,
+    required this.days,
+    Key? key,
+  }) : super(key: key);
 
   @override
-  State<PlanPage2> createState() => _PlanPage2State();
+  State<PlanDetailPage> createState() => _PlanDetailPageState();
 }
 
-class _PlanPage2State extends State<PlanPage2>
+class _PlanDetailPageState extends State<PlanDetailPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String tripName = '';
@@ -28,85 +36,56 @@ class _PlanPage2State extends State<PlanPage2>
     );
   }
 
-  Widget _buildCategorySection(
-    String title,
-    int count,
-    IconData icon,
-    List<Widget> items,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon),
-              const SizedBox(width: 8),
-              Text(
-                '$title · $count',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const Spacer(),
-              IconButton(onPressed: () {}, icon: const Icon(Icons.add)),
-              IconButton(onPressed: () {}, icon: const Icon(Icons.expand_more)),
-            ],
-          ),
-          ...items,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlaceCard([String? title]) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: ListTile(
-          leading: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              'https://picsum.photos/100',
-              width: 50,
-              height: 50,
-              fit: BoxFit.cover,
-            ),
-          ),
-          title: Text(title ?? 'Place name'),
-          subtitle: const Text('nice place~~'),
-          trailing: IconButton(icon: const Icon(Icons.close), onPressed: () {}),
-        ),
-      ),
-    );
-  }
-
   Widget _buildDayContent(int dayIndex) {
     if (viewMode == 'category') {
       return SingleChildScrollView(
         child: Column(
           children: [
-            Container(
-              height: 200,
-              color: Colors.grey[300],
-              alignment: Alignment.center,
-              child: const Text('지도 Placeholder\n(Google Map)'),
+            const MapPlaceholder(),
+            CategorySection(
+              title: 'Tourism',
+              count: 3,
+              icon: Icons.map_outlined,
+              items: [
+                PlaceCard(
+                  title: 'Tourist Spot A',
+                  onDelete: () {},
+                ),
+                PlaceCard(
+                  title: 'Tourist Spot B',
+                  onDelete: () {},
+                ),
+              ],
+              onAddItem: () {},
             ),
-            _buildCategorySection('Tourism', 3, Icons.map_outlined, [
-              _buildPlaceCard('Tourist Spot A'),
-              _buildPlaceCard('Tourist Spot B'),
-            ]),
-            _buildCategorySection('Restaurant', 2, Icons.restaurant, [
-              _buildPlaceCard('Restaurant 1'),
-              _buildPlaceCard('Restaurant 2'),
-            ]),
-            _buildCategorySection('Accommodation', 1, Icons.hotel, [
-              _buildPlaceCard('Hotel ABC'),
-            ]),
+            CategorySection(
+              title: 'Restaurant',
+              count: 2,
+              icon: Icons.restaurant,
+              items: [
+                PlaceCard(
+                  title: 'Restaurant 1',
+                  onDelete: () {},
+                ),
+                PlaceCard(
+                  title: 'Restaurant 2',
+                  onDelete: () {},
+                ),
+              ],
+              onAddItem: () {},
+            ),
+            CategorySection(
+              title: 'Accommodation',
+              count: 1,
+              icon: Icons.hotel,
+              items: [
+                PlaceCard(
+                  title: 'Hotel ABC',
+                  onDelete: () {},
+                ),
+              ],
+              onAddItem: () {},
+            ),
           ],
         ),
       );
@@ -114,26 +93,42 @@ class _PlanPage2State extends State<PlanPage2>
       return SingleChildScrollView(
         child: Column(
           children: [
-            Container(
-              height: 200,
-              color: Colors.grey[300],
-              alignment: Alignment.center,
-              child: const Text('지도 Placeholder\n(Google Map)'),
-            ),
+            const MapPlaceholder(),
             const SizedBox(height: 12),
-            _buildPlaceCard('08:00 · Breakfast - Café Scent'),
-            _buildPlaceCard('10:00 · Gyeongbok Palace'),
-            _buildPlaceCard('13:00 · Lunch - Kimchi House'),
-            _buildPlaceCard('15:00 · Shopping - Myeongdong'),
-            _buildPlaceCard('19:00 · Hotel Check-in'),
+            TimelineItem(
+              time: '08:00',
+              title: 'Breakfast - Café Scent',
+              description: '아침 식사',
+              onDelete: () {},
+            ),
+            TimelineItem(
+              time: '10:00',
+              title: 'Gyeongbok Palace',
+              description: '주요 관광지',
+              onDelete: () {},
+            ),
+            TimelineItem(
+              time: '13:00',
+              title: 'Lunch - Kimchi House',
+              description: '한국 전통 음식',
+              onDelete: () {},
+            ),
+            TimelineItem(
+              time: '15:00',
+              title: 'Shopping - Myeongdong',
+              description: '쇼핑 명소',
+              onDelete: () {},
+            ),
+            TimelineItem(
+              time: '19:00',
+              title: 'Hotel Check-in',
+              description: '숙소',
+              onDelete: () {},
+            ),
           ],
         ),
       );
     }
-  }
-
-  Future<void> _openDrawer() async {
-    Scaffold.of(context).openEndDrawer();
   }
 
   @override
@@ -151,7 +146,7 @@ class _PlanPage2State extends State<PlanPage2>
             TextField(
               decoration: const InputDecoration(labelText: 'Trip Name'),
               controller: TextEditingController(text: tripName),
-              onChanged: (val) => tripName = val,
+              onChanged: (val) => setState(() => tripName = val),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -209,12 +204,17 @@ class _PlanPage2State extends State<PlanPage2>
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.ios_share)),
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.ios_share),
+          ),
           Builder(
             builder: (context) {
               return IconButton(
                 icon: const Icon(Icons.menu),
-                onPressed: _openDrawer,
+                onPressed: () {
+                  Scaffold.of(context).openEndDrawer();
+                },
               );
             },
           ),
