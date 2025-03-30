@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shortsmap/Shorts/model/LocationData.dart';
 import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
 import 'package:shortsmap/Shorts/widget/ShimmerWidget.dart';
@@ -20,29 +21,21 @@ class _ShortsPageState extends State<ShortsPage> {
   final _supabase = Supabase.instance.client;
 
   /// Supabase RPC 호출: search_locations
-  Future<List<LocationData>> _fetchDataFromSupabase(
-    String? region,
-    String? category,
-    double? avgPrice,
-    double? lat,
-    double? lon,
-    double? distanceInKm,
-    bool filterByDistance,
-  ) async {
-    // 거리(km)를 미터로 변환
-    final distanceInMeters = distanceInKm == null ? null : distanceInKm * 1000;
+  Future<List<LocationData>> _fetchDataFromSupabase(String? region, String? category, bool orderNear, double? lat, double? lon) async {
+
+
+    await clearCache();
 
     try {
       // RPC 파라미터 구성
       final response = await _supabase.rpc(
-        'search_locations',
+        'get_locations',
         params: {
           '_region': region,
           '_category': category,
-          '_avg_price': avgPrice,
+          '_order_near': orderNear,
           '_lat': lat,
           '_lon': lon,
-          '_distance': filterByDistance ? distanceInMeters : null,
         },
       );
 
@@ -59,6 +52,15 @@ class _ShortsPageState extends State<ShortsPage> {
     }
   }
 
+
+  Future<void> clearCache() async {
+
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+
+    preferences.remove('bookMarkList');
+
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,15 +75,15 @@ class _ShortsPageState extends State<ShortsPage> {
                   future: _fetchDataFromSupabase(
                     provider.filterRegion,
                     provider.filterCategory,
-                    provider.filterPrice,
+                    provider.orderNear,
                     provider.filterLat,
                     provider.filterLon,
-                    provider.filterDistanceInKm,
-                    provider.filterByDistance,
                   ),
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
+                      print(snapshot.error);
                       return ShimmerWidget(mode: 'error');
+
                     }
 
                     if (snapshot.connectionState == ConnectionState.waiting) {
@@ -111,6 +113,7 @@ class _ShortsPageState extends State<ShortsPage> {
                           rating: shortFormData.rating,
                           category: shortFormData.category,
                           videoId: shortFormData.locationId.toString(),
+                          bookmarkCount: shortFormData.bookmarkCount,
                         );
                       },
                     );
