@@ -93,8 +93,20 @@ class _ShortsPageState extends State<ShortsPage> {
                     List<dynamic> data = snapshot.data!;
 
                     if (data.isEmpty) {
-                      print('비었음');
-                      return ShimmerWidget(mode: 'error');
+                      return ShortFormWidget(
+                        storeName: 'shortFormData.name',
+                        videoURL: 'shortFormData.videoUrl',
+                        storeCaption: 'shortFormData.description',
+                        storeLocation: 'shortFormData.region',
+                        averagePrice: 0,
+                        openTime: 'shortFormData.openTime',
+                        closeTime: 'shortFormData.closeTime',
+                        rating: 0,
+                        category: 'shortFormData.category',
+                        videoId: 'shortFormData.locationId.toString()',
+                        bookmarkCount: 0,
+                        isEmpty: true,
+                      );
                     }
 
                     return PageView.builder(
@@ -114,6 +126,7 @@ class _ShortsPageState extends State<ShortsPage> {
                           category: shortFormData.category,
                           videoId: shortFormData.locationId.toString(),
                           bookmarkCount: shortFormData.bookmarkCount,
+                          isEmpty: false,
                         );
                       },
                     );

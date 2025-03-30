@@ -21,6 +21,7 @@ class ShortFormWidget extends StatefulWidget {
   final double averagePrice;
   final String videoId;
   final int bookmarkCount;
+  final bool isEmpty;
 
   const ShortFormWidget({
     required this.storeName,
@@ -34,6 +35,7 @@ class ShortFormWidget extends StatefulWidget {
     required this.averagePrice,
     required this.videoId,
     required this.bookmarkCount,
+    required this.isEmpty,
     super.key,
   });
 
@@ -92,35 +94,37 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
   @override
   void initState() {
     super.initState();
-    getRestaurantCategory(widget.category);
-    getBookmarkInfoFromCache();
+    if (!widget.isEmpty){
+      getRestaurantCategory(widget.category);
+      getBookmarkInfoFromCache();
 
-    _bookmarkCount = widget.bookmarkCount;
+      _bookmarkCount = widget.bookmarkCount;
 
-    _playerController = VideoPlayerController.networkUrl(
+      _playerController = VideoPlayerController.networkUrl(
         Uri.parse(widget.videoURL),
       )
-      ..initialize().then((value) {
-        _playerController.setLooping(true);
+        ..initialize().then((value) {
+          _playerController.setLooping(true);
 
-        // Future.delayed(const Duration(milliseconds: 500), () {
-        //   _playerController.play();
-        // });
+          // Future.delayed(const Duration(milliseconds: 500), () {
+          //   _playerController.play();
+          // });
 
-        ///다음 영상 넘어갈 때 사운드가 겹쳐서 넣어준 딜레이
-        ///추후에 중간 이상 넘어가면 기존 영상을 멈추고 다음 영상을 재생하는 방식 적용해야함
-        ///음...
-        // 0.5초 후 비디오 재생
-        // if (widget.index == 0) {
-        //   Future.delayed(const Duration(milliseconds: 500), () {
-        //     _playerController.play();
-        //   });
-        // } else {
-        //   Future.delayed(const Duration(milliseconds: 700), () {
-        //     _playerController.play();
-        //   });
-        // }
-      });
+          ///다음 영상 넘어갈 때 사운드가 겹쳐서 넣어준 딜레이
+          ///추후에 중간 이상 넘어가면 기존 영상을 멈추고 다음 영상을 재생하는 방식 적용해야함
+          ///음...
+          // 0.5초 후 비디오 재생
+          // if (widget.index == 0) {
+          //   Future.delayed(const Duration(milliseconds: 500), () {
+          //     _playerController.play();
+          //   });
+          // } else {
+          //   Future.delayed(const Duration(milliseconds: 700), () {
+          //     _playerController.play();
+          //   });
+          // }
+        });
+    }
   }
 
   @override
@@ -214,376 +218,445 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        ///동영상위젯 탭, 더블탭 액션
-        GestureDetector(
-          onTap: () {
-            _toggleVideo();
-          },
-          // onDoubleTap: () {
-          //   print('doubletap');
-          // },
-          child: Container(
-            width: MediaQuery.of(context).size.width,
-            height: MediaQuery.of(context).size.height,
-            color: Colors.black,
-            child: Column(
-              children: [
-                Expanded(
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      VideoPlayer(_playerController),
 
-                      ///위아래 위젯들 가시성을 위한 그림자
-                      IgnorePointer(
-                        child: Container(
-                          // color: Colors.black.withOpacity(0.2),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.black.withValues(alpha: 0.5),
-                                Colors.transparent,
-                                Colors.transparent,
-                                Colors.black.withValues(alpha: 0.5),
-                              ],
+    /// TODO: 빈 위젯 등 위젯들 분리
+    if (widget.isEmpty) {
+     return Stack(
+       children: [
+         ///상단 필터 위젯
+         SafeArea(
+           child: GestureDetector(
+             onTap: () {
+               showFilterModel(context);
+             },
+             child: Row(
+               mainAxisAlignment: MainAxisAlignment.center,
+               children: [
+                 Icon(
+                   Icons.travel_explore_outlined,
+                   color: shortPageWhite,
+                   size: 26,
+                 ),
+                 Consumer<FilterProvider>(
+                   builder: (providerContext, filterProvider, child) {
+                     return Container(
+                       padding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                       color: Colors.transparent,
+                       child: Text(
+                         '${filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory ?? 'All'} ',
+                         style: TextStyle(
+                           fontSize: 21,
+                           fontWeight: FontWeight.w600,
+                           color: shortPageWhite,
+                         ),
+                       ),
+                     );
+                   },
+                 ),
+               ],
+             ),
+           ),
+         ),
+         Center(
+           child: Column(
+             mainAxisAlignment: MainAxisAlignment.center,
+             children: [
+               Text(
+                 'Explored All Videos',
+                 style: TextStyle(
+                   color: Colors.white,
+                   fontWeight: FontWeight.bold,
+                   fontSize: 20,
+                 ),
+               ),
+               SizedBox(height: 30),
+               Text(
+                 'Try Another Filter Please',
+                 style: TextStyle(
+                   color: Colors.white,
+                   fontSize: 18,
+                 ),
+               ),
+             ],
+           ),
+         ),
+       ],
+     );
+    } else {
+      return Stack(
+        children: [
+          ///동영상위젯 탭, 더블탭 액션
+          GestureDetector(
+            onTap: () {
+              _toggleVideo();
+            },
+            onLongPress: (){
+              showInfoModal(context);
+            },
+            // onDoubleTap: () {
+            //   print('doubletap');
+            // },
+            child: Container(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height,
+              color: Colors.black,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        VideoPlayer(_playerController),
+
+                        ///위아래 위젯들 가시성을 위한 그림자
+                        IgnorePointer(
+                          child: Container(
+                            // color: Colors.black.withOpacity(0.2),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.black.withValues(alpha: 0.5),
+                                  Colors.transparent,
+                                  Colors.transparent,
+                                  Colors.black.withValues(alpha: 0.5),
+                                ],
+                              ),
+                            ), // 어두운 투명 레이어
+                          ),
+                        ),
+
+                        ///정지/재개 아이콘
+                        AnimatedOpacity(
+                          opacity: _pauseIconOpacity,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOutCirc,
+                          child: Container(
+                            padding: const EdgeInsets.all(15),
+                            decoration: const BoxDecoration(
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
                             ),
-                          ), // 어두운 투명 레이어
+                            child: Icon(
+                              _currentIcon,
+                              color: shortPageWhite,
+                              size: 50.0,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  VideoProgressIndicator(
+                    _playerController,
+                    padding: EdgeInsets.zero,
+                    allowScrubbing: true, // 스크럽 허용
+                    colors: const VideoProgressColors(
+                      playedColor: Color.fromRGBO(220, 20, 60, 1),
+                      // 재생된 부분 색상
+                      bufferedColor: Colors.grey,
+                      // 버퍼링된 부분 색상
+                      backgroundColor: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          ///설명 Expanded 되었을 때 가독성을 위한 그림자
+          if (_isExpanded)
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _isExpanded = false;
+                });
+              },
+              child: Container(
+                // color: Colors.black.withOpacity(0.2),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.2), // 상단은 투명
+                      Colors.black.withValues(alpha: 0.2),
+                      Colors.black.withValues(alpha: 0.4), // 중간은 약간 어두움
+                      Colors.black.withValues(alpha: 0.6), // 하단은 더 어두움
+                    ],
+                  ),
+                ), // 어두운 투명 레이어
+              ),
+            ),
+
+          ///상단 필터 위젯
+          SafeArea(
+            child: GestureDetector(
+              onTap: () {
+                showFilterModel(context);
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.travel_explore_outlined,
+                    color: shortPageWhite,
+                    size: 26,
+                  ),
+                  Consumer<FilterProvider>(
+                    builder: (providerContext, filterProvider, child) {
+                      return Container(
+                        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                        color: Colors.transparent,
+                        child: Text(
+                          '${filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory ?? 'All'} ',
+                          style: TextStyle(
+                            fontSize: 21,
+                            fontWeight: FontWeight.w600,
+                            color: shortPageWhite,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          ///우측 버튼 위젯
+          Positioned(
+            right: MediaQuery.of(context).size.width * 0.03,
+            bottom: MediaQuery.of(context).size.height * 0.02,
+            child: Consumer<UserDataProvider>(
+              builder: (userDataProviderContext, userDataProvider, child) {
+                return Column(
+                  // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ItemButton(
+                      icon:
+                      _isBookmarked
+                          ? CupertinoIcons.bookmark_fill
+                          : CupertinoIcons.bookmark,
+                      value: _bookmarkCount.toString(),
+                      action:
+                          () => saveBookmarkInfo(userDataProvider.currentUserUID),
+                    ),
+                    ItemButton(icon: CupertinoIcons.bubble_right, value: '32'),
+                    ItemButton(icon: CupertinoIcons.paperplane, value: 'Share'),
+                    ItemButton(icon: Icons.travel_explore_outlined, value: 'Map'),
+                  ],
+                );
+              },
+            ),
+          ),
+
+          ///하단 정보 위젯
+          Positioned(
+            left: MediaQuery.of(context).size.width * 0.015,
+            bottom: MediaQuery.of(context).size.height * 0.015,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.82,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ///사진 + 이름 + More
+                  Row(
+                    children: [
+                      ///사진 or 카테고리 아이콘
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: shortPageWhite,
+                        child: Icon(
+                          restaurantCategory,
+                          color: Colors.black,
+                          size: 30,
                         ),
                       ),
+                      SizedBox(width: 10),
 
-                      ///정지/재개 아이콘
-                      AnimatedOpacity(
-                        opacity: _pauseIconOpacity,
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOutCirc,
-                        child: Container(
-                          padding: const EdgeInsets.all(15),
-                          decoration: const BoxDecoration(
-                            color: Colors.black54,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            _currentIcon,
+                      ///이름
+                      Flexible(
+                        child: Text(
+                          widget.storeName,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
                             color: shortPageWhite,
-                            size: 50.0,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      SizedBox(width: 10),
+
+                      ///More 버튼
+                      GestureDetector(
+                        onTap: () {
+                          showInfoModal(context);
+                        },
+                        child: Container(
+                          width: 70,
+                          height: 30,
+                          padding: EdgeInsets.only(bottom: 3),
+                          child: Center(
+                            child: Text(
+                              'More',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: shortPageWhite,
+                              ),
+                            ),
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(3),
+                            border: Border.all(width: 1.2, color: shortPageWhite),
                           ),
                         ),
                       ),
                     ],
                   ),
-                ),
-                VideoProgressIndicator(
-                  _playerController,
-                  padding: EdgeInsets.zero,
-                  allowScrubbing: true, // 스크럽 허용
-                  colors: const VideoProgressColors(
-                    playedColor: Color.fromRGBO(220, 20, 60, 1),
-                    // 재생된 부분 색상
-                    bufferedColor: Colors.grey,
-                    // 버퍼링된 부분 색상
-                    backgroundColor: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+                  SizedBox(height: 5),
 
-        ///설명 Expanded 되었을 때 가독성을 위한 그림자
-        if (_isExpanded)
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _isExpanded = false;
-              });
-            },
-            child: Container(
-              // color: Colors.black.withOpacity(0.2),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.2), // 상단은 투명
-                    Colors.black.withValues(alpha: 0.2),
-                    Colors.black.withValues(alpha: 0.4), // 중간은 약간 어두움
-                    Colors.black.withValues(alpha: 0.6), // 하단은 더 어두움
-                  ],
-                ),
-              ), // 어두운 투명 레이어
-            ),
-          ),
-
-        ///상단 필터 위젯
-        SafeArea(
-          child: GestureDetector(
-            onTap: () {
-              showFilterModel(context);
-            },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.travel_explore_outlined,
-                  color: shortPageWhite,
-                  size: 26,
-                ),
-                Consumer<FilterProvider>(
-                  builder: (providerContext, filterProvider, child) {
-                    return Container(
-                      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                      color: Colors.transparent,
-                      child: Text(
-                        '${filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory ?? 'All'} ',
-                        style: TextStyle(
-                          fontSize: 21,
-                          fontWeight: FontWeight.w600,
-                          color: shortPageWhite,
-                        ),
+                  ///캡션
+                  GestureDetector(
+                    onTap:
+                        () => setState(() {
+                      _isExpanded = !_isExpanded;
+                    }),
+                    child: AnimatedContainer(
+                      padding: EdgeInsets.only(top: _isExpanded ? 5 : 0),
+                      constraints: BoxConstraints(
+                        maxHeight:
+                        _isExpanded
+                            ? MediaQuery.of(context).size.height * (320 / 812)
+                            : 25,
+                        minHeight:
+                        _isExpanded
+                            ? MediaQuery.of(context).size.height * (100 / 812)
+                            : 25,
                       ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        ///우측 버튼 위젯
-        Positioned(
-          right: MediaQuery.of(context).size.width * 0.03,
-          bottom: MediaQuery.of(context).size.height * 0.02,
-          child: Consumer<UserDataProvider>(
-            builder: (userDataProviderContext, userDataProvider, child) {
-              return Column(
-                // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ItemButton(
-                    icon:
-                        _isBookmarked
-                            ? CupertinoIcons.bookmark_fill
-                            : CupertinoIcons.bookmark,
-                    value: _bookmarkCount.toString(),
-                    action:
-                        () => saveBookmarkInfo(userDataProvider.currentUserUID),
-                  ),
-                  ItemButton(icon: CupertinoIcons.bubble_right, value: '32'),
-                  ItemButton(icon: CupertinoIcons.paperplane, value: 'Share'),
-                  ItemButton(icon: Icons.travel_explore_outlined, value: 'Map'),
-                ],
-              );
-            },
-          ),
-        ),
-
-        ///하단 정보 위젯
-        Positioned(
-          left: MediaQuery.of(context).size.width * 0.015,
-          bottom: MediaQuery.of(context).size.height * 0.015,
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.82,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ///사진 + 이름 + More
-                Row(
-                  children: [
-                    ///사진 or 카테고리 아이콘
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: shortPageWhite,
-                      child: Icon(
-                        restaurantCategory,
-                        color: Colors.black,
-                        size: 30,
-                      ),
-                    ),
-                    SizedBox(width: 10),
-
-                    ///이름
-                    Flexible(
-                      child: Text(
-                        widget.storeName,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: shortPageWhite,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    SizedBox(width: 10),
-
-                    ///More 버튼
-                    GestureDetector(
-                      onTap: () {
-                        showInfoModal(context);
-                      },
-                      child: Container(
-                        width: 70,
-                        height: 30,
-                        padding: EdgeInsets.only(bottom: 3),
-                        child: Center(
+                      duration: const Duration(milliseconds: 200),
+                      child:
+                      _isExpanded
+                          ? SingleChildScrollView(
+                        child: Container(
+                          width: MediaQuery.of(context).size.width * 0.8,
+                          color: Colors.transparent,
                           child: Text(
-                            'More',
+                            widget.storeCaption,
                             style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                              fontSize:
+                              MediaQuery.of(context).size.width *
+                                  0.04,
                               color: shortPageWhite,
                             ),
                           ),
                         ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(3),
-                          border: Border.all(width: 1.2, color: shortPageWhite),
+                      )
+                          : Container(
+                        width: MediaQuery.of(context).size.width * 0.8,
+                        color: Colors.transparent,
+                        child: Text(
+                          widget.storeCaption,
+                          style: TextStyle(
+                            fontSize:
+                            MediaQuery.of(context).size.width * 0.04,
+                            color: shortPageWhite,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ),
-                  ],
-                ),
-                SizedBox(height: 5),
-
-                ///캡션
-                GestureDetector(
-                  onTap:
-                      () => setState(() {
-                        _isExpanded = !_isExpanded;
-                      }),
-                  child: AnimatedContainer(
-                    padding: EdgeInsets.only(top: _isExpanded ? 5 : 0),
-                    constraints: BoxConstraints(
-                      maxHeight:
-                          _isExpanded
-                              ? MediaQuery.of(context).size.height * (320 / 812)
-                              : 25,
-                      minHeight:
-                          _isExpanded
-                              ? MediaQuery.of(context).size.height * (100 / 812)
-                              : 25,
-                    ),
-                    duration: const Duration(milliseconds: 200),
-                    child:
-                        _isExpanded
-                            ? SingleChildScrollView(
-                              child: Container(
-                                width: MediaQuery.of(context).size.width * 0.8,
-                                color: Colors.transparent,
-                                child: Text(
-                                  widget.storeCaption,
-                                  style: TextStyle(
-                                    fontSize:
-                                        MediaQuery.of(context).size.width *
-                                        0.04,
-                                    color: shortPageWhite,
-                                  ),
-                                ),
-                              ),
-                            )
-                            : Container(
-                              width: MediaQuery.of(context).size.width * 0.8,
-                              color: Colors.transparent,
-                              child: Text(
-                                widget.storeCaption,
-                                style: TextStyle(
-                                  fontSize:
-                                      MediaQuery.of(context).size.width * 0.04,
-                                  color: shortPageWhite,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
                   ),
-                ),
-                SizedBox(height: 5),
+                  SizedBox(height: 5),
 
-                ///운영시간 + 별점 + 가격
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    ///운영시간
-                    Container(
-                      padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                      decoration: BoxDecoration(
-                        color: Color.fromRGBO(243, 244, 246, 1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.schedule, size: 18, color: Colors.black),
-                          SizedBox(width: 5),
-                          Text(
-                            '${widget.openTime} ~ ${widget.closeTime}',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize:
-                                  MediaQuery.of(context).size.width * 0.035,
+                  ///운영시간 + 별점 + 가격
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      ///운영시간
+                      Container(
+                        padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: Color.fromRGBO(243, 244, 246, 1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.schedule, size: 18, color: Colors.black),
+                            SizedBox(width: 5),
+                            Text(
+                              '${widget.openTime} ~ ${widget.closeTime}',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize:
+                                MediaQuery.of(context).size.width * 0.035,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    SizedBox(width: MediaQuery.of(context).size.width * 0.02),
+                      SizedBox(width: MediaQuery.of(context).size.width * 0.02),
 
-                    ///별점
-                    Container(
-                      padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                      decoration: BoxDecoration(
-                        color: Color.fromRGBO(243, 244, 246, 1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.star, size: 18, color: Colors.black),
-                          SizedBox(width: 5),
-                          Text(
-                            widget.rating.toString(),
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize:
-                                  MediaQuery.of(context).size.width * 0.035,
+                      ///별점
+                      Container(
+                        padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: Color.fromRGBO(243, 244, 246, 1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.star, size: 18, color: Colors.black),
+                            SizedBox(width: 5),
+                            Text(
+                              widget.rating.toString(),
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize:
+                                MediaQuery.of(context).size.width * 0.035,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    SizedBox(width: MediaQuery.of(context).size.width * 0.02),
+                      SizedBox(width: MediaQuery.of(context).size.width * 0.02),
 
-                    ///가격
-                    Container(
-                      padding: EdgeInsets.symmetric(vertical: 2, horizontal: 8),
-                      decoration: BoxDecoration(
-                        color: Color.fromRGBO(243, 244, 246, 1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.payments, size: 18, color: Colors.black),
-                          SizedBox(width: 5),
-                          Text(
-                            '\$${widget.averagePrice}~',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize:
-                                  MediaQuery.of(context).size.width * 0.035,
+                      ///가격
+                      Container(
+                        padding: EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: Color.fromRGBO(243, 244, 246, 1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.payments, size: 18, color: Colors.black),
+                            SizedBox(width: 5),
+                            Text(
+                              '\$${widget.averagePrice}~',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize:
+                                MediaQuery.of(context).size.width * 0.035,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    }
   }
 
   Future<void> saveBookmarkInfo(String? currentUserUid) async {
