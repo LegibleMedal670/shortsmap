@@ -102,8 +102,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
       _playerController = VideoPlayerController.networkUrl(
         Uri.parse(widget.videoURL),
-      )
-        ..initialize().then((value) {
+      )..initialize().then((value) {
           _playerController.setLooping(true);
 
           // Future.delayed(const Duration(milliseconds: 500), () {
@@ -129,7 +128,9 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
   @override
   void dispose() {
-    _playerController.dispose();
+    if (!widget.isEmpty){
+      _playerController.dispose();
+    }
     super.dispose();
   }
 
