@@ -25,6 +25,11 @@ class _PlanDetailPageState extends State<PlanDetailPage>
   DateTimeRange? selectedRange;
   String viewMode = 'category'; // 'category' or 'timeline'
 
+  // 각 카테고리별 장소 목록을 관리하는 상태 변수들
+  List<String> tourismPlaces = ['Tourist Spot A', 'Tourist Spot B'];
+  List<String> restaurantPlaces = ['Restaurant 1', 'Restaurant 2'];
+  List<String> accommodationPlaces = ['Hotel ABC'];
+
   @override
   void initState() {
     super.initState();
@@ -44,47 +49,96 @@ class _PlanDetailPageState extends State<PlanDetailPage>
             const MapPlaceholder(),
             CategorySection(
               title: 'Tourism',
-              count: 3,
+              count: tourismPlaces.length,
               icon: Icons.map_outlined,
-              items: [
-                PlaceCard(
-                  title: 'Tourist Spot A',
-                  onDelete: () {},
-                ),
-                PlaceCard(
-                  title: 'Tourist Spot B',
-                  onDelete: () {},
-                ),
-              ],
-              onAddItem: () {},
+              items: tourismPlaces.asMap().entries.map((entry) {
+                return PlaceCard(
+                  key: ValueKey('tourism_${entry.key}'),
+                  title: entry.value,
+                  index: entry.key,
+                  onDelete: () {
+                    setState(() {
+                      tourismPlaces.removeAt(entry.key);
+                    });
+                  },
+                );
+              }).toList(),
+              onAddItem: () {
+                setState(() {
+                  tourismPlaces.add('New Tourist Spot');
+                });
+              },
+              onReorder: (oldIndex, newIndex) {
+                setState(() {
+                  if (newIndex > oldIndex) {
+                    newIndex -= 1;
+                  }
+                  final item = tourismPlaces.removeAt(oldIndex);
+                  tourismPlaces.insert(newIndex, item);
+                });
+              },
             ),
             CategorySection(
               title: 'Restaurant',
-              count: 2,
+              count: restaurantPlaces.length,
               icon: Icons.restaurant,
-              items: [
-                PlaceCard(
-                  title: 'Restaurant 1',
-                  onDelete: () {},
-                ),
-                PlaceCard(
-                  title: 'Restaurant 2',
-                  onDelete: () {},
-                ),
-              ],
-              onAddItem: () {},
+              items: restaurantPlaces.asMap().entries.map((entry) {
+                return PlaceCard(
+                  key: ValueKey('restaurant_${entry.key}'),
+                  title: entry.value,
+                  index: entry.key,
+                  onDelete: () {
+                    setState(() {
+                      restaurantPlaces.removeAt(entry.key);
+                    });
+                  },
+                );
+              }).toList(),
+              onAddItem: () {
+                setState(() {
+                  restaurantPlaces.add('New Restaurant');
+                });
+              },
+              onReorder: (oldIndex, newIndex) {
+                setState(() {
+                  if (newIndex > oldIndex) {
+                    newIndex -= 1;
+                  }
+                  final item = restaurantPlaces.removeAt(oldIndex);
+                  restaurantPlaces.insert(newIndex, item);
+                });
+              },
             ),
             CategorySection(
               title: 'Accommodation',
-              count: 1,
+              count: accommodationPlaces.length,
               icon: Icons.hotel,
-              items: [
-                PlaceCard(
-                  title: 'Hotel ABC',
-                  onDelete: () {},
-                ),
-              ],
-              onAddItem: () {},
+              items: accommodationPlaces.asMap().entries.map((entry) {
+                return PlaceCard(
+                  key: ValueKey('accommodation_${entry.key}'),
+                  title: entry.value,
+                  index: entry.key,
+                  onDelete: () {
+                    setState(() {
+                      accommodationPlaces.removeAt(entry.key);
+                    });
+                  },
+                );
+              }).toList(),
+              onAddItem: () {
+                setState(() {
+                  accommodationPlaces.add('New Hotel');
+                });
+              },
+              onReorder: (oldIndex, newIndex) {
+                setState(() {
+                  if (newIndex > oldIndex) {
+                    newIndex -= 1;
+                  }
+                  final item = accommodationPlaces.removeAt(oldIndex);
+                  accommodationPlaces.insert(newIndex, item);
+                });
+              },
             ),
           ],
         ),

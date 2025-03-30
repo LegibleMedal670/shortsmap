@@ -6,6 +6,7 @@ class CategorySection extends StatelessWidget {
   final IconData icon;
   final List<Widget> items;
   final VoidCallback onAddItem;
+  final Function(int oldIndex, int newIndex) onReorder;
 
   const CategorySection({
     Key? key,
@@ -14,6 +15,7 @@ class CategorySection extends StatelessWidget {
     required this.icon,
     required this.items,
     required this.onAddItem,
+    required this.onReorder,
   }) : super(key: key);
 
   @override
@@ -45,7 +47,14 @@ class CategorySection extends StatelessWidget {
               ),
             ],
           ),
-          ...items,
+          ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: items.length,
+            onReorder: onReorder,
+            buildDefaultDragHandles: false,
+            itemBuilder: (context, index) => items[index],
+          ),
         ],
       ),
     );

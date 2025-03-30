@@ -45,12 +45,23 @@ class _PlanPageState extends State<PlanPage> {
       );
     }
 
-    return ListView.builder(
+    return ReorderableListView.builder(
       itemCount: tripList.length,
+      onReorder: (oldIndex, newIndex) {
+        setState(() {
+          if (newIndex > oldIndex) {
+            newIndex -= 1;
+          }
+          final item = tripList.removeAt(oldIndex);
+          tripList.insert(newIndex, item);
+        });
+      },
+      buildDefaultDragHandles: false,
       itemBuilder: (context, index) {
         final trip = tripList[index];
         
         return TripCard(
+          key: UniqueKey(),
           trip: trip,
           onTap: () {
             Navigator.push(

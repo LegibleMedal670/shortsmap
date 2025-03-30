@@ -6,6 +6,7 @@ class PlaceCard extends StatelessWidget {
   final String? subtitle;
   final String imageUrl;
   final VoidCallback onDelete;
+  final int index;
 
   const PlaceCard({
     Key? key,
@@ -13,6 +14,7 @@ class PlaceCard extends StatelessWidget {
     this.subtitle = 'nice place~~',
     this.imageUrl = 'https://picsum.photos/100',
     required this.onDelete,
+    required this.index,
   }) : super(key: key);
 
   @override
@@ -34,9 +36,9 @@ class PlaceCard extends StatelessWidget {
           ),
           title: Text(title),
           subtitle: Text(subtitle ?? 'nice place~~'),
-          trailing: IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: onDelete,
+          trailing: ReorderableDragStartListener(
+            index: index,
+            child: const Icon(Icons.drag_handle),
           ),
         ),
       ),

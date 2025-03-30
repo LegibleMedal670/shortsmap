@@ -4,9 +4,10 @@ import '../../models/trip.dart';
 class TripCard extends StatelessWidget {
   final Trip trip;
   final VoidCallback onTap;
+  final Key? key;
 
   const TripCard({
-    Key? key,
+    this.key,
     required this.trip,
     required this.onTap,
   }) : super(key: key);
@@ -58,7 +59,7 @@ class TripCard extends StatelessWidget {
               ),
             ],
           ),
-          trailing: const Icon(Icons.more_vert),
+          trailing: const Icon(Icons.drag_handle, color: Colors.grey),
           onTap: onTap,
         ),
       ),
