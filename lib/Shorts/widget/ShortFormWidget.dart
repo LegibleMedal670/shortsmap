@@ -292,7 +292,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
               _toggleVideo();
             },
             onLongPress: (){
-              showInfoModal(context);
+              showOptionsModal(context);
             },
             // onDoubleTap: () {
             //   print('doubletap');
@@ -791,6 +791,109 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     );
   }
 
+  void showOptionsModal(BuildContext context) {
+    showModalBottomSheet(
+      backgroundColor: Colors.white,
+      context: context,
+      isScrollControlled: true,
+      enableDrag: true,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20.0),
+          topRight: Radius.circular(20.0),
+        ),
+      ),
+      builder: (BuildContext context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.4,
+          minChildSize: 0.3999,
+          expand: false,
+          builder:
+              (context, optionScrollController) => SizedBox(
+            width: MediaQuery.of(context).size.width,
+            child: SingleChildScrollView(
+              // physics: const ClampingScrollPhysics(),
+              controller: optionScrollController,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: Row(
+                        children: [
+                          Icon(CupertinoIcons.bookmark, size: 24),
+                          SizedBox(width: 20),
+                          Text(
+                            'Bookmark',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: Row(
+                        children: [
+                          Icon(Icons.closed_caption, size: 24),
+                          SizedBox(width: 20),
+                          Text(
+                            'Subtitle',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: Row(
+                        children: [
+                          Icon(Icons.block, size: 24),
+                          SizedBox(width: 20),
+                          Text(
+                            'Not Interested',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: Row(
+                        children: [
+                          Icon(Icons.flag_outlined, size: 24),
+                          SizedBox(width: 20),
+                          Text(
+                            'Report',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: Row(
+                        children: [
+                          Icon(CupertinoIcons.paperplane, size: 24),
+                          SizedBox(width: 20),
+                          Text(
+                            'Share',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   ///영상 필터 ModalBottomSheet
   void showFilterModel(BuildContext context) {
     showModalBottomSheet(
@@ -1034,6 +1137,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
   ///More 버튼을 누르면 나오는 ModalBottomSheet
   void showInfoModal(BuildContext context) {
     showModalBottomSheet(
+      backgroundColor: Colors.white,
       context: context,
       isScrollControlled: true,
       enableDrag: true,
