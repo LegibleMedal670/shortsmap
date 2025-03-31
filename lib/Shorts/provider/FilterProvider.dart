@@ -3,79 +3,48 @@ import 'package:geolocator/geolocator.dart';
 
 /// 동영상을 필터링하는데 쓰이는 요소들을 관리하기 위한 프로바이더
 class FilterProvider extends ChangeNotifier {
-  String? filterRegion;
-  String? filterCategory;
-  double? filterPrice;
-  double? filterLat;
-  double? filterLon;
-  double filterDistanceInKm = 1.5;
-  bool filterByDistance = false;
+  String? _filterRegion;
+  String? _filterCategory;
+  double? _filterLat;
+  double? _filterLon;
+  bool _orderNear = false;
 
-  void setBasicVideoCategory(String? region, String? category, String? price) {
-    double? priceToDouble;
-    if (price != null) {
-      switch (price) {
-        case '1만원 미만':
-          priceToDouble = 10;
-          break;
-        case '1~2만원':
-          priceToDouble = 20;
-          break;
-        case '2만원 이상':
-          priceToDouble = 50;
-          break;
-        default:
-          priceToDouble = 50;
-          break;
-      }
-    }
+  String? get filterRegion => _filterRegion;
+  String? get filterCategory => _filterCategory;
+  double? get filterLat => _filterLat;
+  double? get filterLon => _filterLon;
+  bool get orderNear => _orderNear;
 
-    filterRegion = region;
-    filterCategory = category;
-    filterPrice = priceToDouble;
+  void setBasicVideoCategory(String? region, String? category) {
 
-    print('$filterRegion + $filterCategory + $filterPrice');
+    _filterRegion = region;
+    _filterCategory = category;
+    _orderNear = false;
+
     notifyListeners();
   }
 
-  Future<void> setAroundVideoCategory(BuildContext context, String? category, String? price) async {
-    double? priceToDouble;
-    if (price != null) {
-      switch (price) {
-        case '1만원 미만':
-          priceToDouble = 10;
-          break;
-        case '1~2만원':
-          priceToDouble = 20;
-          break;
-        case '2만원 이상':
-          priceToDouble = 50;
-          break;
-        default:
-          priceToDouble = 50;
-          break;
-      }
-    }
+  Future<void> setAroundVideoCategory(BuildContext context, String? category) async {
 
     // 바로 시스템 권한 요청
     final permission = await Geolocator.requestPermission();
     if (permission != LocationPermission.always &&
         permission != LocationPermission.whileInUse) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("위치 권한이 거부되었습니다.")),
+        const SnackBar(content: Text("Location Permission Denied.")),
       );
       return;
     }
 
     // 권한이 허용된 경우 현재 위치 가져오기
     final position = await Geolocator.getCurrentPosition();
-    filterLat = position.latitude;
-    filterLon = position.longitude;
-    filterRegion = null;
-    filterCategory = category;
-    filterPrice = priceToDouble;
-    filterByDistance = true;
+    _filterLat = position.latitude;
+    _filterLon = position.longitude;
+    _filterRegion = null;
+    _filterCategory = category;
+    _orderNear = true;
 
     notifyListeners();
   }
+
 }

@@ -15,6 +15,7 @@ class LocationData {
   final String videoUrl;
   final String region;
   final Map<String, double>? coordinates; // {'lat': ..., 'lon': ...}
+  final int bookmarkCount;
 
   LocationData({
     required this.locationId,
@@ -33,6 +34,7 @@ class LocationData {
     required this.videoUrl,
     required this.region,
     this.coordinates,
+    required this.bookmarkCount,
   });
 
   // JSON 데이터를 LocationData 객체로 변환하는 팩토리 생성자
@@ -69,6 +71,7 @@ class LocationData {
       videoUrl: json['video_url'] as String,
       region: json['region'] as String,
       coordinates: coords,
+      bookmarkCount: json['bookmark_count'] as int,
     );
   }
 }
