@@ -24,47 +24,22 @@ class UnifiedPlaceCard extends StatelessWidget {
           children: [
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              leading: Stack(
-                children: [
-                  // 이미지
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      place.imageUrl,
+              leading: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  place.imageUrl,
+                  width: 60,
+                  height: 60,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
                       width: 60,
                       height: 60,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 60,
-                          height: 60,
-                          color: Colors.grey[300],
-                          child: const Icon(Icons.image_not_supported, size: 24),
-                        );
-                      },
-                    ),
-                  ),
-                  // 시간 표시 (있을 경우만)
-                  if (place.time != null)
-                    Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: Container(
-                        color: Colors.black54,
-                        padding: const EdgeInsets.symmetric(vertical: 2),
-                        child: Text(
-                          place.time!,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.image_not_supported, size: 24),
+                    );
+                  },
+                ),
               ),
               title: Padding(
                 padding: const EdgeInsets.only(bottom: 4),
@@ -79,16 +54,16 @@ class UnifiedPlaceCard extends StatelessWidget {
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 시간 정보 (있을 경우만)
-                  if (place.time != null)
+                  // 날짜 정보 (있을 경우만)
+                  if (place.date != null)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 4),
                       child: Row(
                         children: [
-                          const Icon(Icons.access_time, size: 14, color: Colors.blue),
+                          const Icon(Icons.calendar_today, size: 14, color: Colors.blue),
                           const SizedBox(width: 4),
                           Text(
-                            place.time!,
+                            place.date!,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.blue,

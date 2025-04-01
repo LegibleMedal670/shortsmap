@@ -1,59 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../provider/TripPlanProvider.dart';
 import '../../models/place.dart';
 import 'unifiedPlaceCard.dart';
 
-class PlannerPage extends StatefulWidget {
-  final Function(Place)? onAddPlace;
-  
-  const PlannerPage({
-    Key? key,
-    this.onAddPlace,
-  }) : super(key: key);
 
-  @override
-  State<PlannerPage> createState() => _PlannerPageState();
-}
+class PlannerPage extends StatelessWidget {
+  const PlannerPage({Key? key}) : super(key: key);
 
-class _PlannerPageState extends State<PlannerPage> {
-  // 여행 일자별 장소 목록 (일자별로 분리)
-  final Map<int, List<Place>> _dayPlaces = {
-    1: [ // 1일차
-      Place(
-        name: '롯데타워',
-        description: '서울의 랜드마크',
-        imageUrl: 'https://example.com/lotte.jpg',
-        category: 'tourism',
-        time: '09:00',
-      ),
-      Place(
-        name: '남산타워',
-        description: '서울의 전망대',
-        imageUrl: 'https://example.com/namsan.jpg',
-        category: 'tourism',
-        time: '13:00',
-      ),
-    ],
-    2: [ // 2일차
-      Place(
-        name: '경복궁',
-        description: '조선시대 왕궁',
-        imageUrl: 'https://example.com/palace.jpg',
-        category: 'tourism',
-        time: '10:00',
-      ),
-      Place(
-        name: '인사동',
-        description: '전통 문화의 거리',
-        imageUrl: 'https://example.com/insadong.jpg',
-        category: 'tourism',
-        time: '14:00',
-      ),
-    ],
-  };
-
-  void _onReorder(int oldIndex, int newIndex) {
+  void _onReorder(int oldIndex, int newIndex, TripPlanProvider provider) {
     // 헤더 위치 계산 및 실제 아이템 인덱스 조정
-    List<PlaceWithDay> allItems = _getAllPlacesWithDayHeaders();
+    List<PlaceWithDay> allItems = _getAllPlacesWithDayHeaders(provider);
     
     // 범위 확인
     if (oldIndex < 0 || oldIndex >= allItems.length || 
@@ -94,61 +51,82 @@ class _PlannerPageState extends State<PlannerPage> {
       return;
     }
     
-    setState(() {
-      // 원본 아이템 정보 저장
-      PlaceWithDay movedItem = allItems[oldIndex];
-      int oldDay = movedItem.day;
-      int indexInOldDay = movedItem.indexInDay;
-      Place place = movedItem.place!;
+    // 원본 아이템 정보 저장
+    PlaceWithDay movedItem = allItems[oldIndex];
+    int oldDay = movedItem.day;
+    int indexInOldDay = movedItem.indexInDay;
+    Place place = movedItem.place!;
+    
+    // 이동될 위치의 Day 결정
+    int newDay;
+    int indexInNewDay;
+    
+    if (allItems[newIndex].place == null) {
+      // 타겟이 헤더인 경우
+      newDay = allItems[newIndex].day;
+      indexInNewDay = 0; // 해당 날짜의 첫 번째 위치로
+    } else {
+      // 타겟이 일반 장소인 경우
+      newDay = allItems[newIndex].day;
+      indexInNewDay = allItems[newIndex].indexInDay;
       
-      // 이동될 위치의 Day 결정
-      int newDay;
-      int indexInNewDay;
-      
-      if (allItems[newIndex].place == null) {
-        // 타겟이 헤더인 경우
-        newDay = allItems[newIndex].day;
-        indexInNewDay = 0; // 해당 날짜의 첫 번째 위치로
-      } else {
-        // 타겟이 일반 장소인 경우
-        newDay = allItems[newIndex].day;
-        indexInNewDay = allItems[newIndex].indexInDay;
-        
-        // 같은 날짜 내에서 뒤로 이동하는 경우, indexInNewDay 조정
-        if (oldDay == newDay && indexInOldDay < indexInNewDay) {
-          indexInNewDay++;
-        }
+      // 같은 날짜 내에서 뒤로 이동하는 경우, indexInNewDay 조정
+      if (oldDay == newDay && indexInOldDay < indexInNewDay) {
+        indexInNewDay++;
       }
-      
-      // 원래 날짜에서 아이템 제거
-      _dayPlaces[oldDay]!.removeAt(indexInOldDay);
-      
-      // 새 날짜에 아이템 추가
-      if (_dayPlaces[newDay] == null) {
-        _dayPlaces[newDay] = [];
-      }
-      
-      // 새 날짜의 인덱스 범위 확인 및 조정
-      if (indexInNewDay > _dayPlaces[newDay]!.length) {
-        indexInNewDay = _dayPlaces[newDay]!.length;
-      }
-      
-      _dayPlaces[newDay]!.insert(indexInNewDay, place);
-      
-      // 각 날짜의 시간 순서 재정렬
-      _updateTimesForDay(oldDay);
-      if (oldDay != newDay) {
-        _updateTimesForDay(newDay);
-      }
+    }
+    
+    // 새로운 dayPlaces 맵 생성 (깊은 복사)
+    Map<int, List<Place>> updatedDayPlaces = {};
+    provider.dayPlaces.forEach((key, value) {
+      updatedDayPlaces[key] = List.from(value);
     });
+    
+    // 원래 날짜에서 아이템 제거
+    if (updatedDayPlaces.containsKey(oldDay)) {
+      List<Place> oldDayPlaces = List.from(updatedDayPlaces[oldDay] ?? []);
+      if (indexInOldDay < oldDayPlaces.length) {
+        oldDayPlaces.removeAt(indexInOldDay);
+        updatedDayPlaces[oldDay] = oldDayPlaces;
+      }
+    }
+    
+    // 새 날짜에 아이템 추가
+    if (!updatedDayPlaces.containsKey(newDay)) {
+      updatedDayPlaces[newDay] = [];
+    }
+    
+    List<Place> newDayPlaces = List.from(updatedDayPlaces[newDay] ?? []);
+    
+    // 새 날짜의 인덱스 범위 확인 및 조정
+    if (indexInNewDay > newDayPlaces.length) {
+      indexInNewDay = newDayPlaces.length;
+    }
+    
+    // 이동한 place의 date 속성 업데이트 - 새 객체 생성
+    Place updatedPlace = Place(
+      name: place.name,
+      description: place.description,
+      imageUrl: place.imageUrl,
+      category: place.category,
+      date: '${newDay}일차',
+    );
+    
+    newDayPlaces.insert(indexInNewDay, updatedPlace);
+    updatedDayPlaces[newDay] = newDayPlaces;
+    
+    // 프로바이더에 업데이트된 맵 전달
+    provider.updateAllDayPlaces(updatedDayPlaces);
   }
 
   // 모든 장소와 날짜 헤더를 포함한 리스트 생성
-  List<PlaceWithDay> _getAllPlacesWithDayHeaders() {
+  List<PlaceWithDay> _getAllPlacesWithDayHeaders(TripPlanProvider provider) {
     List<PlaceWithDay> allItems = [];
     int globalIndex = 0;
     
-    final List<int> sortedDays = _dayPlaces.keys.toList()..sort();
+    final Map<int, List<Place>> dayPlaces = provider.dayPlaces;
+    final List<int> sortedDays = dayPlaces.keys.toList()..sort();
+    
     for (int day in sortedDays) {
       // 날짜 헤더 추가
       allItems.add(
@@ -161,10 +139,10 @@ class _PlannerPageState extends State<PlannerPage> {
       );
       
       // 해당 날짜의 장소들 추가
-      for (int i = 0; i < (_dayPlaces[day] ?? []).length; i++) {
+      for (int i = 0; i < (dayPlaces[day] ?? []).length; i++) {
         allItems.add(
           PlaceWithDay(
-            place: _dayPlaces[day]![i],
+            place: dayPlaces[day]![i],
             day: day,
             indexInDay: i,
             globalIndex: globalIndex++,
@@ -176,136 +154,156 @@ class _PlannerPageState extends State<PlannerPage> {
     return allItems;
   }
 
-  void _updateTimesForDay(int day) {
-    if (_dayPlaces[day] == null || _dayPlaces[day]!.isEmpty) return;
-    
-    // 간단한 예시: 09:00부터 1시간 간격으로 시간 재설정
-    final List<Place> dayPlaces = _dayPlaces[day]!;
-    for (int i = 0; i < dayPlaces.length; i++) {
-      final int hour = 9 + i;
-      final String formattedHour = hour.toString().padLeft(2, '0');
-      final Place oldPlace = dayPlaces[i];
-      
-      // 새 Place 인스턴스를 생성하여 시간 업데이트
-      dayPlaces[i] = Place(
-        name: oldPlace.name,
-        description: oldPlace.description,
-        imageUrl: oldPlace.imageUrl,
-        category: oldPlace.category,
-        time: '$formattedHour:00',
-      );
-    }
-  }
-
-  void _removePlace(int day, int placeIndex) {
-    setState(() {
-      _dayPlaces[day]!.removeAt(placeIndex);
-      _updateTimesForDay(day);
-    });
-  }
-
-  void _addNewPlace(int day) {
-    // 새로운 장소 추가 대화상자 표시
+  void _addNewPlace(BuildContext context, int day, TripPlanProvider provider) {
+    // 플레이스 추가 로직
     showDialog(
       context: context,
-      builder: (context) => _AddPlaceDialog(
-        onAdd: (Place newPlace) {
-          setState(() {
-            _dayPlaces[day] ??= [];
-            _dayPlaces[day]!.add(newPlace);
-            _updateTimesForDay(day);
-          });
-        },
+      builder: (context) => AlertDialog(
+        title: const Text('새 장소 추가'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              '구글 맵 연동 후 장소 추가 기능이 활성화될 예정입니다.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                // 모달만 닫기
+                Navigator.pop(context);
+              },
+              child: const Text('닫기'),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  void _addNewDay() {
-    setState(() {
-      final int newDay = _dayPlaces.keys.isEmpty ? 1 : _dayPlaces.keys.reduce((a, b) => a > b ? a : b) + 1;
-      _dayPlaces[newDay] = [];
-    });
+  void _addNewDay(TripPlanProvider provider) {
+    final Map<int, List<Place>> dayPlaces = provider.dayPlaces;
+    final int newDay = dayPlaces.keys.isEmpty ? 1 : dayPlaces.keys.reduce((a, b) => a > b ? a : b) + 1;
+    
+    // 새 날짜에 대한 빈 목록 추가
+    Map<int, List<Place>> updatedDayPlaces = Map.from(dayPlaces);
+    updatedDayPlaces[newDay] = [];
+    
+    // 프로바이더에 업데이트된 맵 전달
+    provider.updateAllDayPlaces(updatedDayPlaces);
   }
 
   @override
   Widget build(BuildContext context) {
-    final List<int> sortedDays = _dayPlaces.keys.toList()..sort();
-    final List<PlaceWithDay> allPlacesWithIndex = _getAllPlacesWithDayHeaders();
-    
-    return Padding(
-      padding: const EdgeInsets.only(top: 16),
-      child: Stack(
-        children: [
-          sortedDays.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('등록된 일정이 없습니다.'),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _addNewDay,
-                        child: const Text('새 날짜 추가하기'),
+    return Consumer<TripPlanProvider>(
+      builder: (context, provider, child) {
+        final Map<int, List<Place>> dayPlaces = provider.dayPlaces;
+        final List<int> sortedDays = dayPlaces.keys.toList()..sort();
+        final List<PlaceWithDay> allPlacesWithIndex = _getAllPlacesWithDayHeaders(provider);
+        
+        return Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: Stack(
+            children: [
+              sortedDays.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('등록된 일정이 없습니다.'),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () => _addNewDay(provider),
+                            child: const Text('새 날짜 추가하기'),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                )
-              : ReorderableListView.builder(
-                  buildDefaultDragHandles: false,
-                  itemCount: allPlacesWithIndex.length,
-                  onReorder: _onReorder,
-                  itemBuilder: (context, index) {
-                    final PlaceWithDay placeWithDay = allPlacesWithIndex[index];
-                    
-                    // 날짜 구분선인 경우
-                    if (placeWithDay.place == null) {
-                      return _buildDayHeader(
-                        placeWithDay.day, 
-                        _dayPlaces[placeWithDay.day]?.isEmpty ?? true,
-                        key: ValueKey('day_header_${placeWithDay.day}'),
-                      );
-                    }
-                    
-                    // 일반 장소 카드
-                    return UnifiedPlaceCard(
-                      key: ValueKey('place_${placeWithDay.globalIndex}'),
-                      place: placeWithDay.place!,
-                      onDelete: () => _removePlace(placeWithDay.day, placeWithDay.indexInDay),
-                      index: index,  // ReorderableDragStartListener에 전달할 인덱스
-                    );
-                  },
+                    )
+                  : ReorderableListView.builder(
+                      buildDefaultDragHandles: false,
+                      itemCount: allPlacesWithIndex.length,
+                      onReorder: (oldIndex, newIndex) => _onReorder(oldIndex, newIndex, provider),
+                      itemBuilder: (context, index) {
+                        final PlaceWithDay placeWithDay = allPlacesWithIndex[index];
+                        
+                        // 날짜 구분선인 경우
+                        if (placeWithDay.place == null) {
+                          // 날짜 라벨에 실제 날짜 정보 표시
+                          String dateLabel = 'Day ${placeWithDay.day}';
+                          final days = provider.days;
+                          if (days.isNotEmpty && placeWithDay.day <= days.length) {
+                            final DateTime date = days[placeWithDay.day - 1];
+                            dateLabel = '$dateLabel (${date.month}/${date.day})';
+                          }
+                          
+                          return _buildDayHeader(
+                            context,
+                            placeWithDay.day, 
+                            dayPlaces[placeWithDay.day]?.isEmpty ?? true,
+                            provider,
+                            dateLabel: dateLabel,
+                            key: ValueKey('day_header_${placeWithDay.day}'),
+                          );
+                        }
+                        
+                        // 일반 장소 카드
+                        return ReorderableDragStartListener(
+                          index: index,
+                          child: UnifiedPlaceCard(
+                            key: ValueKey('place_${placeWithDay.globalIndex}'),
+                            place: placeWithDay.place!,
+                            onDelete: () => provider.deletePlace(placeWithDay.place!),
+                            index: index,
+                          ),
+                        );
+                      },
+                    ),
+              
+              // 새 날짜 추가 버튼 (일정 수정 기능이 필요한 경우에만 표시)
+              Positioned(
+                bottom: 16,
+                right: 16,
+                child: FloatingActionButton(
+                  heroTag: 'add_day_btn',
+                  onPressed: () => _addNewDay(provider),
+                  child: const Icon(Icons.date_range),
+                  tooltip: '새 날짜 추가',
+                  backgroundColor: Colors.orange,
                 ),
-          
-          // 새 날짜 추가 버튼
-          Positioned(
-            bottom: 16,
-            right: 16,
-            child: FloatingActionButton(
-              heroTag: 'add_day_btn',
-              onPressed: _addNewDay,
-              child: const Icon(Icons.date_range),
-              tooltip: '새 날짜 추가',
-              backgroundColor: Colors.orange,
-            ),
+              ),
+              
+              // 새 장소 추가 버튼
+              Positioned(
+                bottom: 16,
+                right: 86, // 날짜 추가 버튼 옆에 위치
+                child: FloatingActionButton(
+                  heroTag: 'add_place_btn',
+                  onPressed: sortedDays.isNotEmpty 
+                      ? () => _addNewPlace(context, sortedDays.first, provider) 
+                      : null,
+                  child: const Icon(Icons.add_location),
+                  tooltip: '새 장소 추가',
+                ),
+              ),
+            ],
           ),
-          
-          // 새 장소 추가 버튼
-          Positioned(
-            bottom: 16,
-            right: 86, // 첫 번째 버튼 옆에 배치
-            child: FloatingActionButton(
-              heroTag: 'add_place_btn',
-              onPressed: sortedDays.isNotEmpty ? () => _addNewPlace(sortedDays.first) : null,
-              child: const Icon(Icons.add_location),
-              tooltip: '새 장소 추가',
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildDayHeader(int day, bool isEmpty, {required Key key}) {
+  Widget _buildDayHeader(
+    BuildContext context,
+    int day, 
+    bool isEmpty, 
+    TripPlanProvider provider, {
+    required Key key, 
+    String? dateLabel
+  }) {
     return Container(
       key: key,
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -321,7 +319,7 @@ class _PlannerPageState extends State<PlannerPage> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
-                  'Day $day',
+                  dateLabel ?? 'Day $day',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -332,7 +330,7 @@ class _PlannerPageState extends State<PlannerPage> {
               const Spacer(),
               IconButton(
                 icon: const Icon(Icons.add, color: Colors.blue),
-                onPressed: () => _addNewPlace(day),
+                onPressed: () => _addNewPlace(context, day, provider),
                 tooltip: 'Day $day에 장소 추가',
               ),
             ],
@@ -343,9 +341,18 @@ class _PlannerPageState extends State<PlannerPage> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Center(
-                child: Text(
-                  'Day $day에 등록된 일정이 없습니다.',
-                  style: TextStyle(color: Colors.grey[600]),
+                child: Column(
+                  children: [
+                    Text(
+                      'Day $day에 등록된 일정이 없습니다.',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      '구글 맵 연동 후 장소 추가 기능이 활성화될 예정입니다.',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -368,120 +375,4 @@ class PlaceWithDay {
     required this.indexInDay,
     required this.globalIndex,
   });
-}
-
-// 새 장소 추가 대화상자
-class _AddPlaceDialog extends StatefulWidget {
-  final Function(Place) onAdd;
-
-  const _AddPlaceDialog({required this.onAdd});
-
-  @override
-  _AddPlaceDialogState createState() => _AddPlaceDialogState();
-}
-
-class _AddPlaceDialogState extends State<_AddPlaceDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _imageUrlController = TextEditingController();
-  String _category = 'tourism';
-
-  final List<String> _categories = ['tourism', 'restaurant', 'accommodation', 'shopping', 'other'];
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _descriptionController.dispose();
-    _imageUrlController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('새 장소 추가'),
-      content: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: '장소명'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return '장소명을 입력해주세요';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(labelText: '설명'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return '설명을 입력해주세요';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _imageUrlController,
-                decoration: const InputDecoration(labelText: '이미지 URL'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return '이미지 URL을 입력해주세요';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _category,
-                decoration: const InputDecoration(labelText: '카테고리'),
-                items: _categories.map((String category) {
-                  return DropdownMenuItem<String>(
-                    value: category,
-                    child: Text(category),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  if (newValue != null) {
-                    setState(() {
-                      _category = newValue;
-                    });
-                  }
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('취소'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              widget.onAdd(
-                Place(
-                  name: _nameController.text,
-                  description: _descriptionController.text,
-                  imageUrl: _imageUrlController.text,
-                  category: _category,
-                  time: '00:00', // 시간은 나중에 조정됩니다
-                ),
-              );
-              Navigator.of(context).pop();
-            }
-          },
-          child: const Text('추가'),
-        ),
-      ],
-    );
-  }
 }
