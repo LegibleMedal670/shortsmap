@@ -57,7 +57,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
   final List<String> regionOptions = [
     'All',
-    'Around Me',
+    'Near Me',
     '서울',
     '부산',
     '세글자',
@@ -411,7 +411,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         padding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                         color: Colors.transparent,
                         child: Text(
-                          '${filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory ?? 'All'} ',
+                          '${filterProvider.orderNear == true ? 'Near Me': filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory ?? 'All'} ',
                           style: TextStyle(
                             fontSize: 21,
                             fontWeight: FontWeight.w600,
@@ -430,26 +430,22 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
           Positioned(
             right: MediaQuery.of(context).size.width * 0.03,
             bottom: MediaQuery.of(context).size.height * 0.02,
-            child: Consumer<UserDataProvider>(
-              builder: (userDataProviderContext, userDataProvider, child) {
-                return Column(
-                  // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ItemButton(
-                      icon:
-                      _isBookmarked
-                          ? CupertinoIcons.bookmark_fill
-                          : CupertinoIcons.bookmark,
-                      value: _bookmarkCount.toString(),
-                      action:
-                          () => saveBookmarkInfo(userDataProvider.currentUserUID),
-                    ),
-                    ItemButton(icon: CupertinoIcons.bubble_right, value: '32'),
-                    ItemButton(icon: CupertinoIcons.paperplane, value: 'Share'),
-                    ItemButton(icon: Icons.travel_explore_outlined, value: 'Map'),
-                  ],
-                );
-              },
+            child: Column(
+              // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ItemButton(
+                  icon:
+                  _isBookmarked
+                      ? CupertinoIcons.bookmark_fill
+                      : CupertinoIcons.bookmark,
+                  value: _bookmarkCount.toString(),
+                  action:
+                      () => saveBookmarkInfo(Provider.of<UserDataProvider>(context, listen: false).currentUserUID),
+                ),
+                ItemButton(icon: CupertinoIcons.bubble_right, value: '32'),
+                ItemButton(icon: CupertinoIcons.paperplane, value: 'Share'),
+                ItemButton(icon: Icons.travel_explore_outlined, value: 'Map'),
+              ],
             ),
           ),
 
@@ -583,19 +579,21 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                       Container(
                         padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                         decoration: BoxDecoration(
-                          color: Color.fromRGBO(243, 244, 246, 1),
+                          color: Colors.black.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 0.5)
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.schedule, size: 18, color: Colors.black),
+                            Icon(Icons.schedule, size: 18, color: shortPageWhite),
                             SizedBox(width: 5),
                             Text(
                               '${widget.openTime} ~ ${widget.closeTime}',
                               style: TextStyle(
-                                color: Colors.black,
+                                color: shortPageWhite,
                                 fontSize:
-                                MediaQuery.of(context).size.width * 0.035,
+                                MediaQuery.of(context).size.width * 0.032,
+                                fontWeight: FontWeight.w500
                               ),
                             ),
                           ],
@@ -607,19 +605,20 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                       Container(
                         padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                         decoration: BoxDecoration(
-                          color: Color.fromRGBO(243, 244, 246, 1),
-                          borderRadius: BorderRadius.circular(12),
+                            color: Colors.black.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 0.5)
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.star, size: 18, color: Colors.black),
+                            Icon(Icons.star, size: 18, color: shortPageWhite),
                             SizedBox(width: 5),
                             Text(
                               widget.rating.toString(),
                               style: TextStyle(
-                                color: Colors.black,
+                                color: shortPageWhite,
                                 fontSize:
-                                MediaQuery.of(context).size.width * 0.035,
+                                MediaQuery.of(context).size.width * 0.032,
                               ),
                             ),
                           ],
@@ -631,19 +630,20 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                       Container(
                         padding: EdgeInsets.symmetric(vertical: 2, horizontal: 8),
                         decoration: BoxDecoration(
-                          color: Color.fromRGBO(243, 244, 246, 1),
-                          borderRadius: BorderRadius.circular(12),
+                            color: Colors.black.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 0.5)
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.payments, size: 18, color: Colors.black),
+                            Icon(Icons.payments, size: 18, color: shortPageWhite),
                             SizedBox(width: 5),
                             Text(
                               '\$${widget.averagePrice}~',
                               style: TextStyle(
-                                color: Colors.black,
+                                color: shortPageWhite,
                                 fontSize:
-                                MediaQuery.of(context).size.width * 0.035,
+                                MediaQuery.of(context).size.width * 0.032,
                               ),
                             ),
                           ],
@@ -661,6 +661,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
   }
 
   Future<void> saveBookmarkInfo(String? currentUserUid) async {
+    // 로그인 되어있는 경우
     if (currentUserUid != null) {
       // 눌렀을 때 진동
       HapticFeedback.lightImpact();
@@ -670,23 +671,29 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
       List<String> bookMarkList =
           preferences.getStringList('bookMarkList') ?? [];
 
+      // 북마크되지 않은 영상의 경우
       if (!bookMarkList.contains(widget.videoId)) {
         bookMarkList.add(widget.videoId);
 
+        // bookmarked를 True로 바꿔줘 색상을 채우고 현재 값에 +1 해줌
         setState(() {
           _isBookmarked = true;
           _bookmarkCount++;
         });
 
+        // 캐시 업데이트
         await preferences.setStringList('bookMarkList', bookMarkList);
 
         try {
+          // 서버에 저장
           await _supabase.from('bookmarks').insert({
             'user_id': currentUserUid,
             'location_id': widget.videoId,
             'category': widget.category,
             'bookmarked_at': DateTime.now().toIso8601String(),
           });
+
+          // 저장 되었음을 표시해주는 스낵바 TODO ( UI 조정 필요 )
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               backgroundColor: Colors.lightBlueAccent,
@@ -707,24 +714,30 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
             ),
           );
         } catch (e) {
-          // 예외가 발생하면 에러 메시지를 출력합니다.
+          // 예외가 발생하면 에러 메시지를 출력합니다. TODO 에러 처리 어떻게할지 고민
           print('Insert 에러: $e');
         }
       } else {
+
+        // 북마크된 영상의 경우 캐시에서 삭제
         bookMarkList.remove(widget.videoId);
 
+        // bookmarked를 false로 바꿔줘 색상을 비우고 현재 값에 -1 해줌
         setState(() {
           _isBookmarked = false;
           _bookmarkCount--;
         });
 
+        // 캐시 업데이트
         await preferences.setStringList('bookMarkList', bookMarkList);
 
         try {
+          // 서버에서 삭제
           await _supabase.from('bookmarks').delete().match({
             'user_id': currentUserUid,
             'location_id': widget.videoId,
           });
+          // 삭제 되었음을 알려주는 스낵바 TODO ( UI 조정 필요 )
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               backgroundColor: Colors.lightBlueAccent,
@@ -745,10 +758,12 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
             ),
           );
         } catch (e) {
+          // 에러 메세지 출력 TODO 에러 처리 어떻게할지 고민
           print('Delete 에러: $e');
         }
       }
     } else {
+      // 로그인 되어있지 않은 경우엔 로그인하라는 스낵바 띄워줌 TODO ( UI 조정 필요 )
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.lightBlueAccent,
@@ -791,6 +806,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     );
   }
 
+  ///동영상을 꾹 눌렀을 때 나오는 옵션들이 있는 ModalBottomSheet
   void showOptionsModal(BuildContext context) {
     showModalBottomSheet(
       backgroundColor: Colors.white,
@@ -819,69 +835,88 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: Column(
                   children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(vertical: 20),
-                      child: Row(
-                        children: [
-                          Icon(CupertinoIcons.bookmark, size: 24),
-                          SizedBox(width: 20),
-                          Text(
-                            'Bookmark',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                          ),
-                        ],
+                    GestureDetector(
+                      onTap: (){
+                        Navigator.pop(context);
+                        saveBookmarkInfo(Provider.of<UserDataProvider>(context, listen: false).currentUserUID);
+                      },
+                      child: Container(
+                        color: Colors.transparent,
+                        padding: EdgeInsets.only(top: 10, bottom: 20),
+                        child: Row(
+                          children: [
+                            Icon(CupertinoIcons.bookmark, size: 24),
+                            SizedBox(width: 20),
+                            Text(
+                              'Bookmark',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    Container(
-                      padding: EdgeInsets.symmetric(vertical: 20),
-                      child: Row(
-                        children: [
-                          Icon(Icons.closed_caption, size: 24),
-                          SizedBox(width: 20),
-                          Text(
-                            'Subtitle',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                          ),
-                        ],
+                    GestureDetector(
+                      child: Container(
+                        color: Colors.transparent,
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: Row(
+                          children: [
+                            Icon(Icons.closed_caption, size: 24),
+                            SizedBox(width: 20),
+                            Text(
+                              'Subtitle',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    Container(
-                      padding: EdgeInsets.symmetric(vertical: 20),
-                      child: Row(
-                        children: [
-                          Icon(Icons.block, size: 24),
-                          SizedBox(width: 20),
-                          Text(
-                            'Not Interested',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                          ),
-                        ],
+                    GestureDetector(
+                      child: Container(
+                        color: Colors.transparent,
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: Row(
+                          children: [
+                            Icon(Icons.block, size: 24),
+                            SizedBox(width: 20),
+                            Text(
+                              'Not Interested',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    Container(
-                      padding: EdgeInsets.symmetric(vertical: 20),
-                      child: Row(
-                        children: [
-                          Icon(Icons.flag_outlined, size: 24),
-                          SizedBox(width: 20),
-                          Text(
-                            'Report',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                          ),
-                        ],
+                    GestureDetector(
+                      child: Container(
+                        color: Colors.transparent,
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: Row(
+                          children: [
+                            Icon(Icons.flag_outlined, size: 24),
+                            SizedBox(width: 20),
+                            Text(
+                              'Report',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    Container(
-                      padding: EdgeInsets.symmetric(vertical: 20),
-                      child: Row(
-                        children: [
-                          Icon(CupertinoIcons.paperplane, size: 24),
-                          SizedBox(width: 20),
-                          Text(
-                            'Share',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                          ),
-                        ],
+                    GestureDetector(
+                      child: Container(
+                        color: Colors.transparent,
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: Row(
+                          children: [
+                            Icon(CupertinoIcons.paperplane, size: 24),
+                            SizedBox(width: 20),
+                            Text(
+                              'Share',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -1082,7 +1117,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           return GestureDetector(
                             onTap: () {
 
-                              if (selectedRegion == 'Around Me') {
+                              if (selectedRegion == 'Near Me') {
                                 filterProvider.setAroundVideoCategory(
                                   context,
                                   (selectedCategory == 'All')
