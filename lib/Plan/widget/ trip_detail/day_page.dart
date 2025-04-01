@@ -4,6 +4,7 @@ import '../../provider/TripPlanProvider.dart';
 import 'unifiedPlaceCard.dart';
 import 'map_placeholder.dart';
 import '../../models/place.dart';
+import 'new_plan_modal.dart';
 
 class DayPage extends StatelessWidget {
   final int dayIndex; // 몇 일차인지 (0부터 시작)
@@ -17,31 +18,17 @@ class DayPage extends StatelessWidget {
 
   // 장소 추가 다이얼로그 표시 (실제 기능은 비활성화)
   void _showAddPlaceDialog(BuildContext context, TripPlanProvider provider) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('${dayNumber}일차 새 장소 추가'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              '구글 맵 연동 후 장소 추가 기능이 활성화될 예정입니다.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                // 모달만 닫기
-                Navigator.pop(context);
-              },
-              child: const Text('닫기'),
-            ),
-          ],
-        ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => NewPlanModal(
+        onPersonalMemoCreated: (place) {
+          // 아직 상태관리 및 UnifiedPlaceCard 추가 기능은 구현하지 않음
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('장소가 추가되었습니다: ${place.name}')),
+          );
+        },
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../provider/TripPlanProvider.dart';
 import '../../models/place.dart';
 import 'unifiedPlaceCard.dart';
+import 'new_plan_modal.dart';
 
 
 class PlannerPage extends StatelessWidget {
@@ -156,31 +157,17 @@ class PlannerPage extends StatelessWidget {
 
   void _addNewPlace(BuildContext context, int day, TripPlanProvider provider) {
     // 플레이스 추가 로직
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('새 장소 추가'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              '구글 맵 연동 후 장소 추가 기능이 활성화될 예정입니다.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                // 모달만 닫기
-                Navigator.pop(context);
-              },
-              child: const Text('닫기'),
-            ),
-          ],
-        ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => NewPlanModal(
+        onPersonalMemoCreated: (place) {
+          // 아직 상태관리 및 UnifiedPlaceCard 추가 기능은 구현하지 않음
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('장소가 추가되었습니다: ${place.name}')),
+          );
+        },
       ),
     );
   }
