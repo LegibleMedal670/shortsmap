@@ -6,8 +6,34 @@ import 'unifiedPlaceCard.dart';
 import 'new_plan_modal.dart';
 
 
-class PlannerPage extends StatelessWidget {
+class PlannerPage extends StatefulWidget {
   const PlannerPage({Key? key}) : super(key: key);
+
+  @override
+  State<PlannerPage> createState() => _PlannerPageState();
+}
+
+class _PlannerPageState extends State<PlannerPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Provider의 상태 변경은 다음 프레임에서 실행
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<TripPlanProvider>(context, listen: false);
+      final days = provider.days;
+      final dayPlaces = provider.dayPlaces;
+      
+      if (dayPlaces.isEmpty && days.isNotEmpty) {
+        print('날짜 정보 초기화 시작');
+        Map<int, List<Place>> updatedDayPlaces = {};
+        for (int i = 0; i < days.length; i++) {
+          updatedDayPlaces[i + 1] = []; // 1일차부터 시작
+        }
+        provider.updateAllDayPlaces(updatedDayPlaces);
+        print('날짜 정보 초기화 완료: ${updatedDayPlaces.length}일');
+      }
+    });
+  }
 
   void _onReorder(int oldIndex, int newIndex, TripPlanProvider provider) {
     // 헤더 위치 계산 및 실제 아이템 인덱스 조정
@@ -191,6 +217,7 @@ class PlannerPage extends StatelessWidget {
         final Map<int, List<Place>> dayPlaces = provider.dayPlaces;
         final List<int> sortedDays = dayPlaces.keys.toList()..sort();
         final List<PlaceWithDay> allPlacesWithIndex = _getAllPlacesWithDayHeaders(provider);
+        final days = provider.days;
         
         return Padding(
           padding: const EdgeInsets.only(top: 16),
@@ -221,7 +248,6 @@ class PlannerPage extends StatelessWidget {
                         if (placeWithDay.place == null) {
                           // 날짜 라벨에 실제 날짜 정보 표시
                           String dateLabel = 'Day ${placeWithDay.day}';
-                          final days = provider.days;
                           if (days.isNotEmpty && placeWithDay.day <= days.length) {
                             final DateTime date = days[placeWithDay.day - 1];
                             dateLabel = '$dateLabel (${date.month}/${date.day})';
