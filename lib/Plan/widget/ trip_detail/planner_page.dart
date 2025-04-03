@@ -55,54 +55,44 @@ class _PlannerPageState extends State<PlannerPage> {
       return;
     }
 
-    // Flutter의 ReorderableListView는 새 위치가 이전 위치보다 크면 1을 빼줌
-    if (oldIndex < newIndex) {
-      newIndex -= 1;
-    }
-
-    // 타겟 위치가 헤더인 경우, 그 다음 아이템으로 조정
-    if (newIndex < allItems.length && allItems[newIndex].place == null) {
-      newIndex++;
-
-      // 조정된 위치가 범위를 벗어나면 마지막 위치로 설정
-      if (newIndex >= allItems.length) {
-        newIndex = allItems.length - 1;
-
-        // 마지막이 헤더면 헤더 바로 앞으로
-        if (allItems[newIndex].place == null) {
-          newIndex--;
-        }
-      }
-    }
-
-    // 재조정된 위치가 여전히 범위를 벗어나면 작업 중단
-    if (newIndex < 0 || newIndex >= allItems.length) {
-      print('조정된 위치가 범위를 벗어남: newIndex=$newIndex');
-      return;
-    }
-
     // 원본 아이템 정보 저장
     PlaceWithDay movedItem = allItems[oldIndex];
     int oldDay = movedItem.day;
     int indexInOldDay = movedItem.indexInDay;
     Place place = movedItem.place!;
 
-    // 이동될 위치의 Day 결정
+    // 타겟 위치를 확인하고 적절한 날짜 결정
     int newDay;
     int indexInNewDay;
 
-    if (allItems[newIndex].place == null) {
-      // 타겟이 헤더인 경우
-      newDay = allItems[newIndex].day;
-      indexInNewDay = 0; // 해당 날짜의 첫 번째 위치로
-    } else {
-      // 타겟이 일반 장소인 경우
-      newDay = allItems[newIndex].day;
-      indexInNewDay = allItems[newIndex].indexInDay;
+    // 새 인덱스가 이동한 다음 위치인지 확인
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
 
+    // 타겟 위치의 아이템 확인
+    PlaceWithDay targetItem;
+    if (newIndex >= allItems.length) {
+      // 마지막 위치로 이동하는 경우
+      targetItem = allItems[allItems.length - 1];
+    } else {
+      targetItem = allItems[newIndex];
+    }
+
+    // 타겟이 헤더인 경우 해당 날짜의 첫 번째 아이템으로 이동
+    if (targetItem.place == null) {
+      newDay = targetItem.day;
+      indexInNewDay = 0;
+    } else {
+      // 일반 아이템인 경우
+      newDay = targetItem.day;
+      indexInNewDay = targetItem.indexInDay;
+      
       // 같은 날짜 내에서 뒤로 이동하는 경우, indexInNewDay 조정
       if (oldDay == newDay && indexInOldDay < indexInNewDay) {
-        indexInNewDay++;
+        // 이미 원본 아이템이 제거된 것을 고려
+      } else {
+        indexInNewDay += 1;
       }
     }
 
@@ -247,8 +237,7 @@ class _PlannerPageState extends State<PlannerPage> {
                       ],
                     ),
                   )
-                  : // ReorderableListView.builder 수정
-                  ReorderableListView.builder(
+                  : ReorderableListView.builder(
                     buildDefaultDragHandles: false,
                     itemCount: allPlacesWithIndex.length,
                     onReorder:
@@ -258,7 +247,7 @@ class _PlannerPageState extends State<PlannerPage> {
                       final PlaceWithDay placeWithDay =
                           allPlacesWithIndex[index];
 
-                      // 날짜 구분선인 경우
+                      // 날짜 구분선인 경우 (드래그 핸들 제거, 재정렬 불가)
                       if (placeWithDay.place == null) {
                         String dateLabel = 'Day ${placeWithDay.day}';
                         if (days.isNotEmpty &&
@@ -267,7 +256,6 @@ class _PlannerPageState extends State<PlannerPage> {
                           dateLabel = '$dateLabel (${date.month}/${date.day})';
                         }
 
-                        // 여기서 key 확인
                         return _buildDayHeader(
                           context,
                           placeWithDay.day,
@@ -278,14 +266,13 @@ class _PlannerPageState extends State<PlannerPage> {
                         );
                       }
 
-                      // 일반 장소 카드
+                      // 일반 장소 카드 (드래그 가능)
                       return ReorderableDragStartListener(
                         key: ValueKey(
                           'place_${placeWithDay.globalIndex}',
-                        ), // 여기에 key 추가
+                        ),
                         index: index,
                         child: UnifiedPlaceCard(
-                          key: ValueKey('place_${placeWithDay.globalIndex}'),
                           place: placeWithDay.place!,
                           onDelete:
                               () => provider.deletePlace(placeWithDay.place!),

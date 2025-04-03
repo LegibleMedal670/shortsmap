@@ -102,10 +102,7 @@ class UnifiedPlaceCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (index != null)
-                        ReorderableDragStartListener(
-                          index: index!,
-                          child: const Icon(Icons.drag_handle, color: Colors.grey),
-                        ),
+                        Icon(Icons.drag_handle, color: Colors.grey),
                       if (index != null) const SizedBox(width: 8),
                       IconButton(
                         icon: const Icon(Icons.close, size: 20),
