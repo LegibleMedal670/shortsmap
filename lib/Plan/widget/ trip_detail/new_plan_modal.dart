@@ -3,10 +3,12 @@ import '../../models/place.dart';
 
 class NewPlanModal extends StatefulWidget {
   final Function(Place)? onPersonalMemoCreated;
+  final int selectedDay;
 
   const NewPlanModal({
     Key? key,
     this.onPersonalMemoCreated,
+    required this.selectedDay,
   }) : super(key: key);
 
   @override
@@ -204,6 +206,7 @@ class _NewPlanModalState extends State<NewPlanModal> {
                       description: _memoController.text.trim(),
                       imageUrl: 'https://via.placeholder.com/150',  // 기본 이미지 URL
                       category: _selectedCategory,
+                      date: '${widget.selectedDay}일차',
                     );
                     
                     widget.onPersonalMemoCreated!(newPlace);
@@ -249,6 +252,7 @@ class ExampleUsage extends StatelessWidget {
                 print('생성된 장소: ${place.name}');
                 // 여기서 Place 객체를 저장하거나 처리하는 로직을 구현할 수 있습니다.
               },
+              selectedDay: 1,
             ),
           );
         },
