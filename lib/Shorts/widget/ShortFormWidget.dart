@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
@@ -8,6 +9,7 @@ import 'package:shortsmap/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:video_player/video_player.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 class ShortFormWidget extends StatefulWidget {
   final String storeName;
@@ -45,6 +47,7 @@ class ShortFormWidget extends StatefulWidget {
 
 class _ShortFormWidgetState extends State<ShortFormWidget> {
   late VideoPlayerController _playerController;
+  late YoutubePlayerController _controller;
   IconData _currentIcon = Icons.pause;
   double _pauseIconOpacity = 0.0;
   IconData restaurantCategory = Icons.restaurant_outlined;
@@ -91,6 +94,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
   bool _isBookmarked = false;
 
+  bool _isRestarting = false;
+
   @override
   void initState() {
     super.initState();
@@ -100,53 +105,115 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
       _bookmarkCount = widget.bookmarkCount;
 
-      _playerController = VideoPlayerController.networkUrl(
-          Uri.parse(widget.videoURL),
-        )
-        ..initialize().then((value) {
-          _playerController.setLooping(true);
+      _controller = YoutubePlayerController(
+        params: YoutubePlayerParams(
+          mute: false,
+          showControls: false,
+          showFullscreenButton: false,
+          loop: true,
+          showVideoAnnotations: false,
+          pointerEvents: PointerEvents.none,
+        ),
+      );
 
-          // Future.delayed(const Duration(milliseconds: 500), () {
-          //   _playerController.play();
-          // });
+      // _controller = YoutubePlayerController.fromVideoId(
+      //   videoId: '6cymxn3Jo-o',
+      //   autoPlay: true,
+      //   params: YoutubePlayerParams(
+      //     loop: true, // 직접 loop 기능은 없으므로 false로 설정
+      //     showControls: false,
+      //     mute: false,
+      //     showFullscreenButton: false,
+      //   ),
+      // );
 
-          ///다음 영상 넘어갈 때 사운드가 겹쳐서 넣어준 딜레이
-          ///추후에 중간 이상 넘어가면 기존 영상을 멈추고 다음 영상을 재생하는 방식 적용해야함
-          ///음...
-          // 0.5초 후 비디오 재생
-          // if (widget.index == 0) {
-          //   Future.delayed(const Duration(milliseconds: 500), () {
-          //     _playerController.play();
-          //   });
-          // } else {
-          //   Future.delayed(const Duration(milliseconds: 700), () {
-          //     _playerController.play();
-          //   });
-          // }
-        });
+      _controller.loadVideoById(videoId: 'iFc37k9m4fA');
+
+      // _playerController = VideoPlayerController.networkUrl(
+      //     Uri.parse(widget.videoURL),
+      //   )
+      //   ..initialize().then((value) {
+      //     _playerController.setLooping(true);
+      //
+      //     // Future.delayed(const Duration(milliseconds: 500), () {
+      //     //   _playerController.play();
+      //     // });
+      //
+      //     ///다음 영상 넘어갈 때 사운드가 겹쳐서 넣어준 딜레이
+      //     ///추후에 중간 이상 넘어가면 기존 영상을 멈추고 다음 영상을 재생하는 방식 적용해야함
+      //     ///음...
+      //     // 0.5초 후 비디오 재생
+      //     // if (widget.index == 0) {
+      //     //   Future.delayed(const Duration(milliseconds: 500), () {
+      //     //     _playerController.play();
+      //     //   });
+      //     // } else {
+      //     //   Future.delayed(const Duration(milliseconds: 700), () {
+      //     //     _playerController.play();
+      //     //   });
+      //     // }
+      //   });
     }
   }
 
+  // YoutubeValueBuilder에서 호출할 상태 체크 함수
+  // void _checkAndRestart(YoutubePlayerValue value) {
+  //   if (value.playerState == PlayerState.ended && !_isRestarting) {
+  //     _isRestarting = true;
+  //     // 재생 위치를 0초로 이동하고 영상 재생 시작
+  //     _controller.seekTo(seconds: 0);
+  //     _controller.playVideo();
+  //     // 약간의 딜레이 후 플래그 리셋 (중복 호출 방지)
+  //     Future.delayed(const Duration(milliseconds: 500), () {
+  //       _isRestarting = false;
+  //     });
+  //   }
+  // }
+
+  // 현재 재생 시간이 전체 재생시간의 끝 0.1초 이내인지 체크하고,
+  // 조건 만족 시 0초로 이동 후 재생을 재시작하는 함수
+  void _checkAndRestart(YoutubePlayerValue value) async{
+    final Duration duration = value.metaData.duration;
+    // duration이 0 이상일 때만 체크 (영상 메타데이터가 로드된 경우)
+    if (duration.inMilliseconds > 0) {
+      // currentTime은 초 단위 (double)
+      final double currentTime = await _controller.currentTime;
+      final double totalSeconds = duration.inMilliseconds / 1000.0;
+      final double remaining = totalSeconds - currentTime;
+      // 남은 시간이 0.1초 이내이면 재시작
+      if (remaining < 0.2 && !_isRestarting) {
+        _isRestarting = true;
+        _controller.seekTo(seconds: 0);
+        _controller.playVideo();
+        Future.delayed(const Duration(milliseconds: 500), () {
+          _isRestarting = false;
+        });
+      }
+    }
+  }
   @override
   void dispose() {
     if (!widget.isEmpty) {
-      _playerController.dispose();
+      // _playerController.dispose();
+      _controller.close();
     }
     super.dispose();
   }
 
   ///stop + resume
   void _toggleVideo() {
-    final wasPlaying = _playerController.value.isPlaying;
+    final wasPlaying = _controller.value.playerState == PlayerState.playing;
     setState(() {
       _currentIcon = wasPlaying ? Icons.pause : Icons.play_arrow;
       _pauseIconOpacity = 1.0;
     });
 
     if (wasPlaying) {
-      _playerController.pause();
+      // _playerController.pause();
+      _controller.pauseVideo();
     } else {
-      _playerController.play();
+      _controller.playVideo();
+      // _playerController.play();
     }
 
     // 애니메이션 처리
@@ -300,14 +367,38 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
             child: Container(
               width: MediaQuery.of(context).size.width,
               height: MediaQuery.of(context).size.height,
-              color: Colors.black,
+              color: Color(0xff121212),
               child: Column(
                 children: [
                   Expanded(
                     child: Stack(
-                      alignment: Alignment.center,
+                      alignment: Alignment.topCenter,
                       children: [
-                        VideoPlayer(_playerController),
+                        Positioned(
+                          top: 100,
+                          child: YoutubeValueBuilder(
+                            controller: _controller,
+                            builder: (context, value) {
+                              _checkAndRestart(value);
+                              return IgnorePointer(
+                                child: FittedBox(
+                                  fit: BoxFit.cover,
+                                  child: SizedBox(
+                                    // 원래 영상의 비율을 유지하는 크기 지정 (9:16)
+                                    width: MediaQuery.of(context).size.width * 0.8,
+                                    height: (MediaQuery.of(context).size.width * 0.8) * (16 / 9),
+                                    child: YoutubePlayer(
+                                      controller: _controller,
+                                      backgroundColor: Colors.black,
+                                      // aspectRatio는 이제 FittedBox로 크기를 조절하므로 제거하거나 동일하게 유지할 수 있음.
+                                      // aspectRatio: 9 / 16,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
 
                         ///위아래 위젯들 가시성을 위한 그림자
                         IgnorePointer(
@@ -329,38 +420,40 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ),
 
                         ///정지/재개 아이콘
-                        AnimatedOpacity(
-                          opacity: _pauseIconOpacity,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOutCirc,
-                          child: Container(
-                            padding: const EdgeInsets.all(15),
-                            decoration: const BoxDecoration(
-                              color: Colors.black54,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              _currentIcon,
-                              color: shortPageWhite,
-                              size: 50.0,
+                        Center(
+                          child: AnimatedOpacity(
+                            opacity: _pauseIconOpacity,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOutCirc,
+                            child: Container(
+                              padding: const EdgeInsets.all(15),
+                              decoration: const BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                _currentIcon,
+                                color: shortPageWhite,
+                                size: 50.0,
+                              ),
                             ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  VideoProgressIndicator(
-                    _playerController,
-                    padding: EdgeInsets.zero,
-                    allowScrubbing: true, // 스크럽 허용
-                    colors: const VideoProgressColors(
-                      playedColor: Color.fromRGBO(220, 20, 60, 1),
-                      // 재생된 부분 색상
-                      bufferedColor: Colors.grey,
-                      // 버퍼링된 부분 색상
-                      backgroundColor: Colors.grey,
-                    ),
-                  ),
+                  // VideoProgressIndicator(
+                  //   _playerController,
+                  //   padding: EdgeInsets.zero,
+                  //   allowScrubbing: true, // 스크럽 허용
+                  //   colors: const VideoProgressColors(
+                  //     playedColor: Color.fromRGBO(220, 20, 60, 1),
+                  //     // 재생된 부분 색상
+                  //     bufferedColor: Colors.grey,
+                  //     // 버퍼링된 부분 색상
+                  //     backgroundColor: Colors.grey,
+                  //   ),
+                  // ),
                 ],
               ),
             ),
@@ -450,9 +543,9 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ).currentUserUID,
                       ),
                 ),
-                ItemButton(icon: CupertinoIcons.bubble_right, value: '32'),
-                ItemButton(icon: CupertinoIcons.paperplane, value: 'Share'),
-                ItemButton(icon: Icons.travel_explore_outlined, value: 'Map'),
+                // ItemButton(icon: CupertinoIcons.bubble_right, value: '32'),
+                // ItemButton(icon: CupertinoIcons.paperplane, value: 'Share'),
+                // ItemButton(icon: Icons.travel_explore_outlined, value: 'Map'),
               ],
             ),
           ),
@@ -1283,7 +1376,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               style: TextStyle(color: Colors.black54),
                             ),
                             SizedBox(width: 15),
-                            Text('거리', style: TextStyle(color: Colors.black54)),
+                            // Text('${Geolocator.distanceBetween(Provider.of<UserDataProvider>(context, listen: false,).currentLon!, Provider.of<UserDataProvider>(context, listen: false,).currentLat!, widget.storeLocation,)}', style: TextStyle(color: Colors.black54)),
                             Spacer(),
                             Container(
                               margin: EdgeInsets.only(right: 10),
