@@ -41,57 +41,58 @@ class ShimmerWidget extends StatelessWidget {
             child: Stack(
               children: [
                 Positioned(
-                  right: 15,
-                  bottom: 15,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      ShimmerIcon(),
-                      ShimmerIcon(),
-                      ShimmerIcon(),
-                      ShimmerIcon(),
-                    ],
+                  right: MediaQuery.of(context).size.width * 0.05,
+                  bottom: MediaQuery.of(context).size.height * 0.001,
+                  child: SafeArea(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ShimmerIcon(),
+                      ],
+                    ),
                   ),
                 ),
                 Positioned(
-                  left: 25,
-                  bottom: 23,
-                  child: Container(
-                    width: MediaQuery.of(context).size.width,
-                    child: Row(
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 20,
-                                  backgroundColor: Colors.grey[700],
-                                ),
-                                const SizedBox(width: 13),
-                                Container(
-                                  width: 150,
-                                  height: 15,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[700],
-                                    borderRadius: BorderRadius.circular(8),
+                  left: MediaQuery.of(context).size.width * 0.05,
+                  bottom: MediaQuery.of(context).size.height * 0.001,
+                  child: SafeArea(
+                    child: Container(
+                      width: MediaQuery.of(context).size.width * 0.82,
+                      child: Row(
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 20,
+                                    backgroundColor: Colors.grey[700],
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 17),
-                            Container(
-                              width: 230,
-                              height: 15,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[700],
-                                borderRadius: BorderRadius.circular(8),
+                                  const SizedBox(width: 13),
+                                  Container(
+                                    width: 150,
+                                    height: 15,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[700],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                              const SizedBox(height: 17),
+                              Container(
+                                width: 230,
+                                height: 15,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[700],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
