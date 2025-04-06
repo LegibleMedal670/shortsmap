@@ -92,7 +92,6 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
   bool _isBookmarked = false;
 
-
   @override
   void initState() {
     super.initState();
@@ -114,7 +113,6 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
       );
 
       _controller.loadVideoById(videoId: 'VxVo4cRxYTM');
-
     }
   }
 
@@ -254,12 +252,13 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
               ),
             ),
           ),
+
           ///뒤로가기 버튼
           Positioned(
             left: MediaQuery.of(context).size.width * 0.05,
             child: SafeArea(
               child: GestureDetector(
-                onTap: (){
+                onTap: () {
                   Navigator.pop(context);
                 },
                 child: Container(
@@ -336,8 +335,13 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                   fit: BoxFit.cover,
                                   child: Container(
                                     // 원래 영상의 비율을 유지하는 크기 지정 (9:16)
-                                    width: MediaQuery.of(context).size.width * 0.89,
-                                    height: (MediaQuery.of(context).size.width * 0.89) * (16 / 9),
+                                    width:
+                                        MediaQuery.of(context).size.width *
+                                        0.89,
+                                    height:
+                                        (MediaQuery.of(context).size.width *
+                                            0.89) *
+                                        (16 / 9),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(10),
                                     ),
@@ -482,7 +486,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
             left: MediaQuery.of(context).size.width * 0.05,
             child: SafeArea(
               child: GestureDetector(
-                onTap: (){
+                onTap: () {
                   Navigator.pop(context);
                 },
                 child: Container(
@@ -503,17 +507,13 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
             right: MediaQuery.of(context).size.width * 0.05,
             child: SafeArea(
               child: GestureDetector(
-                onTap: (){
+                onTap: () {
                   showOptionsModal(context);
                 },
                 child: Container(
                   padding: EdgeInsets.all(5),
                   color: Colors.transparent,
-                  child: Icon(
-                    Icons.more_vert,
-                    color: shortPageWhite,
-                    size: 32,
-                  ),
+                  child: Icon(Icons.more_vert, color: shortPageWhite, size: 32),
                 ),
               ),
             ),
@@ -663,7 +663,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                   ),
                                 )
                                 : Container(
-                                  width: MediaQuery.of(context).size.width * 0.8,
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.8,
                                   color: Colors.transparent,
                                   child: Text(
                                     widget.storeCaption,
@@ -719,7 +720,9 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             ],
                           ),
                         ),
-                        SizedBox(width: MediaQuery.of(context).size.width * 0.02),
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.02,
+                        ),
 
                         ///별점
                         Container(
@@ -750,7 +753,9 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             ],
                           ),
                         ),
-                        SizedBox(width: MediaQuery.of(context).size.width * 0.02),
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.02,
+                        ),
 
                         ///가격
                         Container(
@@ -1334,7 +1339,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
   ///More 버튼을 누르면 나오는 ModalBottomSheet
   void showInfoModal(BuildContext context) {
     showModalBottomSheet(
-      backgroundColor: Colors.white,
+      backgroundColor: shortPageWhite,
       context: context,
       isScrollControlled: true,
       enableDrag: true,
@@ -1348,11 +1353,11 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
       builder: (BuildContext context) {
         return DraggableScrollableSheet(
           maxChildSize: 0.9,
-          initialChildSize: 0.4,
-          minChildSize: 0.3999,
+          initialChildSize: 0.37,
+          minChildSize: 0.3699,
           expand: false,
           snap: true,
-          snapSizes: const [0.4, 0.9],
+          snapSizes: const [0.38, 0.9],
           builder:
               (context, infoScrollController) => SizedBox(
                 width: MediaQuery.of(context).size.width,
@@ -1364,34 +1369,125 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                     child: Column(
                       children: [
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              widget.storeName,
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
+                            Container(
+                              width: 90,
+                              height: 90,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.lightBlue,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(2.0),
+                                child: CircleAvatar(
+                                  radius: 90,
+                                  backgroundImage: NetworkImage(
+                                    'https://placehold.co/400.png',
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.storeName,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                SizedBox(height: 3),
+                                Text(
+                                  // widget.category,
+                                  'category · 가격대',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                                SizedBox(height: 3),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      CupertinoIcons.bus,
+                                      color: Colors.black26,
+                                      size: 18,
+                                    ),
+                                    Text(
+                                      // widget.storeLocation,
+                                      ' 15분 · 태평',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 3),
+                                // Text(
+                                //   // widget.rating.toString(),
+                                //   '별점위젯',
+                                //   style: TextStyle(
+                                //     fontSize: 14,
+                                //     color: Colors.black54,
+                                //   ),
+                                // ),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      CupertinoIcons.time,
+                                      color: Colors.black26,
+                                      size: 18,
+                                    ),
+                                    Text(
+                                      // widget.storeLocation,
+                                      ' 09:00 ~ 20:00',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Spacer(),
+                            Container(
+                              width: 40,
+                              height: 40,
+                              margin: EdgeInsets.only(right: 15),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.black12,
+                              ),
+                              child: Icon(
+                                CupertinoIcons.share,
+                                size: 20,
                                 color: Colors.black,
                               ),
                             ),
-                            SizedBox(width: 15),
-                            Text(
-                              '음식점유형',
-                              style: TextStyle(color: Colors.black54),
-                            ),
-                            SizedBox(width: 15),
-                            // Text('${Geolocator.distanceBetween(Provider.of<UserDataProvider>(context, listen: false,).currentLon!, Provider.of<UserDataProvider>(context, listen: false,).currentLat!, widget.storeLocation,)}', style: TextStyle(color: Colors.black54)),
-                            Spacer(),
                             Container(
-                              margin: EdgeInsets.only(right: 10),
-                              padding: EdgeInsets.all(5),
+                              width: 40,
+                              height: 40,
+                              margin: EdgeInsets.only(right: 5),
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(5),
-                                border: Border.all(
-                                  color: Colors.black,
-                                  width: 0.5,
-                                ),
+                                shape: BoxShape.circle,
+                                color: Colors.black12,
                               ),
-                              child: Text('북마크'),
+                              child: Icon(
+                                Icons.close_rounded,
+                                size: 20,
+                                color: Colors.black,
+                              ),
                             ),
                           ],
                         ),
@@ -1400,59 +1496,195 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             Container(
-                              width: MediaQuery.of(context).size.width * 0.28,
-                              height: MediaQuery.of(context).size.width * 0.28,
+                              width: MediaQuery.of(context).size.width * 0.3,
+                              padding: EdgeInsets.symmetric(vertical: 6),
                               decoration: BoxDecoration(
-                                color: Colors.black26,
-                                borderRadius: BorderRadius.circular(8),
+                                color: Colors.black12,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    CupertinoIcons.phone,
+                                    color: Colors.black,
+                                    size: 22,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Call',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             Container(
-                              width: MediaQuery.of(context).size.width * 0.28,
-                              height: MediaQuery.of(context).size.width * 0.28,
+                              width: MediaQuery.of(context).size.width * 0.3,
+                              padding: EdgeInsets.symmetric(vertical: 6),
                               decoration: BoxDecoration(
-                                color: Colors.black26,
-                                borderRadius: BorderRadius.circular(8),
+                                color: Colors.black12,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.directions_car,
+                                    color: Colors.black,
+                                    size: 22,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Route',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             Container(
-                              width: MediaQuery.of(context).size.width * 0.28,
-                              height: MediaQuery.of(context).size.width * 0.28,
+                              width: MediaQuery.of(context).size.width * 0.3,
+                              padding: EdgeInsets.symmetric(vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.lightBlue,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    CupertinoIcons.bookmark,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Save',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 25),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Container(
+                              width: MediaQuery.of(context).size.width * 0.3,
+                              height: MediaQuery.of(context).size.width * 0.3,
                               decoration: BoxDecoration(
                                 color: Colors.black26,
                                 borderRadius: BorderRadius.circular(8),
+                                image: DecorationImage(
+                                  image: NetworkImage(
+                                    'https://placehold.co/400.png',
+                                  ),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              width: MediaQuery.of(context).size.width * 0.3,
+                              height: MediaQuery.of(context).size.width * 0.3,
+                              decoration: BoxDecoration(
+                                color: Colors.black26,
+                                borderRadius: BorderRadius.circular(8),
+                                image: DecorationImage(
+                                  image: NetworkImage(
+                                    'https://placehold.co/400.png',
+                                  ),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              width: MediaQuery.of(context).size.width * 0.3,
+                              height: MediaQuery.of(context).size.width * 0.3,
+                              decoration: BoxDecoration(
+                                color: Colors.black26,
+                                borderRadius: BorderRadius.circular(8),
+                                image: DecorationImage(
+                                  image: NetworkImage(
+                                    'https://placehold.co/400.png',
+                                  ),
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             ),
                           ],
                         ),
                         SizedBox(height: 25),
                         Container(
-                          width: MediaQuery.of(context).size.width,
-                          height: 30,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.black26,
+                            color: shortPageWhite,
                             borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              _buildListTile(
+                                icon: Icons.location_on_outlined,
+                                title: 'Address',
+                                subtitle: '주소어쩌구저쩌구~~ \n누르면 구글맵 or 애플맵 or 자체화면',
+                                onTap: () {
+                                  // TODO: 원하는 동작을 추가하세요 (예: 지도 화면으로 이동)
+                                },
+                              ),
+                              const Divider(height: 2),
+                              _buildListTile(
+                                icon: Icons.phone,
+                                title: 'Call',
+                                subtitle: '전화번호~~ \n누르면 전화걸어줌',
+                                onTap: () {
+                                  // TODO: 전화 걸기 등 동작을 추가하세요
+                                },
+                              ),
+                              const Divider(height: 2),
+                              _buildListTile(
+                                icon: Icons.language,
+                                title: 'Visit Website',
+                                subtitle: '웹사이트 있으면 \n누르면 웹사이트가짐',
+                                onTap: () {
+                                  // TODO: 브라우저 열기 등 동작을 추가하세요
+                                },
+                              ),
+                              const Divider(height: 2),
+                              _buildListTile(
+                                icon: Icons.flag,
+                                title: 'Report',
+                                onTap: () {
+                                  // TODO: 신고 화면으로 이동 등 동작을 추가하세요
+                                },
+                              ),
+                              const Divider(height: 2),
+                              _buildListTile(
+                                icon: Icons.verified_outlined,
+                                title: 'I am owner of this place',
+                                onTap: () {
+                                  // TODO: 신고 화면으로 이동 등 동작을 추가하세요
+                                },
+                              ),
+                            ],
                           ),
                         ),
-                        SizedBox(height: 15),
-                        Container(
-                          width: MediaQuery.of(context).size.width,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            color: Colors.black26,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        SizedBox(height: 15),
-                        Container(
-                          width: MediaQuery.of(context).size.width,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            color: Colors.black26,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        SizedBox(height: 15),
                       ],
                     ),
                   ),
@@ -1460,6 +1692,21 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
               ),
         );
       },
+    );
+  }
+
+  Widget _buildListTile({
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    VoidCallback? onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.black,),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+      subtitle: subtitle != null ? Text(subtitle, style: TextStyle(fontSize: 15),) : null,
+      trailing: const Icon(Icons.chevron_right, size: 26,),
+      onTap: onTap,
     );
   }
 
@@ -1476,7 +1723,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
         }
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14,),
+        padding: const EdgeInsets.symmetric(vertical: 14),
         margin: EdgeInsets.only(right: 5),
         color: Colors.transparent,
         child: Column(
