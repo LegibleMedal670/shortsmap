@@ -135,7 +135,7 @@ class _ShortsPageState extends State<ShortsPage> {
               },
             ),
           ),
-          BottomNavBar(context, 'shorts'),
+          // BottomNavBar(context, 'shorts'),
         ],
       ),
       // bottomNavigationBar: BottomNavigationBar(

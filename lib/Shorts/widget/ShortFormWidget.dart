@@ -8,7 +8,6 @@ import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
 import 'package:shortsmap/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:video_player/video_player.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 class ShortFormWidget extends StatefulWidget {
@@ -46,7 +45,6 @@ class ShortFormWidget extends StatefulWidget {
 }
 
 class _ShortFormWidgetState extends State<ShortFormWidget> {
-  late VideoPlayerController _playerController;
   late YoutubePlayerController _controller;
   IconData _currentIcon = Icons.pause;
   double _pauseIconOpacity = 0.0;
@@ -94,7 +92,6 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
   bool _isBookmarked = false;
 
-  bool _isRestarting = false;
 
   @override
   void initState() {
@@ -110,91 +107,20 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
           mute: false,
           showControls: false,
           showFullscreenButton: false,
-          loop: true,
+          loop: false,
           showVideoAnnotations: false,
           pointerEvents: PointerEvents.none,
         ),
       );
 
-      // _controller = YoutubePlayerController.fromVideoId(
-      //   videoId: '6cymxn3Jo-o',
-      //   autoPlay: true,
-      //   params: YoutubePlayerParams(
-      //     loop: true, // 직접 loop 기능은 없으므로 false로 설정
-      //     showControls: false,
-      //     mute: false,
-      //     showFullscreenButton: false,
-      //   ),
-      // );
+      _controller.loadVideoById(videoId: 'VxVo4cRxYTM');
 
-      _controller.loadVideoById(videoId: 'iFc37k9m4fA');
-
-      // _playerController = VideoPlayerController.networkUrl(
-      //     Uri.parse(widget.videoURL),
-      //   )
-      //   ..initialize().then((value) {
-      //     _playerController.setLooping(true);
-      //
-      //     // Future.delayed(const Duration(milliseconds: 500), () {
-      //     //   _playerController.play();
-      //     // });
-      //
-      //     ///다음 영상 넘어갈 때 사운드가 겹쳐서 넣어준 딜레이
-      //     ///추후에 중간 이상 넘어가면 기존 영상을 멈추고 다음 영상을 재생하는 방식 적용해야함
-      //     ///음...
-      //     // 0.5초 후 비디오 재생
-      //     // if (widget.index == 0) {
-      //     //   Future.delayed(const Duration(milliseconds: 500), () {
-      //     //     _playerController.play();
-      //     //   });
-      //     // } else {
-      //     //   Future.delayed(const Duration(milliseconds: 700), () {
-      //     //     _playerController.play();
-      //     //   });
-      //     // }
-      //   });
     }
   }
 
-  // YoutubeValueBuilder에서 호출할 상태 체크 함수
-  // void _checkAndRestart(YoutubePlayerValue value) {
-  //   if (value.playerState == PlayerState.ended && !_isRestarting) {
-  //     _isRestarting = true;
-  //     // 재생 위치를 0초로 이동하고 영상 재생 시작
-  //     _controller.seekTo(seconds: 0);
-  //     _controller.playVideo();
-  //     // 약간의 딜레이 후 플래그 리셋 (중복 호출 방지)
-  //     Future.delayed(const Duration(milliseconds: 500), () {
-  //       _isRestarting = false;
-  //     });
-  //   }
-  // }
-
-  // 현재 재생 시간이 전체 재생시간의 끝 0.1초 이내인지 체크하고,
-  // 조건 만족 시 0초로 이동 후 재생을 재시작하는 함수
-  void _checkAndRestart(YoutubePlayerValue value) async{
-    final Duration duration = value.metaData.duration;
-    // duration이 0 이상일 때만 체크 (영상 메타데이터가 로드된 경우)
-    if (duration.inMilliseconds > 0) {
-      // currentTime은 초 단위 (double)
-      final double currentTime = await _controller.currentTime;
-      final double totalSeconds = duration.inMilliseconds / 1000.0;
-      final double remaining = totalSeconds - currentTime;
-      // 남은 시간이 0.1초 이내이면 재시작
-      if (remaining < 0.2 && !_isRestarting) {
-        _isRestarting = true;
-        _controller.seekTo(seconds: 0);
-        _controller.playVideo();
-        Future.delayed(const Duration(milliseconds: 500), () {
-          _isRestarting = false;
-        });
-      }
-    }
-  }
   @override
   void dispose() {
     if (!widget.isEmpty) {
-      // _playerController.dispose();
       _controller.close();
     }
     super.dispose();
@@ -328,6 +254,26 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
               ),
             ),
           ),
+          ///뒤로가기 버튼
+          Positioned(
+            left: MediaQuery.of(context).size.width * 0.05,
+            child: SafeArea(
+              child: GestureDetector(
+                onTap: (){
+                  Navigator.pop(context);
+                },
+                child: Container(
+                  padding: EdgeInsets.all(5),
+                  color: Colors.transparent,
+                  child: Icon(
+                    CupertinoIcons.back,
+                    color: shortPageWhite,
+                    size: 32,
+                  ),
+                ),
+              ),
+            ),
+          ),
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -367,7 +313,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
             child: Container(
               width: MediaQuery.of(context).size.width,
               height: MediaQuery.of(context).size.height,
-              color: Color(0xff121212),
+              // color: Color(0xff121212),
+              color: Colors.black,
               child: Column(
                 children: [
                   Expanded(
@@ -375,18 +322,26 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                       alignment: Alignment.topCenter,
                       children: [
                         Positioned(
-                          top: 100,
+                          top: 115,
                           child: YoutubeValueBuilder(
                             controller: _controller,
                             builder: (context, value) {
-                              _checkAndRestart(value);
+                              // _checkAndRestart(value);
+                              if (value.playerState == PlayerState.ended) {
+                                _controller.seekTo(seconds: 0);
+                                _controller.playVideo();
+                              }
                               return IgnorePointer(
                                 child: FittedBox(
                                   fit: BoxFit.cover,
-                                  child: SizedBox(
+                                  child: Container(
                                     // 원래 영상의 비율을 유지하는 크기 지정 (9:16)
-                                    width: MediaQuery.of(context).size.width * 0.8,
-                                    height: (MediaQuery.of(context).size.width * 0.8) * (16 / 9),
+                                    width: MediaQuery.of(context).size.width * 0.89,
+                                    height: (MediaQuery.of(context).size.width * 0.89) * (16 / 9),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    clipBehavior: Clip.hardEdge,
                                     child: YoutubePlayer(
                                       controller: _controller,
                                       backgroundColor: Colors.black,
@@ -401,23 +356,23 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ),
 
                         ///위아래 위젯들 가시성을 위한 그림자
-                        IgnorePointer(
-                          child: Container(
-                            // color: Colors.black.withOpacity(0.2),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.black.withValues(alpha: 0.5),
-                                  Colors.transparent,
-                                  Colors.transparent,
-                                  Colors.black.withValues(alpha: 0.5),
-                                ],
-                              ),
-                            ), // 어두운 투명 레이어
-                          ),
-                        ),
+                        // IgnorePointer(
+                        //   child: Container(
+                        //     // color: Colors.black.withOpacity(0.2),
+                        //     decoration: BoxDecoration(
+                        //       gradient: LinearGradient(
+                        //         begin: Alignment.topCenter,
+                        //         end: Alignment.bottomCenter,
+                        //         colors: [
+                        //           Colors.black.withValues(alpha: 0.5),
+                        //           Colors.transparent,
+                        //           Colors.transparent,
+                        //           Colors.black.withValues(alpha: 0.5),
+                        //         ],
+                        //       ),
+                        //     ), // 어두운 투명 레이어
+                        //   ),
+                        // ),
 
                         ///정지/재개 아이콘
                         Center(
@@ -522,132 +477,172 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
             ),
           ),
 
+          ///뒤로가기 버튼
+          Positioned(
+            left: MediaQuery.of(context).size.width * 0.05,
+            child: SafeArea(
+              child: GestureDetector(
+                onTap: (){
+                  Navigator.pop(context);
+                },
+                child: Container(
+                  padding: EdgeInsets.all(5),
+                  color: Colors.transparent,
+                  child: Icon(
+                    CupertinoIcons.back,
+                    color: shortPageWhite,
+                    size: 32,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
           ///우측 버튼 위젯
           Positioned(
-            right: MediaQuery.of(context).size.width * 0.03,
-            bottom: MediaQuery.of(context).size.height * 0.02,
-            child: Column(
-              // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ItemButton(
-                  icon:
-                      _isBookmarked
-                          ? CupertinoIcons.bookmark_fill
-                          : CupertinoIcons.bookmark,
-                  value: _bookmarkCount.toString(),
-                  action:
-                      () => saveBookmarkInfo(
-                        Provider.of<UserDataProvider>(
-                          context,
-                          listen: false,
-                        ).currentUserUID,
-                      ),
-                ),
-                // ItemButton(icon: CupertinoIcons.bubble_right, value: '32'),
-                // ItemButton(icon: CupertinoIcons.paperplane, value: 'Share'),
-                // ItemButton(icon: Icons.travel_explore_outlined, value: 'Map'),
-              ],
+            right: MediaQuery.of(context).size.width * 0.05,
+            bottom: MediaQuery.of(context).size.height * 0.001,
+            child: SafeArea(
+              child: Column(
+                // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ItemButton(
+                    icon:
+                        _isBookmarked
+                            ? CupertinoIcons.bookmark_fill
+                            : CupertinoIcons.bookmark,
+                    value: _bookmarkCount.toString(),
+                    action:
+                        () => saveBookmarkInfo(
+                          Provider.of<UserDataProvider>(
+                            context,
+                            listen: false,
+                          ).currentUserUID,
+                        ),
+                  ),
+                  // ItemButton(icon: CupertinoIcons.bubble_right, value: '32'),
+                  // ItemButton(icon: CupertinoIcons.paperplane, value: 'Share'),
+                  // ItemButton(icon: Icons.travel_explore_outlined, value: 'Map'),
+                ],
+              ),
             ),
           ),
 
           ///하단 정보 위젯
           Positioned(
-            left: MediaQuery.of(context).size.width * 0.015,
-            bottom: MediaQuery.of(context).size.height * 0.015,
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.82,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ///사진 + 이름 + More
-                  Row(
-                    children: [
-                      ///사진 or 카테고리 아이콘
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: shortPageWhite,
-                        child: Icon(
-                          restaurantCategory,
-                          color: Colors.black,
-                          size: 30,
-                        ),
-                      ),
-                      SizedBox(width: 10),
-
-                      ///이름
-                      Flexible(
-                        child: Text(
-                          widget.storeName,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: shortPageWhite,
+            left: MediaQuery.of(context).size.width * 0.05,
+            bottom: MediaQuery.of(context).size.height * 0.001,
+            child: SafeArea(
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.82,
+                color: Colors.transparent,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ///사진 + 이름 + More
+                    Row(
+                      children: [
+                        ///사진 or 카테고리 아이콘
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: shortPageWhite,
+                          child: Icon(
+                            restaurantCategory,
+                            color: Colors.black,
+                            size: 30,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      SizedBox(width: 10),
+                        SizedBox(width: 10),
 
-                      ///More 버튼
-                      GestureDetector(
-                        onTap: () {
-                          showInfoModal(context);
-                        },
-                        child: Container(
-                          width: 70,
-                          height: 30,
-                          padding: EdgeInsets.only(bottom: 3),
-                          child: Center(
-                            child: Text(
-                              'More',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                        ///이름
+                        Flexible(
+                          child: Text(
+                            widget.storeName,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: shortPageWhite,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        SizedBox(width: 10),
+
+                        ///More 버튼
+                        GestureDetector(
+                          onTap: () {
+                            showInfoModal(context);
+                          },
+                          child: Container(
+                            width: 70,
+                            height: 30,
+                            padding: EdgeInsets.only(bottom: 3),
+                            child: Center(
+                              child: Text(
+                                'More',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: shortPageWhite,
+                                ),
+                              ),
+                            ),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(3),
+                              border: Border.all(
+                                width: 1.2,
                                 color: shortPageWhite,
                               ),
                             ),
                           ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(3),
-                            border: Border.all(
-                              width: 1.2,
-                              color: shortPageWhite,
-                            ),
-                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 5),
+                      ],
+                    ),
+                    SizedBox(height: 5),
 
-                  ///캡션
-                  GestureDetector(
-                    onTap:
-                        () => setState(() {
-                          _isExpanded = !_isExpanded;
-                        }),
-                    child: AnimatedContainer(
-                      padding: EdgeInsets.only(top: _isExpanded ? 5 : 0),
-                      constraints: BoxConstraints(
-                        maxHeight:
+                    ///캡션
+                    GestureDetector(
+                      onTap:
+                          () => setState(() {
+                            _isExpanded = !_isExpanded;
+                          }),
+                      child: AnimatedContainer(
+                        color: Colors.transparent,
+                        padding: EdgeInsets.only(top: _isExpanded ? 5 : 0),
+                        constraints: BoxConstraints(
+                          maxHeight:
+                              _isExpanded
+                                  ? MediaQuery.of(context).size.height *
+                                      (320 / 812)
+                                  : 25,
+                          minHeight:
+                              _isExpanded
+                                  ? MediaQuery.of(context).size.height *
+                                      (100 / 812)
+                                  : 25,
+                        ),
+                        duration: const Duration(milliseconds: 200),
+                        child:
                             _isExpanded
-                                ? MediaQuery.of(context).size.height *
-                                    (320 / 812)
-                                : 25,
-                        minHeight:
-                            _isExpanded
-                                ? MediaQuery.of(context).size.height *
-                                    (100 / 812)
-                                : 25,
-                      ),
-                      duration: const Duration(milliseconds: 200),
-                      child:
-                          _isExpanded
-                              ? SingleChildScrollView(
-                                child: Container(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.8,
+                                ? SingleChildScrollView(
+                                  child: Container(
+                                    width:
+                                        MediaQuery.of(context).size.width * 0.8,
+                                    color: Colors.transparent,
+                                    child: Text(
+                                      widget.storeCaption,
+                                      style: TextStyle(
+                                        fontSize:
+                                            MediaQuery.of(context).size.width *
+                                            0.04,
+                                        color: shortPageWhite,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                : Container(
+                                  width: MediaQuery.of(context).size.width * 0.8,
                                   color: Colors.transparent,
                                   child: Text(
                                     widget.storeCaption,
@@ -657,135 +652,122 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                           0.04,
                                       color: shortPageWhite,
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                              )
-                              : Container(
-                                width: MediaQuery.of(context).size.width * 0.8,
-                                color: Colors.transparent,
-                                child: Text(
-                                  widget.storeCaption,
-                                  style: TextStyle(
-                                    fontSize:
-                                        MediaQuery.of(context).size.width *
-                                        0.04,
-                                    color: shortPageWhite,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 5),
+                    SizedBox(height: 5),
 
-                  ///운영시간 + 별점 + 가격
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      ///운영시간
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          vertical: 4,
-                          horizontal: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.3),
-                            width: 0.5,
+                    ///운영시간 + 별점 + 가격
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        ///운영시간
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            vertical: 4,
+                            horizontal: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              width: 0.5,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.schedule,
+                                size: 18,
+                                color: shortPageWhite,
+                              ),
+                              SizedBox(width: 5),
+                              Text(
+                                '${widget.openTime} ~ ${widget.closeTime}',
+                                style: TextStyle(
+                                  color: shortPageWhite,
+                                  fontSize:
+                                      MediaQuery.of(context).size.width * 0.032,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.schedule,
-                              size: 18,
-                              color: shortPageWhite,
-                            ),
-                            SizedBox(width: 5),
-                            Text(
-                              '${widget.openTime} ~ ${widget.closeTime}',
-                              style: TextStyle(
-                                color: shortPageWhite,
-                                fontSize:
-                                    MediaQuery.of(context).size.width * 0.032,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(width: MediaQuery.of(context).size.width * 0.02),
+                        SizedBox(width: MediaQuery.of(context).size.width * 0.02),
 
-                      ///별점
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          vertical: 4,
-                          horizontal: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.3),
-                            width: 0.5,
+                        ///별점
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            vertical: 4,
+                            horizontal: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              width: 0.5,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.star, size: 18, color: shortPageWhite),
+                              SizedBox(width: 5),
+                              Text(
+                                widget.rating.toString(),
+                                style: TextStyle(
+                                  color: shortPageWhite,
+                                  fontSize:
+                                      MediaQuery.of(context).size.width * 0.032,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.star, size: 18, color: shortPageWhite),
-                            SizedBox(width: 5),
-                            Text(
-                              widget.rating.toString(),
-                              style: TextStyle(
-                                color: shortPageWhite,
-                                fontSize:
-                                    MediaQuery.of(context).size.width * 0.032,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(width: MediaQuery.of(context).size.width * 0.02),
+                        SizedBox(width: MediaQuery.of(context).size.width * 0.02),
 
-                      ///가격
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          vertical: 2,
-                          horizontal: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.3),
-                            width: 0.5,
+                        ///가격
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            vertical: 2,
+                            horizontal: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              width: 0.5,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.payments,
+                                size: 18,
+                                color: shortPageWhite,
+                              ),
+                              SizedBox(width: 5),
+                              Text(
+                                '\$${widget.averagePrice}~',
+                                style: TextStyle(
+                                  color: shortPageWhite,
+                                  fontSize:
+                                      MediaQuery.of(context).size.width * 0.032,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.payments,
-                              size: 18,
-                              color: shortPageWhite,
-                            ),
-                            SizedBox(width: 5),
-                            Text(
-                              '\$${widget.averagePrice}~',
-                              style: TextStyle(
-                                color: shortPageWhite,
-                                fontSize:
-                                    MediaQuery.of(context).size.width * 0.032,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1466,17 +1448,19 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     String? value,
     VoidCallback? action,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-      child: Column(
-        children: [
-          GestureDetector(
-            onTap: () {
-              if (action != null) {
-                action();
-              }
-            },
-            child: Container(
+    return GestureDetector(
+      onTap: () {
+        if (action != null) {
+          action();
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14,),
+        margin: EdgeInsets.only(right: 5),
+        color: Colors.transparent,
+        child: Column(
+          children: [
+            Container(
               decoration: BoxDecoration(
                 // 배경을 투명하게 두되, 가운데부터 투명해지는 RadialGradient 적용
                 gradient: RadialGradient(
@@ -1490,31 +1474,31 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
               ),
               child: Icon(icon, size: 40, color: shortPageWhite),
             ),
-          ),
-          const SizedBox(height: 5),
-          if (value != null)
-            Container(
-              decoration: BoxDecoration(
-                // 배경을 투명하게 두되, 가운데부터 투명해지는 RadialGradient 적용
-                gradient: RadialGradient(
-                  colors: [
-                    Colors.black.withValues(alpha: 0.3), // 중앙이 좀 더 어두운 영역
-                    Colors.transparent, // 가장자리로 갈수록 투명
-                  ],
-                  center: Alignment.center,
-                  radius: 0.6, // 0 ~ 1 사이에서 조절 (값을 높이면 더 넓게 퍼짐)
+            const SizedBox(height: 5),
+            if (value != null)
+              Container(
+                decoration: BoxDecoration(
+                  // 배경을 투명하게 두되, 가운데부터 투명해지는 RadialGradient 적용
+                  gradient: RadialGradient(
+                    colors: [
+                      Colors.black.withValues(alpha: 0.3), // 중앙이 좀 더 어두운 영역
+                      Colors.transparent, // 가장자리로 갈수록 투명
+                    ],
+                    center: Alignment.center,
+                    radius: 0.6, // 0 ~ 1 사이에서 조절 (값을 높이면 더 넓게 퍼짐)
+                  ),
+                ),
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    color: shortPageWhite,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-              child: Text(
-                value,
-                style: TextStyle(
-                  color: shortPageWhite,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
