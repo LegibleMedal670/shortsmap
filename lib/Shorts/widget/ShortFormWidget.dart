@@ -498,13 +498,13 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
             ),
           ),
 
-          ///More 버튼
+          ///Options 버튼
           Positioned(
             right: MediaQuery.of(context).size.width * 0.05,
             child: SafeArea(
               child: GestureDetector(
                 onTap: (){
-                  showInfoModal(context);
+                  showOptionsModal(context);
                 },
                 child: Container(
                   padding: EdgeInsets.all(5),
