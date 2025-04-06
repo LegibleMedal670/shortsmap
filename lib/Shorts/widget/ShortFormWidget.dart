@@ -498,6 +498,27 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
             ),
           ),
 
+          ///More 버튼
+          Positioned(
+            right: MediaQuery.of(context).size.width * 0.05,
+            child: SafeArea(
+              child: GestureDetector(
+                onTap: (){
+                  showInfoModal(context);
+                },
+                child: Container(
+                  padding: EdgeInsets.all(5),
+                  color: Colors.transparent,
+                  child: Icon(
+                    Icons.more_vert,
+                    color: shortPageWhite,
+                    size: 32,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
           ///우측 버튼 위젯
           Positioned(
             right: MediaQuery.of(context).size.width * 0.05,
