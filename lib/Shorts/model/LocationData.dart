@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class LocationData {
   final int locationId;
   final String name;
@@ -40,18 +42,22 @@ class LocationData {
   // JSON 데이터를 LocationData 객체로 변환하는 팩토리 생성자
   factory LocationData.fromJson(Map<String, dynamic> json) {
     Map<String, double>? coords;
-    // location 컬럼이 "POINT(lon lat)" 형식의 문자열로 들어온다고 가정
+
     if (json['location'] != null && json['location'] is String) {
       final locationStr = json['location'] as String;
-      final regex = RegExp(r'POINT\(([-\d\.]+) ([-\d\.]+)\)');
-      final match = regex.firstMatch(locationStr);
-      if (match != null) {
-        final lon = double.tryParse(match.group(1)!);
-        final lat = double.tryParse(match.group(2)!);
-        if (lon != null && lat != null) {
-          coords = {'lat': lat, 'lon': lon};
+
+        final geoJson = jsonDecode(locationStr);
+        if (geoJson is Map && geoJson.containsKey('coordinates')) {
+          final coordinatesList = geoJson['coordinates'];
+          if (coordinatesList is List && coordinatesList.length >= 2) {
+            final lon = double.tryParse(coordinatesList[0].toString());
+            final lat = double.tryParse(coordinatesList[1].toString());
+            if (lon != null && lat != null) {
+              coords = {'lat': lat, 'lon': lon};
+            }
+          }
         }
-      }
+
     }
 
     return LocationData(

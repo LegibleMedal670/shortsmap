@@ -24,15 +24,10 @@ Widget BottomNavBar(BuildContext context, String page) {
           onTap: () async {
             HapticFeedback.lightImpact();
             if (page != 'shorts') {
-              Navigator.pushReplacement(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation1, animation2) =>
-                  const ShortsPage(),
-                  transitionDuration: Duration.zero,
-                  reverseTransitionDuration: Duration.zero,
-                ),
-              );
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => ShortsPage()));
             }
           },
           child: Column(

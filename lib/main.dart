@@ -17,6 +17,7 @@ Future<void> main() async {
   /// Supabase 초기화 후 현재 로그인 상태 확인
   final currentUser = Supabase.instance.client.auth.currentUser;
   final userDataProvider = UserDataProvider();
+  await userDataProvider.setCurrentLocation(null, null);
   if (currentUser != null) {
     // 로그인 상태이면 UID를 provider에 설정
     userDataProvider.login(currentUser.id);

@@ -1,13 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
 import 'package:shortsmap/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:video_player/video_player.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 class ShortFormWidget extends StatefulWidget {
   final String storeName;
@@ -22,6 +23,7 @@ class ShortFormWidget extends StatefulWidget {
   final String videoId;
   final int bookmarkCount;
   final bool isEmpty;
+  final Map<String, double> coordinates;
 
   const ShortFormWidget({
     required this.storeName,
@@ -36,6 +38,7 @@ class ShortFormWidget extends StatefulWidget {
     required this.videoId,
     required this.bookmarkCount,
     required this.isEmpty,
+    required this.coordinates,
     super.key,
   });
 
@@ -44,7 +47,7 @@ class ShortFormWidget extends StatefulWidget {
 }
 
 class _ShortFormWidgetState extends State<ShortFormWidget> {
-  late VideoPlayerController _playerController;
+  late YoutubePlayerController _controller;
   IconData _currentIcon = Icons.pause;
   double _pauseIconOpacity = 0.0;
   IconData restaurantCategory = Icons.restaurant_outlined;
@@ -57,7 +60,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
   final List<String> regionOptions = [
     'All',
-    'Around Me',
+    'Near Me',
     '서울',
     '부산',
     '세글자',
@@ -94,58 +97,49 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
   @override
   void initState() {
     super.initState();
-    if (!widget.isEmpty){
+    if (!widget.isEmpty) {
       getRestaurantCategory(widget.category);
       getBookmarkInfoFromCache();
 
       _bookmarkCount = widget.bookmarkCount;
 
-      _playerController = VideoPlayerController.networkUrl(
-        Uri.parse(widget.videoURL),
-      )..initialize().then((value) {
-          _playerController.setLooping(true);
+      _controller = YoutubePlayerController(
+        params: YoutubePlayerParams(
+          mute: false,
+          showControls: false,
+          showFullscreenButton: false,
+          loop: false,
+          showVideoAnnotations: false,
+          pointerEvents: PointerEvents.none,
+        ),
+      );
 
-          // Future.delayed(const Duration(milliseconds: 500), () {
-          //   _playerController.play();
-          // });
-
-          ///다음 영상 넘어갈 때 사운드가 겹쳐서 넣어준 딜레이
-          ///추후에 중간 이상 넘어가면 기존 영상을 멈추고 다음 영상을 재생하는 방식 적용해야함
-          ///음...
-          // 0.5초 후 비디오 재생
-          // if (widget.index == 0) {
-          //   Future.delayed(const Duration(milliseconds: 500), () {
-          //     _playerController.play();
-          //   });
-          // } else {
-          //   Future.delayed(const Duration(milliseconds: 700), () {
-          //     _playerController.play();
-          //   });
-          // }
-        });
+      _controller.loadVideoById(videoId: 'Rg_yX_EKmlI');
     }
   }
 
   @override
   void dispose() {
-    if (!widget.isEmpty){
-      _playerController.dispose();
+    if (!widget.isEmpty) {
+      _controller.close();
     }
     super.dispose();
   }
 
   ///stop + resume
   void _toggleVideo() {
-    final wasPlaying = _playerController.value.isPlaying;
+    final wasPlaying = _controller.value.playerState == PlayerState.playing;
     setState(() {
       _currentIcon = wasPlaying ? Icons.pause : Icons.play_arrow;
       _pauseIconOpacity = 1.0;
     });
 
     if (wasPlaying) {
-      _playerController.pause();
+      // _playerController.pause();
+      _controller.pauseVideo();
     } else {
-      _playerController.play();
+      _controller.playVideo();
+      // _playerController.play();
     }
 
     // 애니메이션 처리
@@ -219,70 +213,90 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
   @override
   Widget build(BuildContext context) {
-
     /// TODO: 빈 위젯 등 위젯들 분리
     if (widget.isEmpty) {
-     return Stack(
-       children: [
-         ///상단 필터 위젯
-         SafeArea(
-           child: GestureDetector(
-             onTap: () {
-               showFilterModel(context);
-             },
-             child: Row(
-               mainAxisAlignment: MainAxisAlignment.center,
-               children: [
-                 Icon(
-                   Icons.travel_explore_outlined,
-                   color: shortPageWhite,
-                   size: 26,
-                 ),
-                 Consumer<FilterProvider>(
-                   builder: (providerContext, filterProvider, child) {
-                     return Container(
-                       padding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                       color: Colors.transparent,
-                       child: Text(
-                         '${filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory ?? 'All'} ',
-                         style: TextStyle(
-                           fontSize: 21,
-                           fontWeight: FontWeight.w600,
-                           color: shortPageWhite,
-                         ),
-                       ),
-                     );
-                   },
-                 ),
-               ],
-             ),
-           ),
-         ),
-         Center(
-           child: Column(
-             mainAxisAlignment: MainAxisAlignment.center,
-             children: [
-               Text(
-                 'Explored All Videos',
-                 style: TextStyle(
-                   color: Colors.white,
-                   fontWeight: FontWeight.bold,
-                   fontSize: 20,
-                 ),
-               ),
-               SizedBox(height: 30),
-               Text(
-                 'Try Another Filter Please',
-                 style: TextStyle(
-                   color: Colors.white,
-                   fontSize: 18,
-                 ),
-               ),
-             ],
-           ),
-         ),
-       ],
-     );
+      return Stack(
+        children: [
+          ///상단 필터 위젯
+          SafeArea(
+            child: GestureDetector(
+              onTap: () {
+                showFilterModal(context);
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.travel_explore_outlined,
+                    color: shortPageWhite,
+                    size: 26,
+                  ),
+                  Consumer<FilterProvider>(
+                    builder: (providerContext, filterProvider, child) {
+                      return Container(
+                        padding: EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 8,
+                        ),
+                        color: Colors.transparent,
+                        child: Text(
+                          '${filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory ?? 'All'} ',
+                          style: TextStyle(
+                            fontSize: 21,
+                            fontWeight: FontWeight.w600,
+                            color: shortPageWhite,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          ///뒤로가기 버튼
+          Positioned(
+            left: MediaQuery.of(context).size.width * 0.05,
+            child: SafeArea(
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.pop(context);
+                },
+                child: Container(
+                  padding: EdgeInsets.all(5),
+                  color: Colors.transparent,
+                  child: Icon(
+                    CupertinoIcons.back,
+                    color: shortPageWhite,
+                    size: 32,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Explored All Videos',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                ),
+                SizedBox(height: 30),
+                Text(
+                  'Try Another Filter Please',
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
     } else {
       return Stack(
         children: [
@@ -291,8 +305,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
             onTap: () {
               _toggleVideo();
             },
-            onLongPress: (){
-              showInfoModal(context);
+            onLongPress: () {
+              showOptionsModal(context);
             },
             // onDoubleTap: () {
             //   print('doubletap');
@@ -300,67 +314,107 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
             child: Container(
               width: MediaQuery.of(context).size.width,
               height: MediaQuery.of(context).size.height,
+              // color: Color(0xff121212),
               color: Colors.black,
               child: Column(
                 children: [
                   Expanded(
                     child: Stack(
-                      alignment: Alignment.center,
+                      alignment: Alignment.topCenter,
                       children: [
-                        VideoPlayer(_playerController),
-
-                        ///위아래 위젯들 가시성을 위한 그림자
-                        IgnorePointer(
-                          child: Container(
-                            // color: Colors.black.withOpacity(0.2),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.black.withValues(alpha: 0.5),
-                                  Colors.transparent,
-                                  Colors.transparent,
-                                  Colors.black.withValues(alpha: 0.5),
-                                ],
-                              ),
-                            ), // 어두운 투명 레이어
+                        Positioned(
+                          top: 115,
+                          child: YoutubeValueBuilder(
+                            controller: _controller,
+                            builder: (context, value) {
+                              // _checkAndRestart(value);
+                              if (value.playerState == PlayerState.ended) {
+                                _controller.seekTo(seconds: 0);
+                                _controller.playVideo();
+                              }
+                              return IgnorePointer(
+                                child: FittedBox(
+                                  fit: BoxFit.cover,
+                                  child: Container(
+                                    // 원래 영상의 비율을 유지하는 크기 지정 (9:16)
+                                    width:
+                                        MediaQuery.of(context).size.width *
+                                        0.89,
+                                    height:
+                                        (MediaQuery.of(context).size.width *
+                                            0.89) *
+                                        (16 / 9),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    clipBehavior: Clip.hardEdge,
+                                    child: YoutubePlayer(
+                                      controller: _controller,
+                                      backgroundColor: Colors.black,
+                                      // aspectRatio는 이제 FittedBox로 크기를 조절하므로 제거하거나 동일하게 유지할 수 있음.
+                                      // aspectRatio: 9 / 16,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
 
+                        ///위아래 위젯들 가시성을 위한 그림자
+                        // IgnorePointer(
+                        //   child: Container(
+                        //     // color: Colors.black.withOpacity(0.2),
+                        //     decoration: BoxDecoration(
+                        //       gradient: LinearGradient(
+                        //         begin: Alignment.topCenter,
+                        //         end: Alignment.bottomCenter,
+                        //         colors: [
+                        //           Colors.black.withValues(alpha: 0.5),
+                        //           Colors.transparent,
+                        //           Colors.transparent,
+                        //           Colors.black.withValues(alpha: 0.5),
+                        //         ],
+                        //       ),
+                        //     ), // 어두운 투명 레이어
+                        //   ),
+                        // ),
+
                         ///정지/재개 아이콘
-                        AnimatedOpacity(
-                          opacity: _pauseIconOpacity,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOutCirc,
-                          child: Container(
-                            padding: const EdgeInsets.all(15),
-                            decoration: const BoxDecoration(
-                              color: Colors.black54,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              _currentIcon,
-                              color: shortPageWhite,
-                              size: 50.0,
+                        Center(
+                          child: AnimatedOpacity(
+                            opacity: _pauseIconOpacity,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOutCirc,
+                            child: Container(
+                              padding: const EdgeInsets.all(15),
+                              decoration: const BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                _currentIcon,
+                                color: shortPageWhite,
+                                size: 50.0,
+                              ),
                             ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  VideoProgressIndicator(
-                    _playerController,
-                    padding: EdgeInsets.zero,
-                    allowScrubbing: true, // 스크럽 허용
-                    colors: const VideoProgressColors(
-                      playedColor: Color.fromRGBO(220, 20, 60, 1),
-                      // 재생된 부분 색상
-                      bufferedColor: Colors.grey,
-                      // 버퍼링된 부분 색상
-                      backgroundColor: Colors.grey,
-                    ),
-                  ),
+                  // VideoProgressIndicator(
+                  //   _playerController,
+                  //   padding: EdgeInsets.zero,
+                  //   allowScrubbing: true, // 스크럽 허용
+                  //   colors: const VideoProgressColors(
+                  //     playedColor: Color.fromRGBO(220, 20, 60, 1),
+                  //     // 재생된 부분 색상
+                  //     bufferedColor: Colors.grey,
+                  //     // 버퍼링된 부분 색상
+                  //     backgroundColor: Colors.grey,
+                  //   ),
+                  // ),
                 ],
               ),
             ),
@@ -395,7 +449,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
           SafeArea(
             child: GestureDetector(
               onTap: () {
-                showFilterModel(context);
+                showFilterModal(context);
               },
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -408,10 +462,13 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                   Consumer<FilterProvider>(
                     builder: (providerContext, filterProvider, child) {
                       return Container(
-                        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                        padding: EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 8,
+                        ),
                         color: Colors.transparent,
                         child: Text(
-                          '${filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory ?? 'All'} ',
+                          '${filterProvider.orderNear == true ? 'Near Me' : filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory ?? 'All'} ',
                           style: TextStyle(
                             fontSize: 21,
                             fontWeight: FontWeight.w600,
@@ -426,232 +483,321 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
             ),
           ),
 
+          ///뒤로가기 버튼
+          Positioned(
+            left: MediaQuery.of(context).size.width * 0.05,
+            child: SafeArea(
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.pop(context);
+                },
+                child: Container(
+                  padding: EdgeInsets.all(5),
+                  color: Colors.transparent,
+                  child: Icon(
+                    CupertinoIcons.back,
+                    color: shortPageWhite,
+                    size: 32,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          ///Options 버튼
+          Positioned(
+            right: MediaQuery.of(context).size.width * 0.05,
+            child: SafeArea(
+              child: GestureDetector(
+                onTap: () {
+                  showOptionsModal(context);
+                },
+                child: Container(
+                  padding: EdgeInsets.all(5),
+                  color: Colors.transparent,
+                  child: Icon(Icons.more_vert, color: shortPageWhite, size: 32),
+                ),
+              ),
+            ),
+          ),
+
           ///우측 버튼 위젯
           Positioned(
-            right: MediaQuery.of(context).size.width * 0.03,
-            bottom: MediaQuery.of(context).size.height * 0.02,
-            child: Consumer<UserDataProvider>(
-              builder: (userDataProviderContext, userDataProvider, child) {
-                return Column(
-                  // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ItemButton(
-                      icon:
-                      _isBookmarked
-                          ? CupertinoIcons.bookmark_fill
-                          : CupertinoIcons.bookmark,
-                      value: _bookmarkCount.toString(),
-                      action:
-                          () => saveBookmarkInfo(userDataProvider.currentUserUID),
-                    ),
-                    ItemButton(icon: CupertinoIcons.bubble_right, value: '32'),
-                    ItemButton(icon: CupertinoIcons.paperplane, value: 'Share'),
-                    ItemButton(icon: Icons.travel_explore_outlined, value: 'Map'),
-                  ],
-                );
-              },
+            right: MediaQuery.of(context).size.width * 0.05,
+            bottom: MediaQuery.of(context).size.height * 0.001,
+            child: SafeArea(
+              child: Column(
+                // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ItemButton(
+                    icon:
+                        _isBookmarked
+                            ? CupertinoIcons.bookmark_fill
+                            : CupertinoIcons.bookmark,
+                    value: _bookmarkCount.toString(),
+                    action:
+                        () => saveBookmarkInfo(
+                          Provider.of<UserDataProvider>(
+                            context,
+                            listen: false,
+                          ).currentUserUID,
+                        ),
+                  ),
+                  // ItemButton(icon: CupertinoIcons.bubble_right, value: '32'),
+                  // ItemButton(icon: CupertinoIcons.paperplane, value: 'Share'),
+                  // ItemButton(icon: Icons.travel_explore_outlined, value: 'Map'),
+                ],
+              ),
             ),
           ),
 
           ///하단 정보 위젯
           Positioned(
-            left: MediaQuery.of(context).size.width * 0.015,
-            bottom: MediaQuery.of(context).size.height * 0.015,
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.82,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ///사진 + 이름 + More
-                  Row(
-                    children: [
-                      ///사진 or 카테고리 아이콘
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: shortPageWhite,
-                        child: Icon(
-                          restaurantCategory,
-                          color: Colors.black,
-                          size: 30,
-                        ),
-                      ),
-                      SizedBox(width: 10),
-
-                      ///이름
-                      Flexible(
-                        child: Text(
-                          widget.storeName,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: shortPageWhite,
+            left: MediaQuery.of(context).size.width * 0.05,
+            bottom: MediaQuery.of(context).size.height * 0.001,
+            child: SafeArea(
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.82,
+                color: Colors.transparent,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ///사진 + 이름 + More
+                    Row(
+                      children: [
+                        ///사진 or 카테고리 아이콘
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: shortPageWhite,
+                          child: Icon(
+                            restaurantCategory,
+                            color: Colors.black,
+                            size: 30,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      SizedBox(width: 10),
+                        SizedBox(width: 10),
 
-                      ///More 버튼
-                      GestureDetector(
-                        onTap: () {
-                          showInfoModal(context);
-                        },
-                        child: Container(
-                          width: 70,
-                          height: 30,
-                          padding: EdgeInsets.only(bottom: 3),
-                          child: Center(
-                            child: Text(
-                              'More',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                        ///이름
+                        Flexible(
+                          child: Text(
+                            widget.storeName,
+                            // '대왕암공원',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: shortPageWhite,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        SizedBox(width: 10),
+
+                        ///More 버튼
+                        GestureDetector(
+                          onTap: () {
+                            showInfoModal(context);
+                          },
+                          child: Container(
+                            width: 70,
+                            height: 30,
+                            padding: EdgeInsets.only(bottom: 3),
+                            child: Center(
+                              child: Text(
+                                'More',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: shortPageWhite,
+                                ),
+                              ),
+                            ),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(3),
+                              border: Border.all(
+                                width: 1.2,
                                 color: shortPageWhite,
                               ),
                             ),
                           ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(3),
-                            border: Border.all(width: 1.2, color: shortPageWhite),
-                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 5),
+                      ],
+                    ),
+                    SizedBox(height: 5),
 
-                  ///캡션
-                  GestureDetector(
-                    onTap:
-                        () => setState(() {
-                      _isExpanded = !_isExpanded;
-                    }),
-                    child: AnimatedContainer(
-                      padding: EdgeInsets.only(top: _isExpanded ? 5 : 0),
-                      constraints: BoxConstraints(
-                        maxHeight:
-                        _isExpanded
-                            ? MediaQuery.of(context).size.height * (320 / 812)
-                            : 25,
-                        minHeight:
-                        _isExpanded
-                            ? MediaQuery.of(context).size.height * (100 / 812)
-                            : 25,
-                      ),
-                      duration: const Duration(milliseconds: 200),
-                      child:
-                      _isExpanded
-                          ? SingleChildScrollView(
-                        child: Container(
-                          width: MediaQuery.of(context).size.width * 0.8,
-                          color: Colors.transparent,
-                          child: Text(
-                            widget.storeCaption,
-                            style: TextStyle(
-                              fontSize:
-                              MediaQuery.of(context).size.width *
-                                  0.04,
-                              color: shortPageWhite,
-                            ),
-                          ),
-                        ),
-                      )
-                          : Container(
-                        width: MediaQuery.of(context).size.width * 0.8,
+                    ///캡션
+                    GestureDetector(
+                      onTap:
+                          () => setState(() {
+                            _isExpanded = !_isExpanded;
+                          }),
+                      child: AnimatedContainer(
                         color: Colors.transparent,
-                        child: Text(
-                          widget.storeCaption,
-                          style: TextStyle(
-                            fontSize:
-                            MediaQuery.of(context).size.width * 0.04,
-                            color: shortPageWhite,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        padding: EdgeInsets.only(top: _isExpanded ? 5 : 0),
+                        constraints: BoxConstraints(
+                          maxHeight:
+                              _isExpanded
+                                  ? MediaQuery.of(context).size.height *
+                                      (320 / 812)
+                                  : 25,
+                          minHeight:
+                              _isExpanded
+                                  ? MediaQuery.of(context).size.height *
+                                      (100 / 812)
+                                  : 25,
                         ),
+                        duration: const Duration(milliseconds: 200),
+                        child:
+                            _isExpanded
+                                ? SingleChildScrollView(
+                                  child: Container(
+                                    width:
+                                        MediaQuery.of(context).size.width * 0.8,
+                                    color: Colors.transparent,
+                                    child: Text(
+                                      widget.storeCaption,
+                                      style: TextStyle(
+                                        fontSize:
+                                            MediaQuery.of(context).size.width *
+                                            0.04,
+                                        color: shortPageWhite,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                : Container(
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.8,
+                                  color: Colors.transparent,
+                                  child: Text(
+                                    widget.storeCaption,
+                                    // '대왕암 공원은 우리나라에서 울주군 간절곶과 함께 해가 가장 빨리 뜨는 대왕암이 있는 곳이다. 우리나라 동남단에서 동해 쪽으로 가장 뾰족하게 나온 부분의 끝 지점에 해당하는 대왕암공원은 동해의 길잡이를 하는 울기항로표지소로도 유명하다. ',
+                                    style: TextStyle(
+                                      fontSize:
+                                          MediaQuery.of(context).size.width *
+                                          0.04,
+                                      color: shortPageWhite,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
                       ),
                     ),
-                  ),
-                  SizedBox(height: 5),
+                    SizedBox(height: 5),
 
-                  ///운영시간 + 별점 + 가격
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      ///운영시간
-                      Container(
-                        padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                        decoration: BoxDecoration(
-                          color: Color.fromRGBO(243, 244, 246, 1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.schedule, size: 18, color: Colors.black),
-                            SizedBox(width: 5),
-                            Text(
-                              '${widget.openTime} ~ ${widget.closeTime}',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize:
-                                MediaQuery.of(context).size.width * 0.035,
-                              ),
+                    ///운영시간 + 별점 + 가격
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        ///운영시간
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            vertical: 4,
+                            horizontal: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              width: 0.5,
                             ),
-                          ],
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.schedule,
+                                size: 18,
+                                color: shortPageWhite,
+                              ),
+                              SizedBox(width: 5),
+                              Text(
+                                '${widget.openTime} ~ ${widget.closeTime}',
+                                style: TextStyle(
+                                  color: shortPageWhite,
+                                  fontSize:
+                                      MediaQuery.of(context).size.width * 0.032,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      SizedBox(width: MediaQuery.of(context).size.width * 0.02),
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.02,
+                        ),
 
-                      ///별점
-                      Container(
-                        padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                        decoration: BoxDecoration(
-                          color: Color.fromRGBO(243, 244, 246, 1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.star, size: 18, color: Colors.black),
-                            SizedBox(width: 5),
-                            Text(
-                              widget.rating.toString(),
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize:
-                                MediaQuery.of(context).size.width * 0.035,
-                              ),
+                        ///별점
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            vertical: 4,
+                            horizontal: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              width: 0.5,
                             ),
-                          ],
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.star, size: 18, color: shortPageWhite),
+                              SizedBox(width: 5),
+                              Text(
+                                widget.rating.toString(),
+                                style: TextStyle(
+                                  color: shortPageWhite,
+                                  fontSize:
+                                      MediaQuery.of(context).size.width * 0.032,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      SizedBox(width: MediaQuery.of(context).size.width * 0.02),
+                        SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.02,
+                        ),
 
-                      ///가격
-                      Container(
-                        padding: EdgeInsets.symmetric(vertical: 2, horizontal: 8),
-                        decoration: BoxDecoration(
-                          color: Color.fromRGBO(243, 244, 246, 1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.payments, size: 18, color: Colors.black),
-                            SizedBox(width: 5),
-                            Text(
-                              '\$${widget.averagePrice}~',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize:
-                                MediaQuery.of(context).size.width * 0.035,
-                              ),
+                        ///가격
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            vertical: 2,
+                            horizontal: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              width: 0.5,
                             ),
-                          ],
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.payments,
+                                size: 18,
+                                color: shortPageWhite,
+                              ),
+                              SizedBox(width: 5),
+                              Text(
+                                '\$${widget.averagePrice}~',
+                                style: TextStyle(
+                                  color: shortPageWhite,
+                                  fontSize:
+                                      MediaQuery.of(context).size.width * 0.032,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -661,6 +807,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
   }
 
   Future<void> saveBookmarkInfo(String? currentUserUid) async {
+    // 로그인 되어있는 경우
     if (currentUserUid != null) {
       // 눌렀을 때 진동
       HapticFeedback.lightImpact();
@@ -670,23 +817,29 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
       List<String> bookMarkList =
           preferences.getStringList('bookMarkList') ?? [];
 
+      // 북마크되지 않은 영상의 경우
       if (!bookMarkList.contains(widget.videoId)) {
         bookMarkList.add(widget.videoId);
 
+        // bookmarked를 True로 바꿔줘 색상을 채우고 현재 값에 +1 해줌
         setState(() {
           _isBookmarked = true;
           _bookmarkCount++;
         });
 
+        // 캐시 업데이트
         await preferences.setStringList('bookMarkList', bookMarkList);
 
         try {
+          // 서버에 저장
           await _supabase.from('bookmarks').insert({
             'user_id': currentUserUid,
             'location_id': widget.videoId,
             'category': widget.category,
             'bookmarked_at': DateTime.now().toIso8601String(),
           });
+
+          // 저장 되었음을 표시해주는 스낵바 TODO ( UI 조정 필요 )
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               backgroundColor: Colors.lightBlueAccent,
@@ -707,24 +860,29 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
             ),
           );
         } catch (e) {
-          // 예외가 발생하면 에러 메시지를 출력합니다.
+          // 예외가 발생하면 에러 메시지를 출력합니다. TODO 에러 처리 어떻게할지 고민
           print('Insert 에러: $e');
         }
       } else {
+        // 북마크된 영상의 경우 캐시에서 삭제
         bookMarkList.remove(widget.videoId);
 
+        // bookmarked를 false로 바꿔줘 색상을 비우고 현재 값에 -1 해줌
         setState(() {
           _isBookmarked = false;
           _bookmarkCount--;
         });
 
+        // 캐시 업데이트
         await preferences.setStringList('bookMarkList', bookMarkList);
 
         try {
+          // 서버에서 삭제
           await _supabase.from('bookmarks').delete().match({
             'user_id': currentUserUid,
             'location_id': widget.videoId,
           });
+          // 삭제 되었음을 알려주는 스낵바 TODO ( UI 조정 필요 )
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               backgroundColor: Colors.lightBlueAccent,
@@ -745,10 +903,12 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
             ),
           );
         } catch (e) {
+          // 에러 메세지 출력 TODO 에러 처리 어떻게할지 고민
           print('Delete 에러: $e');
         }
       }
     } else {
+      // 로그인 되어있지 않은 경우엔 로그인하라는 스낵바 띄워줌 TODO ( UI 조정 필요 )
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.lightBlueAccent,
@@ -774,10 +934,32 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     }
   }
 
-  void showLocationModal(BuildContext context) {
+  String calculateTimeRequired(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
+    double distanceInMeters = Geolocator.distanceBetween(
+      lat1,
+      lon1,
+      lat2,
+      lon2,
+    );
+
+    // 평균속도 30km/h (500미터/분)를 가정하여 소요 시간 계산
+    int travelTimeMinutes = (distanceInMeters / 500).round();
+
+    return travelTimeMinutes.toString();
+  }
+
+  ///동영상을 꾹 눌렀을 때 나오는 옵션들이 있는 ModalBottomSheet
+  void showOptionsModal(BuildContext context) {
     showModalBottomSheet(
+      backgroundColor: Colors.white,
       context: context,
       isScrollControlled: true,
+      enableDrag: true,
       showDragHandle: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
@@ -786,13 +968,136 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
         ),
       ),
       builder: (BuildContext context) {
-        return Container();
+        return DraggableScrollableSheet(
+          initialChildSize: 0.4,
+          minChildSize: 0.3999,
+          expand: false,
+          builder:
+              (context, optionScrollController) => SizedBox(
+                width: MediaQuery.of(context).size.width,
+                child: SingleChildScrollView(
+                  // physics: const ClampingScrollPhysics(),
+                  controller: optionScrollController,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: Column(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pop(context);
+                            saveBookmarkInfo(
+                              Provider.of<UserDataProvider>(
+                                context,
+                                listen: false,
+                              ).currentUserUID,
+                            );
+                          },
+                          child: Container(
+                            color: Colors.transparent,
+                            padding: EdgeInsets.only(top: 10, bottom: 20),
+                            child: Row(
+                              children: [
+                                Icon(CupertinoIcons.bookmark, size: 24),
+                                SizedBox(width: 20),
+                                Text(
+                                  'Bookmark',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          child: Container(
+                            color: Colors.transparent,
+                            padding: EdgeInsets.symmetric(vertical: 20),
+                            child: Row(
+                              children: [
+                                Icon(Icons.closed_caption, size: 24),
+                                SizedBox(width: 20),
+                                Text(
+                                  'Subtitle',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          child: Container(
+                            color: Colors.transparent,
+                            padding: EdgeInsets.symmetric(vertical: 20),
+                            child: Row(
+                              children: [
+                                Icon(Icons.block, size: 24),
+                                SizedBox(width: 20),
+                                Text(
+                                  'Not Interested',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          child: Container(
+                            color: Colors.transparent,
+                            padding: EdgeInsets.symmetric(vertical: 20),
+                            child: Row(
+                              children: [
+                                Icon(Icons.flag_outlined, size: 24),
+                                SizedBox(width: 20),
+                                Text(
+                                  'Report',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          child: Container(
+                            color: Colors.transparent,
+                            padding: EdgeInsets.symmetric(vertical: 20),
+                            child: Row(
+                              children: [
+                                Icon(CupertinoIcons.paperplane, size: 24),
+                                SizedBox(width: 20),
+                                Text(
+                                  'Share',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+        );
       },
     );
   }
 
   ///영상 필터 ModalBottomSheet
-  void showFilterModel(BuildContext context) {
+  void showFilterModal(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -977,14 +1282,20 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           child,
                         ) {
                           return GestureDetector(
-                            onTap: () {
-
-                              if (selectedRegion == 'Around Me') {
-                                filterProvider.setAroundVideoCategory(
+                            onTap: () async {
+                              if (selectedRegion == 'Near Me') {
+                                await filterProvider.setAroundVideoCategory(
                                   context,
                                   (selectedCategory == 'All')
-                                    ? null
-                                    : selectedCategory,
+                                      ? null
+                                      : selectedCategory,
+                                );
+                                await Provider.of<UserDataProvider>(
+                                  context,
+                                  listen: false,
+                                ).setCurrentLocation(
+                                  filterProvider.filterLat,
+                                  filterProvider.filterLon,
                                 );
                               } else {
                                 filterProvider.setBasicVideoCategory(
@@ -1034,6 +1345,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
   ///More 버튼을 누르면 나오는 ModalBottomSheet
   void showInfoModal(BuildContext context) {
     showModalBottomSheet(
+      backgroundColor: shortPageWhite,
       context: context,
       isScrollControlled: true,
       enableDrag: true,
@@ -1047,11 +1359,11 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
       builder: (BuildContext context) {
         return DraggableScrollableSheet(
           maxChildSize: 0.9,
-          initialChildSize: 0.4,
-          minChildSize: 0.3999,
+          initialChildSize: 0.37,
+          minChildSize: 0.3699,
           expand: false,
           snap: true,
-          snapSizes: const [0.4, 0.9],
+          snapSizes: const [0.38, 0.9],
           builder:
               (context, infoScrollController) => SizedBox(
                 width: MediaQuery.of(context).size.width,
@@ -1063,34 +1375,128 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                     child: Column(
                       children: [
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              widget.storeName,
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
+                            Container(
+                              width: 90,
+                              height: 90,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.lightBlue,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(2.0),
+                                child: CircleAvatar(
+                                  radius: 90,
+                                  backgroundImage: NetworkImage(
+                                    'https://placehold.co/400.png',
+                                  ),
+                                  backgroundColor: shortPageWhite,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.storeName,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                SizedBox(height: 3),
+                                Text(
+                                  // widget.category,
+                                  '${widget.category} · ${widget.averagePrice}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                                SizedBox(height: 3),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      CupertinoIcons.bus,
+                                      color: Colors.black26,
+                                      size: 18,
+                                    ),
+                                    Text(
+                                      // widget.storeLocation,
+                                      (widget.coordinates['lat'] != null && Provider.of<UserDataProvider>(context, listen: false).currentLat != null)
+                                        ? ' ${calculateTimeRequired(Provider.of<UserDataProvider>(context, listen: false).currentLat!, Provider.of<UserDataProvider>(context, listen: false).currentLon!, widget.coordinates['lat']!, widget.coordinates['lon']!)}분 · ${widget.storeLocation}'
+                                        : ' 30분 · ${widget.storeLocation}',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 3),
+                                // Text(
+                                //   // widget.rating.toString(),
+                                //   '별점위젯',
+                                //   style: TextStyle(
+                                //     fontSize: 14,
+                                //     color: Colors.black54,
+                                //   ),
+                                // ),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      CupertinoIcons.time,
+                                      color: Colors.black26,
+                                      size: 18,
+                                    ),
+                                    Text(
+                                      // widget.storeLocation,
+                                      ' ${widget.openTime} ~ ${widget.closeTime}',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Spacer(),
+                            Container(
+                              width: 40,
+                              height: 40,
+                              margin: EdgeInsets.only(right: 15),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.black12,
+                              ),
+                              child: Icon(
+                                CupertinoIcons.share,
+                                size: 20,
                                 color: Colors.black,
                               ),
                             ),
-                            SizedBox(width: 15),
-                            Text(
-                              '음식점유형',
-                              style: TextStyle(color: Colors.black54),
-                            ),
-                            SizedBox(width: 15),
-                            Text('거리', style: TextStyle(color: Colors.black54)),
-                            Spacer(),
                             Container(
-                              margin: EdgeInsets.only(right: 10),
-                              padding: EdgeInsets.all(5),
+                              width: 40,
+                              height: 40,
+                              margin: EdgeInsets.only(right: 5),
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(5),
-                                border: Border.all(
-                                  color: Colors.black,
-                                  width: 0.5,
-                                ),
+                                shape: BoxShape.circle,
+                                color: Colors.black12,
                               ),
-                              child: Text('북마크'),
+                              child: Icon(
+                                Icons.close_rounded,
+                                size: 20,
+                                color: Colors.black,
+                              ),
                             ),
                           ],
                         ),
@@ -1099,59 +1505,198 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             Container(
-                              width: MediaQuery.of(context).size.width * 0.28,
-                              height: MediaQuery.of(context).size.width * 0.28,
+                              width: MediaQuery.of(context).size.width * 0.3,
+                              padding: EdgeInsets.symmetric(vertical: 6),
                               decoration: BoxDecoration(
-                                color: Colors.black26,
-                                borderRadius: BorderRadius.circular(8),
+                                color: Colors.black12,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    CupertinoIcons.phone,
+                                    color: Colors.black,
+                                    size: 22,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Call',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             Container(
-                              width: MediaQuery.of(context).size.width * 0.28,
-                              height: MediaQuery.of(context).size.width * 0.28,
+                              width: MediaQuery.of(context).size.width * 0.3,
+                              padding: EdgeInsets.symmetric(vertical: 6),
                               decoration: BoxDecoration(
-                                color: Colors.black26,
-                                borderRadius: BorderRadius.circular(8),
+                                color: Colors.black12,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.directions_car,
+                                    color: Colors.black,
+                                    size: 22,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Route',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             Container(
-                              width: MediaQuery.of(context).size.width * 0.28,
-                              height: MediaQuery.of(context).size.width * 0.28,
+                              width: MediaQuery.of(context).size.width * 0.3,
+                              padding: EdgeInsets.symmetric(vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.lightBlue,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    CupertinoIcons.bookmark,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Save',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 25),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Container(
+                              width: MediaQuery.of(context).size.width * 0.3,
+                              height: MediaQuery.of(context).size.width * 0.3,
                               decoration: BoxDecoration(
                                 color: Colors.black26,
                                 borderRadius: BorderRadius.circular(8),
+                                image: DecorationImage(
+                                  image: NetworkImage(
+                                    'https://placehold.co/400.png',
+                                  ),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              width: MediaQuery.of(context).size.width * 0.3,
+                              height: MediaQuery.of(context).size.width * 0.3,
+                              decoration: BoxDecoration(
+                                color: Colors.black26,
+                                borderRadius: BorderRadius.circular(8),
+                                image: DecorationImage(
+                                  image: NetworkImage(
+                                    'https://placehold.co/400.png',
+                                  ),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              width: MediaQuery.of(context).size.width * 0.3,
+                              height: MediaQuery.of(context).size.width * 0.3,
+                              decoration: BoxDecoration(
+                                color: Colors.black26,
+                                borderRadius: BorderRadius.circular(8),
+                                image: DecorationImage(
+                                  image: NetworkImage(
+                                    'https://placehold.co/400.png',
+                                  ),
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             ),
                           ],
                         ),
                         SizedBox(height: 25),
                         Container(
-                          width: MediaQuery.of(context).size.width,
-                          height: 30,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
-                            color: Colors.black26,
+                            color: shortPageWhite,
                             borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              _buildListTile(
+                                icon: Icons.location_on_outlined,
+                                title: 'Address',
+                                subtitle: '주소어쩌구저쩌구~~ \n누르면 구글맵 or 애플맵 or 자체화면',
+                                onTap: () {
+                                  // TODO: 원하는 동작을 추가하세요 (예: 지도 화면으로 이동)
+                                },
+                              ),
+                              const Divider(height: 2),
+                              _buildListTile(
+                                icon: Icons.phone,
+                                title: 'Call',
+                                subtitle: '전화번호~~ \n누르면 전화걸어줌',
+                                onTap: () {
+                                  // TODO: 전화 걸기 등 동작을 추가하세요
+                                },
+                              ),
+                              const Divider(height: 2),
+                              _buildListTile(
+                                icon: Icons.language,
+                                title: 'Visit Website',
+                                subtitle: '웹사이트 있으면 \n누르면 웹사이트가짐',
+                                onTap: () {
+                                  // TODO: 브라우저 열기 등 동작을 추가하세요
+                                },
+                              ),
+                              const Divider(height: 2),
+                              _buildListTile(
+                                icon: Icons.flag,
+                                title: 'Report',
+                                onTap: () {
+                                  // TODO: 신고 화면으로 이동 등 동작을 추가하세요
+                                },
+                              ),
+                              const Divider(height: 2),
+                              _buildListTile(
+                                icon: Icons.verified_outlined,
+                                title: 'I am owner of this place',
+                                onTap: () {
+                                  // TODO: 신고 화면으로 이동 등 동작을 추가하세요
+                                },
+                              ),
+                            ],
                           ),
                         ),
-                        SizedBox(height: 15),
-                        Container(
-                          width: MediaQuery.of(context).size.width,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            color: Colors.black26,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        SizedBox(height: 15),
-                        Container(
-                          width: MediaQuery.of(context).size.width,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            color: Colors.black26,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        SizedBox(height: 15),
                       ],
                     ),
                   ),
@@ -1162,23 +1707,43 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     );
   }
 
+  Widget _buildListTile({
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    VoidCallback? onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.black),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+      subtitle:
+          subtitle != null
+              ? Text(subtitle, style: TextStyle(fontSize: 15))
+              : null,
+      trailing: const Icon(Icons.chevron_right, size: 26),
+      onTap: onTap,
+    );
+  }
+
   ///우측 버튼들
   Widget ItemButton({
     IconData icon = Icons.bookmark,
     String? value,
     VoidCallback? action,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-      child: Column(
-        children: [
-          GestureDetector(
-            onTap: () {
-              if (action != null) {
-                action();
-              }
-            },
-            child: Container(
+    return GestureDetector(
+      onTap: () {
+        if (action != null) {
+          action();
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        margin: EdgeInsets.only(right: 5),
+        color: Colors.transparent,
+        child: Column(
+          children: [
+            Container(
               decoration: BoxDecoration(
                 // 배경을 투명하게 두되, 가운데부터 투명해지는 RadialGradient 적용
                 gradient: RadialGradient(
@@ -1192,31 +1757,31 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
               ),
               child: Icon(icon, size: 40, color: shortPageWhite),
             ),
-          ),
-          const SizedBox(height: 5),
-          if (value != null)
-            Container(
-              decoration: BoxDecoration(
-                // 배경을 투명하게 두되, 가운데부터 투명해지는 RadialGradient 적용
-                gradient: RadialGradient(
-                  colors: [
-                    Colors.black.withValues(alpha: 0.3), // 중앙이 좀 더 어두운 영역
-                    Colors.transparent, // 가장자리로 갈수록 투명
-                  ],
-                  center: Alignment.center,
-                  radius: 0.6, // 0 ~ 1 사이에서 조절 (값을 높이면 더 넓게 퍼짐)
+            const SizedBox(height: 5),
+            if (value != null)
+              Container(
+                decoration: BoxDecoration(
+                  // 배경을 투명하게 두되, 가운데부터 투명해지는 RadialGradient 적용
+                  gradient: RadialGradient(
+                    colors: [
+                      Colors.black.withValues(alpha: 0.3), // 중앙이 좀 더 어두운 영역
+                      Colors.transparent, // 가장자리로 갈수록 투명
+                    ],
+                    center: Alignment.center,
+                    radius: 0.6, // 0 ~ 1 사이에서 조절 (값을 높이면 더 넓게 퍼짐)
+                  ),
+                ),
+                child: Text(
+                  value,
+                  style: TextStyle(
+                    color: shortPageWhite,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-              child: Text(
-                value,
-                style: TextStyle(
-                  color: shortPageWhite,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
