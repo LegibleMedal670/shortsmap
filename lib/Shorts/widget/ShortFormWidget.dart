@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
@@ -114,7 +116,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
         ),
       );
 
-      _controller.loadVideoById(videoId: 'Rg_yX_EKmlI');
+      _controller.loadVideoById(videoId: 'NscOnNp2x8M');
     }
   }
 
@@ -596,7 +598,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ///More 버튼
                         GestureDetector(
                           onTap: () {
-                            showInfoModal(context);
+                            showInfoModal(context, 'ChIJydcugP6jfDUR0thfS3gHASk');
                           },
                           child: Container(
                             width: 70,
@@ -934,6 +936,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     }
   }
 
+  ///현재 위치와 장소 위치간의 거리를 계산해서 소요시간 계산
   String calculateTimeRequired(
     double lat1,
     double lon1,
@@ -951,6 +954,505 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     int travelTimeMinutes = (distanceInMeters / 500).round();
 
     return travelTimeMinutes.toString();
+  }
+
+  ///TODO API KEY 숨겨야함
+  String apiKey = "AIzaSyC0fC5Xjg33ZeaBChPXIK-ijjblzI4SnB4";
+
+  // 1단계: 특정 장소의 사진 목록(name 값)을 가져오는 함수
+  Future<List<String>> getPhotoNames(String placeId) async {
+    final url = Uri.parse(
+      'https://places.googleapis.com/v1/places/$placeId?fields=photos&key=$apiKey',
+    );
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      List photos = data['photos'] as List? ?? [];
+      return photos.map<String>((photo) => photo['name'] as String).toList();
+    } else {
+      throw Exception('장소의 사진을 가져오지 못했습니다.');
+    }
+  }
+
+  // 2단계: name을 사용해 사진 URL(photoUri)을 얻는 함수
+  Future<String> getPhotoUrl(
+    String photoName, {
+    int maxHeightPx = 400,
+    int maxWidthPx = 400,
+  }) async {
+    final encodedPhotoName = Uri.encodeFull(photoName);
+    final url = Uri.parse(
+      'https://places.googleapis.com/v1/$encodedPhotoName/media'
+      '?key=$apiKey&maxHeightPx=$maxHeightPx&maxWidthPx=$maxWidthPx&skipHttpRedirect=true',
+    );
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['photoUri'] as String;
+    } else {
+      throw Exception('사진의 URL을 가져오지 못했습니다.');
+    }
+  }
+
+  // 최적화된 fetchAllPhotoUrls: 모든 사진 URL을 병렬로 불러옴
+  Future<List<String>> fetchAllPhotoUrls(String placeId) async {
+    try {
+      final photoNames = await getPhotoNames(placeId);
+      // 각 사진의 URL을 병렬 요청으로 가져옴
+      final photoUrls = await Future.wait(
+        photoNames.map((photoName) => getPhotoUrl(photoName)),
+      );
+      return photoUrls;
+    } catch (e) {
+      print(e);
+      return [];
+    }
+  }
+
+  ///More 버튼을 누르면 나오는 ModalBottomSheet
+  void showInfoModal(BuildContext context, String placeId) {
+    // Future를 미리 변수에 담아 두면 동일한 Future 인스턴스를 재사용할 수 있습니다.
+    final futurePhotos = fetchAllPhotoUrls(placeId);
+
+    showModalBottomSheet(
+      backgroundColor: shortPageWhite,
+      context: context,
+      isScrollControlled: true,
+      enableDrag: true,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20.0),
+          topRight: Radius.circular(20.0),
+        ),
+      ),
+      builder: (BuildContext context) {
+        return DraggableScrollableSheet(
+          maxChildSize: 0.9,
+          initialChildSize: 0.37,
+          minChildSize: 0.3699,
+          expand: false,
+          snap: true,
+          snapSizes: const [0.38, 0.9],
+          builder: (context, infoScrollController) {
+            return SingleChildScrollView(
+              controller: infoScrollController,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: Column(
+                  children: [
+                    // 상단의 프로필 및 기본정보 Row (사진, 매장명, 카테고리, 시간 등)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // FutureBuilder를 사용하여 첫 번째 사진을 CircleAvatar 이미지로 설정
+                        FutureBuilder<List<String>>(
+                          future: futurePhotos,
+                          builder: (context, snapshot) {
+                            String imageUrl = 'https://placehold.co/400.png';
+
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return Container(
+                                width: 90,
+                                height: 90,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.lightBlue,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(2.0),
+                                  child: CircleAvatar(
+                                    radius: 90,
+                                    backgroundColor: Colors.black26,
+                                  ),
+                                ),
+                              );
+                            }
+
+                            if (snapshot.hasData && snapshot.data!.isEmpty) {
+                              return Container(
+                                width: 90,
+                                height: 90,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.lightBlue,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(2.0),
+                                  child: CircleAvatar(
+                                    radius: 90,
+                                    backgroundColor: Colors.black26,
+                                    child: Text('빔'),
+                                  ),
+                                ),
+                              );
+                            }
+
+                            if (snapshot.connectionState ==
+                                ConnectionState.done) {
+                              if (snapshot.hasData &&
+                                  snapshot.data!.isNotEmpty) {
+                                imageUrl = snapshot.data!.first;
+                              }
+                            }
+                            return Container(
+                              width: 90,
+                              height: 90,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.lightBlue,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(2.0),
+                                child: CircleAvatar(
+                                  radius: 90,
+                                  backgroundImage: NetworkImage(imageUrl),
+                                  backgroundColor: shortPageWhite,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 10),
+                        // 텍스트 정보: 매장명, 카테고리, 평균 가격 등
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.storeName,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              '${widget.category} · ${widget.averagePrice}',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  CupertinoIcons.bus,
+                                  color: Colors.black26,
+                                  size: 18,
+                                ),
+                                Text(
+                                  (widget.coordinates['lat'] != null &&
+                                      Provider.of<UserDataProvider>(
+                                        context,
+                                        listen: false,
+                                      ).currentLat !=
+                                          null)
+                                      ? ' ${calculateTimeRequired(Provider.of<UserDataProvider>(context, listen: false).currentLat!, Provider.of<UserDataProvider>(context, listen: false).currentLon!, widget.coordinates['lat']!, widget.coordinates['lon']!)}분 · ${widget.storeLocation}'
+                                      : ' 30분 · ${widget.storeLocation}',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  CupertinoIcons.time,
+                                  color: Colors.black26,
+                                  size: 18,
+                                ),
+                                Text(
+                                  ' ${widget.openTime} ~ ${widget.closeTime}',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        // 공유, 닫기 버튼
+                        Container(
+                          width: 40,
+                          height: 40,
+                          margin: const EdgeInsets.only(right: 15),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black12,
+                          ),
+                          child: const Icon(
+                            CupertinoIcons.share,
+                            size: 20,
+                            color: Colors.black,
+                          ),
+                        ),
+                        Container(
+                          width: 40,
+                          height: 40,
+                          margin: const EdgeInsets.only(right: 5),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black12,
+                          ),
+                          child: const Icon(
+                            Icons.close_rounded,
+                            size: 20,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 25),
+                    // 버튼 Row (Call, Route, Save)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Container(
+                          width: MediaQuery.of(context).size.width * 0.3,
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.black12,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(
+                                CupertinoIcons.phone,
+                                color: Colors.black,
+                                size: 22,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Call',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          width: MediaQuery.of(context).size.width * 0.3,
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.black12,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(
+                                Icons.directions_car,
+                                color: Colors.black,
+                                size: 22,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Route',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          width: MediaQuery.of(context).size.width * 0.3,
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.lightBlue,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(
+                                CupertinoIcons.bookmark,
+                                color: Colors.white,
+                                size: 22,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Save',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 25),
+                    // 사진 리스트: FutureBuilder로 모든 사진을 불러온 후, ListView로 좌우 스크롤 구현
+                    FutureBuilder<List<String>>(
+                      future: futurePhotos,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Container(
+                                width: MediaQuery.of(context).size.width * 0.3,
+                                height: MediaQuery.of(context).size.width * 0.3,
+                                decoration: BoxDecoration(
+                                  color: Colors.black26,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              Container(
+                                width: MediaQuery.of(context).size.width * 0.3,
+                                height: MediaQuery.of(context).size.width * 0.3,
+                                decoration: BoxDecoration(
+                                  color: Colors.black26,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              Container(
+                                width: MediaQuery.of(context).size.width * 0.3,
+                                height: MediaQuery.of(context).size.width * 0.3,
+                                decoration: BoxDecoration(
+                                  color: Colors.black26,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ],
+                          );
+                        } else if (snapshot.hasError ||
+                            !snapshot.hasData ||
+                            snapshot.data!.isEmpty) {
+                          return SizedBox.shrink();
+                        } else {
+                          final photoUrls = snapshot.data!;
+                          return SizedBox(
+                            height: MediaQuery.of(context).size.width * 0.3,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: photoUrls.length,
+                              itemBuilder: (context, index) {
+                                return Container(
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
+                                  width: MediaQuery.of(context).size.width * 0.3,
+                                  height: MediaQuery.of(context).size.width * 0.3,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    image: DecorationImage(
+                                      image: NetworkImage(photoUrls[index]),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 25),
+                    // 추가 정보 리스트 (주소, 전화번호, 웹사이트 등)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: shortPageWhite,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          _buildListTile(
+                            icon: Icons.location_on_outlined,
+                            title: 'Address',
+                            subtitle: '주소어쩌구저쩌구~~ \n누르면 구글맵 or 애플맵 or 자체화면',
+                            onTap: () {
+                              // TODO: 원하는 동작 추가
+                            },
+                          ),
+                          const Divider(height: 2),
+                          _buildListTile(
+                            icon: Icons.phone,
+                            title: 'Call',
+                            subtitle: '전화번호~~ \n누르면 전화걸어줌',
+                            onTap: () {
+                              // TODO: 전화 기능 추가
+                            },
+                          ),
+                          const Divider(height: 2),
+                          _buildListTile(
+                            icon: Icons.language,
+                            title: 'Visit Website',
+                            subtitle: '웹사이트 있으면 \n누르면 웹사이트로 이동',
+                            onTap: () {
+                              // TODO: 브라우저 열기 기능 추가
+                            },
+                          ),
+                          const Divider(height: 2),
+                          _buildListTile(
+                            icon: Icons.flag,
+                            title: 'Report',
+                            onTap: () {
+                              // TODO: 신고 기능 추가
+                            },
+                          ),
+                          const Divider(height: 2),
+                          _buildListTile(
+                            icon: Icons.verified_outlined,
+                            title: 'I am owner of this place',
+                            onTap: () {
+                              // TODO: 소유자 인증 기능 추가
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    // 추가 위젯들...
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   ///동영상을 꾹 눌렀을 때 나오는 옵션들이 있는 ModalBottomSheet
@@ -1337,371 +1839,6 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
               },
             );
           },
-        );
-      },
-    );
-  }
-
-  ///More 버튼을 누르면 나오는 ModalBottomSheet
-  void showInfoModal(BuildContext context) {
-    showModalBottomSheet(
-      backgroundColor: shortPageWhite,
-      context: context,
-      isScrollControlled: true,
-      enableDrag: true,
-      showDragHandle: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20.0),
-          topRight: Radius.circular(20.0),
-        ),
-      ),
-      builder: (BuildContext context) {
-        return DraggableScrollableSheet(
-          maxChildSize: 0.9,
-          initialChildSize: 0.37,
-          minChildSize: 0.3699,
-          expand: false,
-          snap: true,
-          snapSizes: const [0.38, 0.9],
-          builder:
-              (context, infoScrollController) => SizedBox(
-                width: MediaQuery.of(context).size.width,
-                child: SingleChildScrollView(
-                  // physics: const ClampingScrollPhysics(),
-                  controller: infoScrollController,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    child: Column(
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: 90,
-                              height: 90,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.lightBlue,
-                                  width: 2,
-                                ),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(2.0),
-                                child: CircleAvatar(
-                                  radius: 90,
-                                  backgroundImage: NetworkImage(
-                                    'https://placehold.co/400.png',
-                                  ),
-                                  backgroundColor: shortPageWhite,
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 10),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  widget.storeName,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                SizedBox(height: 3),
-                                Text(
-                                  // widget.category,
-                                  '${widget.category} · ${widget.averagePrice}',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                                SizedBox(height: 3),
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      CupertinoIcons.bus,
-                                      color: Colors.black26,
-                                      size: 18,
-                                    ),
-                                    Text(
-                                      // widget.storeLocation,
-                                      (widget.coordinates['lat'] != null && Provider.of<UserDataProvider>(context, listen: false).currentLat != null)
-                                        ? ' ${calculateTimeRequired(Provider.of<UserDataProvider>(context, listen: false).currentLat!, Provider.of<UserDataProvider>(context, listen: false).currentLon!, widget.coordinates['lat']!, widget.coordinates['lon']!)}분 · ${widget.storeLocation}'
-                                        : ' 30분 · ${widget.storeLocation}',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.black54,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 3),
-                                // Text(
-                                //   // widget.rating.toString(),
-                                //   '별점위젯',
-                                //   style: TextStyle(
-                                //     fontSize: 14,
-                                //     color: Colors.black54,
-                                //   ),
-                                // ),
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      CupertinoIcons.time,
-                                      color: Colors.black26,
-                                      size: 18,
-                                    ),
-                                    Text(
-                                      // widget.storeLocation,
-                                      ' ${widget.openTime} ~ ${widget.closeTime}',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.black54,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            Spacer(),
-                            Container(
-                              width: 40,
-                              height: 40,
-                              margin: EdgeInsets.only(right: 15),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.black12,
-                              ),
-                              child: Icon(
-                                CupertinoIcons.share,
-                                size: 20,
-                                color: Colors.black,
-                              ),
-                            ),
-                            Container(
-                              width: 40,
-                              height: 40,
-                              margin: EdgeInsets.only(right: 5),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.black12,
-                              ),
-                              child: Icon(
-                                Icons.close_rounded,
-                                size: 20,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 25),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Container(
-                              width: MediaQuery.of(context).size.width * 0.3,
-                              padding: EdgeInsets.symmetric(vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Colors.black12,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    CupertinoIcons.phone,
-                                    color: Colors.black,
-                                    size: 22,
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Call',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              width: MediaQuery.of(context).size.width * 0.3,
-                              padding: EdgeInsets.symmetric(vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Colors.black12,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.directions_car,
-                                    color: Colors.black,
-                                    size: 22,
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Route',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              width: MediaQuery.of(context).size.width * 0.3,
-                              padding: EdgeInsets.symmetric(vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Colors.lightBlue,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    CupertinoIcons.bookmark,
-                                    color: Colors.white,
-                                    size: 22,
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Save',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 25),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Container(
-                              width: MediaQuery.of(context).size.width * 0.3,
-                              height: MediaQuery.of(context).size.width * 0.3,
-                              decoration: BoxDecoration(
-                                color: Colors.black26,
-                                borderRadius: BorderRadius.circular(8),
-                                image: DecorationImage(
-                                  image: NetworkImage(
-                                    'https://placehold.co/400.png',
-                                  ),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              width: MediaQuery.of(context).size.width * 0.3,
-                              height: MediaQuery.of(context).size.width * 0.3,
-                              decoration: BoxDecoration(
-                                color: Colors.black26,
-                                borderRadius: BorderRadius.circular(8),
-                                image: DecorationImage(
-                                  image: NetworkImage(
-                                    'https://placehold.co/400.png',
-                                  ),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              width: MediaQuery.of(context).size.width * 0.3,
-                              height: MediaQuery.of(context).size.width * 0.3,
-                              decoration: BoxDecoration(
-                                color: Colors.black26,
-                                borderRadius: BorderRadius.circular(8),
-                                image: DecorationImage(
-                                  image: NetworkImage(
-                                    'https://placehold.co/400.png',
-                                  ),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 25),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: shortPageWhite,
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              _buildListTile(
-                                icon: Icons.location_on_outlined,
-                                title: 'Address',
-                                subtitle: '주소어쩌구저쩌구~~ \n누르면 구글맵 or 애플맵 or 자체화면',
-                                onTap: () {
-                                  // TODO: 원하는 동작을 추가하세요 (예: 지도 화면으로 이동)
-                                },
-                              ),
-                              const Divider(height: 2),
-                              _buildListTile(
-                                icon: Icons.phone,
-                                title: 'Call',
-                                subtitle: '전화번호~~ \n누르면 전화걸어줌',
-                                onTap: () {
-                                  // TODO: 전화 걸기 등 동작을 추가하세요
-                                },
-                              ),
-                              const Divider(height: 2),
-                              _buildListTile(
-                                icon: Icons.language,
-                                title: 'Visit Website',
-                                subtitle: '웹사이트 있으면 \n누르면 웹사이트가짐',
-                                onTap: () {
-                                  // TODO: 브라우저 열기 등 동작을 추가하세요
-                                },
-                              ),
-                              const Divider(height: 2),
-                              _buildListTile(
-                                icon: Icons.flag,
-                                title: 'Report',
-                                onTap: () {
-                                  // TODO: 신고 화면으로 이동 등 동작을 추가하세요
-                                },
-                              ),
-                              const Divider(height: 2),
-                              _buildListTile(
-                                icon: Icons.verified_outlined,
-                                title: 'I am owner of this place',
-                                onTap: () {
-                                  // TODO: 신고 화면으로 이동 등 동작을 추가하세요
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
         );
       },
     );
