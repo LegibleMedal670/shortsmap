@@ -106,6 +106,7 @@ class _ShortsPageState extends State<ShortsPage> {
                         videoId: 'shortFormData.locationId.toString()',
                         bookmarkCount: 0,
                         isEmpty: true,
+                        coordinates: {},
                       );
                     }
 
@@ -113,7 +114,7 @@ class _ShortsPageState extends State<ShortsPage> {
                       scrollDirection: Axis.vertical,
                       itemCount: data.length,
                       itemBuilder: (context, index) {
-                        final shortFormData = data[index];
+                        final LocationData shortFormData = data[index];
                         return ShortFormWidget(
                           storeName: shortFormData.name,
                           videoURL: shortFormData.videoUrl,
@@ -127,6 +128,7 @@ class _ShortsPageState extends State<ShortsPage> {
                           videoId: shortFormData.locationId.toString(),
                           bookmarkCount: shortFormData.bookmarkCount,
                           isEmpty: false,
+                          coordinates: shortFormData.coordinates!,
                         );
                       },
                     );

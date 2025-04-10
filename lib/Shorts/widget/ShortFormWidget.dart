@@ -23,6 +23,7 @@ class ShortFormWidget extends StatefulWidget {
   final String videoId;
   final int bookmarkCount;
   final bool isEmpty;
+  final Map<String, double> coordinates;
 
   const ShortFormWidget({
     required this.storeName,
@@ -37,6 +38,7 @@ class ShortFormWidget extends StatefulWidget {
     required this.videoId,
     required this.bookmarkCount,
     required this.isEmpty,
+    required this.coordinates,
     super.key,
   });
 
@@ -112,7 +114,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
         ),
       );
 
-      _controller.loadVideoById(videoId: 'VxVo4cRxYTM');
+      _controller.loadVideoById(videoId: 'Rg_yX_EKmlI');
     }
   }
 
@@ -579,6 +581,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         Flexible(
                           child: Text(
                             widget.storeName,
+                            // '대왕암공원',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
@@ -668,6 +671,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                   color: Colors.transparent,
                                   child: Text(
                                     widget.storeCaption,
+                                    // '대왕암 공원은 우리나라에서 울주군 간절곶과 함께 해가 가장 빨리 뜨는 대왕암이 있는 곳이다. 우리나라 동남단에서 동해 쪽으로 가장 뾰족하게 나온 부분의 끝 지점에 해당하는 대왕암공원은 동해의 길잡이를 하는 울기항로표지소로도 유명하다. ',
                                     style: TextStyle(
                                       fontSize:
                                           MediaQuery.of(context).size.width *
@@ -930,21 +934,23 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     }
   }
 
-  void showLocationModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20.0),
-          topRight: Radius.circular(20.0),
-        ),
-      ),
-      builder: (BuildContext context) {
-        return Container();
-      },
+  String calculateTimeRequired(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
+    double distanceInMeters = Geolocator.distanceBetween(
+      lat1,
+      lon1,
+      lat2,
+      lon2,
     );
+
+    // 평균속도 30km/h (500미터/분)를 가정하여 소요 시간 계산
+    int travelTimeMinutes = (distanceInMeters / 500).round();
+
+    return travelTimeMinutes.toString();
   }
 
   ///동영상을 꾹 눌렀을 때 나오는 옵션들이 있는 ModalBottomSheet
@@ -1388,6 +1394,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                   backgroundImage: NetworkImage(
                                     'https://placehold.co/400.png',
                                   ),
+                                  backgroundColor: shortPageWhite,
                                 ),
                               ),
                             ),
@@ -1406,7 +1413,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 SizedBox(height: 3),
                                 Text(
                                   // widget.category,
-                                  'category · 가격대',
+                                  '${widget.category} · ${widget.averagePrice}',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.black54,
@@ -1423,7 +1430,9 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                     ),
                                     Text(
                                       // widget.storeLocation,
-                                      ' 15분 · 태평',
+                                      (widget.coordinates['lat'] != null && Provider.of<UserDataProvider>(context, listen: false).currentLat != null)
+                                        ? ' ${calculateTimeRequired(Provider.of<UserDataProvider>(context, listen: false).currentLat!, Provider.of<UserDataProvider>(context, listen: false).currentLon!, widget.coordinates['lat']!, widget.coordinates['lon']!)}분 · ${widget.storeLocation}'
+                                        : ' 30분 · ${widget.storeLocation}',
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: Colors.black54,
@@ -1450,7 +1459,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                     ),
                                     Text(
                                       // widget.storeLocation,
-                                      ' 09:00 ~ 20:00',
+                                      ' ${widget.openTime} ~ ${widget.closeTime}',
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: Colors.black54,
@@ -1626,7 +1635,10 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ),
                         SizedBox(height: 25),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: shortPageWhite,
                             borderRadius: BorderRadius.circular(8),
@@ -1702,10 +1714,13 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     VoidCallback? onTap,
   }) {
     return ListTile(
-      leading: Icon(icon, color: Colors.black,),
+      leading: Icon(icon, color: Colors.black),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: subtitle != null ? Text(subtitle, style: TextStyle(fontSize: 15),) : null,
-      trailing: const Icon(Icons.chevron_right, size: 26,),
+      subtitle:
+          subtitle != null
+              ? Text(subtitle, style: TextStyle(fontSize: 15))
+              : null,
+      trailing: const Icon(Icons.chevron_right, size: 26),
       onTap: onTap,
     );
   }
