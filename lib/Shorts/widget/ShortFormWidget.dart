@@ -1159,7 +1159,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              '${widget.category} · ${widget.averagePrice}',
+                              '${widget.category} · \$${widget.averagePrice.round()}~',
                               style: const TextStyle(
                                 fontSize: 14,
                                 color: Colors.black54,
