@@ -60,7 +60,9 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
   late int _bookmarkCount;
 
-  /// Supabase client
+  bool _hasRecordedSeen = false;
+
+  //Supabase client
   final _supabase = Supabase.instance.client;
 
   final List<String> regionOptions = [
@@ -206,6 +208,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     }
   }
 
+  ///북마크 여부를 캐시에서 불러옴
   void getBookmarkInfoFromCache() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
 
@@ -214,6 +217,43 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     setState(() {
       _isBookmarked = bookMarkList.contains(widget.videoId);
     });
+  }
+
+  ///영상 시청 여부 저장
+  Future<void> recordSeenVideo(String? currentUserUid) async {
+
+    ///로그인한 경우에는 서버에 저장
+    if (currentUserUid != null) {
+      try {
+        // 서버에 저장
+        await _supabase.from('seenvideos').insert({
+          'user_id': currentUserUid,
+          'location_id': widget.videoId,
+        });
+      } catch (e) {
+        // 예외가 발생하면 에러 메시지를 출력합니다. TODO 에러 처리 어떻게할지 고민
+        print('Insert 에러: $e');
+      }
+    } else {
+
+      /// 로그인하지 않은 경우에는 캐시에 저장
+      SharedPreferences preferences = await SharedPreferences.getInstance();
+
+      List<String> seenVideoIds = preferences.getStringList('seenVideoIds') ?? [];
+
+      // videoId 추가
+      seenVideoIds.add(widget.videoId);
+
+      // Set을 이용해 중복 제거
+      seenVideoIds = seenVideoIds.toSet().toList();
+
+      // 업데이트된 리스트 저장
+      await preferences.setStringList('seenVideoIds', seenVideoIds);
+
+      print(preferences.getStringList('seenVideoIds') ?? []);
+
+
+    }
   }
 
   @override
@@ -337,7 +377,13 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           YoutubeValueBuilder(
                             controller: _controller,
                             builder: (context, value) {
-                              // _checkAndRestart(value);
+
+                              if (value.playerState == PlayerState.playing && !_hasRecordedSeen) {
+                                _hasRecordedSeen = true; // 한 번 기록했음을 표시
+                                // 현재 사용자 UID를 전달하여 recordSeenVideo 실행
+                                recordSeenVideo(Provider.of<UserDataProvider>(context, listen: false).currentUserUID);
+                              }
+
                               if (value.playerState == PlayerState.ended) {
                                 _controller.seekTo(seconds: 0);
                                 _controller.playVideo();
@@ -816,6 +862,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     }
   }
 
+  ///북마크 저장
   Future<void> saveBookmarkInfo(String? currentUserUid) async {
     // 로그인 되어있는 경우
     if (currentUserUid != null) {
@@ -967,7 +1014,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
   ///TODO API KEY 숨겨야함
   String apiKey = "AIzaSyC0fC5Xjg33ZeaBChPXIK-ijjblzI4SnB4";
 
-// 1단계: 특정 장소의 사진들 중 맨 첫번째 사진의 name만 가져오는 함수
+  // 1단계: 특정 장소의 사진들 중 맨 첫번째 사진의 name만 가져오는 함수
   Future<String> getFirstPhotoName(String placeId) async {
     final url = Uri.parse(
       'https://places.googleapis.com/v1/places/$placeId?fields=photos&key=$apiKey',
@@ -990,7 +1037,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     }
   }
 
-// 2단계: name을 사용해 사진 URL(photoUri)을 얻는 함수
+  // 2단계: name을 사용해 사진 URL(photoUri)을 얻는 함수
   Future<String> getPhotoUrl(
       String photoName, {
         int maxHeightPx = 400,
@@ -1012,7 +1059,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     }
   }
 
-// 3단계: 장소의 첫 번째 사진 URL을 가져오는 함수
+  // 3단계: 장소의 첫 번째 사진 URL을 가져오는 함수
   Future<String> fetchFirstPhotoUrl(String placeId) async {
     try {
       // 첫 번째 사진의 name을 가져옴
@@ -1918,6 +1965,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     );
   }
 
+  ///More modal의 타일 위젯
   Widget _buildListTile({
     required IconData icon,
     required String title,
