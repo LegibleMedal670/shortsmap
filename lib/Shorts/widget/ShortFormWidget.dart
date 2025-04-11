@@ -10,6 +10,7 @@ import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
 import 'package:shortsmap/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 class ShortFormWidget extends StatefulWidget {
@@ -1017,6 +1018,10 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
   void showInfoModal(BuildContext context, String placeId) {
     // Future를 미리 변수에 담아 두면 동일한 Future 인스턴스를 재사용할 수 있습니다.
     final futurePhotos = fetchAllPhotoUrls(placeId);
+    final double? userLat = Provider.of<UserDataProvider>(context, listen: false).currentLat;
+    final double? userLon = Provider.of<UserDataProvider>(context, listen: false).currentLon;
+    final double? locationLat = widget.coordinates['lat'];
+    final double? locationLon = widget.coordinates['lon'];
 
     showModalBottomSheet(
       backgroundColor: shortPageWhite,
@@ -1158,13 +1163,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                   size: 18,
                                 ),
                                 Text(
-                                  (widget.coordinates['lat'] != null &&
-                                      Provider.of<UserDataProvider>(
-                                        context,
-                                        listen: false,
-                                      ).currentLat !=
-                                          null)
-                                      ? ' ${calculateTimeRequired(Provider.of<UserDataProvider>(context, listen: false).currentLat!, Provider.of<UserDataProvider>(context, listen: false).currentLon!, widget.coordinates['lat']!, widget.coordinates['lon']!)}분 · ${widget.storeLocation}'
+                                  (locationLat != null && userLat != null && locationLon != null && userLon != null)
+                                      ? ' ${calculateTimeRequired(userLat, userLon, locationLat, locationLon)}분 · ${widget.storeLocation}'
                                       : ' 30분 · ${widget.storeLocation}',
                                   style: const TextStyle(
                                     fontSize: 14,
@@ -1230,56 +1230,78 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        Container(
-                          width: MediaQuery.of(context).size.width * 0.3,
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.black12,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(
-                                CupertinoIcons.phone,
-                                color: Colors.black,
-                                size: 22,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                'Call',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
+                        GestureDetector(
+                          onTap: () async{
+                            final Uri phoneUri = Uri(
+                              scheme: 'tel',
+                              path: '+82 10 5475 6096', //TODO : 전화번호 적용
+                            );
+
+                            if (await canLaunchUrl(phoneUri)) {
+                            await launchUrl(phoneUri);
+                            } else {
+                            debugPrint('전화 걸기 실패');
+                            }
+                          },
+                          child: Container(
+                            width: MediaQuery.of(context).size.width * 0.3,
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.black12,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(
+                                  CupertinoIcons.phone,
+                                  color: Colors.black,
+                                  size: 22,
                                 ),
-                              ),
-                            ],
+                                SizedBox(width: 8),
+                                Text(
+                                  'Call',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                        Container(
-                          width: MediaQuery.of(context).size.width * 0.3,
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.black12,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(
-                                Icons.directions_car,
-                                color: Colors.black,
-                                size: 22,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                'Route',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
+                        GestureDetector(
+                          onTap: () async{
+                            await launchUrl( ///TODO PlaceId 받아와서 넣어줘야함
+                              Uri.parse('https://www.google.com/maps/dir/?api=1&origin=$userLat,$userLon&destination=${widget.storeName}&destination_place_id=ChIJq5SjCJKlfDURGqkGbzT21Y8&travelmode=transit'),
+                              mode: LaunchMode.externalApplication
+                            );
+                          },
+                          child: Container(
+                            width: MediaQuery.of(context).size.width * 0.3,
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.black12,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(
+                                  Icons.directions_car,
+                                  color: Colors.black,
+                                  size: 22,
                                 ),
-                              ),
-                            ],
+                                SizedBox(width: 8),
+                                Text(
+                                  'Route',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                         Container(
@@ -1403,8 +1425,11 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             icon: Icons.location_on_outlined,
                             title: 'Address',
                             subtitle: '주소어쩌구저쩌구~~ \n누르면 구글맵 or 애플맵 or 자체화면',
-                            onTap: () {
-                              // TODO: 원하는 동작 추가
+                            onTap: () async {
+                              await launchUrl( ///TODO PlaceId 받아와서 넣어줘야함
+                              Uri.parse('https://www.google.com/maps/search/?api=1&query=${widget.storeName}&query_place_id=ChIJq5SjCJKlfDURGqkGbzT21Y8'),
+                              mode: LaunchMode.externalApplication
+                              );
                             },
                           ),
                           const Divider(height: 2),
@@ -1412,8 +1437,17 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             icon: Icons.phone,
                             title: 'Call',
                             subtitle: '전화번호~~ \n누르면 전화걸어줌',
-                            onTap: () {
-                              // TODO: 전화 기능 추가
+                            onTap: () async {
+                              final Uri phoneUri = Uri(
+                                scheme: 'tel',
+                                path: '+82 10 5475 6096', //TODO : 전화번호 적용
+                              );
+
+                              if (await canLaunchUrl(phoneUri)) {
+                              await launchUrl(phoneUri);
+                              } else {
+                              debugPrint('전화 걸기 실패');
+                              }
                             },
                           ),
                           const Divider(height: 2),
@@ -1421,8 +1455,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             icon: Icons.language,
                             title: 'Visit Website',
                             subtitle: '웹사이트 있으면 \n누르면 웹사이트로 이동',
-                            onTap: () {
-                              // TODO: 브라우저 열기 기능 추가
+                            onTap: () async {
+                              await launchUrl(Uri.parse('https://www.naver.com'), mode: LaunchMode.inAppBrowserView);
                             },
                           ),
                           const Divider(height: 2),
