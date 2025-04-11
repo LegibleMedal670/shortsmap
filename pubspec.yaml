@@ -52,6 +52,7 @@ dependencies:
   http: ^1.3.0
   # 전화 걸기, 사이트 열기 등을 위한 패키지
   url_launcher: ^6.3.1
+  share_plus: ^10.1.4
 
 dev_dependencies:
   flutter_test:

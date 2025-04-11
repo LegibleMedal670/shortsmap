@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:share_plus/share_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -1610,6 +1611,13 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           ),
                         ),
                         GestureDetector(
+                          onTap: () {
+                            Navigator.pop(context);
+                            Share.share(
+                              'https://www.youtube.com/shorts/NscOnNp2x8M',
+                              subject: widget.storeName,
+                            );
+                          },
                           child: Container(
                             color: Colors.transparent,
                             padding: EdgeInsets.symmetric(vertical: 20),
