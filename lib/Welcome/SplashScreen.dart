@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:shortsmap/Plan/screens/plan_page.dart';
 import 'package:shortsmap/Shorts/page/ShortsPage.dart';
 
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
-
+  const SplashScreen({Key? key}) : super(key: key);
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
@@ -16,18 +16,17 @@ class _SplashScreenState extends State<SplashScreen> {
     _navigateToNextScreen();
   }
 
-  ///스플래시스크린에서 로그인 여부 등 확인하고 다음 페이지로 이동
-  ///이후 소셜 로그인 관련 추가한 뒤에 업데이트 필요
+  /// 스플래시 화면 이후 MainNavigator로 전환하여
+  /// 초기 라우트 스택(ShortsPage & PlanPage)을 구성합니다.
   void _navigateToNextScreen() async {
     await Future.delayed(const Duration(milliseconds: 1500));
-
     Navigator.pushReplacement(
       context,
-      _buildPageRoute( ShortsPage()),
+      _buildPageRoute(MainNavigator()),
     );
   }
 
-  ///부드러운전환을위한??? 설명필요
+  /// 부드러운 전환을 위한 페이지 전환 애니메이션(없도록 설정)
   PageRouteBuilder _buildPageRoute(Widget screen) {
     return PageRouteBuilder(
       pageBuilder: (context, animation1, animation2) => screen,
@@ -36,18 +35,32 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 
-  ///현재는 단순한 텍스트만 있음 추후 애니메이션 혹은 아이콘 추가 업데이트
+  /// 스플래시 화면 UI 예시
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // backgroundColor: Colors.white,
       body: Center(
         child: Container(
-          // height: 210,
           width: MediaQuery.of(context).size.width * 0.7,
           child: Image.asset('images/logo.png'),
         ),
       ),
+    );
+  }
+}
+
+class MainNavigator extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Navigator(
+      onGenerateInitialRoutes: (navigator, initialRoute) {
+        return [
+          // 스택의 최상단: PlanPage (최초에 보이는 페이지)
+          MaterialPageRoute(builder: (_) => PlanPage()),
+          // 스택의 가장 밑: ShortsPage
+          MaterialPageRoute(builder: (_) => ShortsPage()),
+        ];
+      },
     );
   }
 }
