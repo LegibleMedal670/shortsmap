@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -216,6 +217,14 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark.copyWith(
+        statusBarColor: Colors.black, // Color for Android
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness:
+        Platform.isIOS
+            ? Brightness.dark
+            : Brightness.light
+    ));
     /// TODO: 빈 위젯 등 위젯들 분리
     if (widget.isEmpty) {
       return Stack(
