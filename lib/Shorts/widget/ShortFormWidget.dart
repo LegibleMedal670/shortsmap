@@ -967,8 +967,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
   ///TODO API KEY 숨겨야함
   String apiKey = "AIzaSyC0fC5Xjg33ZeaBChPXIK-ijjblzI4SnB4";
 
-  // 1단계: 특정 장소의 사진 목록(name 값)을 가져오는 함수
-  Future<List<String>> getPhotoNames(String placeId) async {
+// 1단계: 특정 장소의 사진들 중 맨 첫번째 사진의 name만 가져오는 함수
+  Future<String> getFirstPhotoName(String placeId) async {
     final url = Uri.parse(
       'https://places.googleapis.com/v1/places/$placeId?fields=photos&key=$apiKey',
     );
@@ -978,22 +978,28 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       List photos = data['photos'] as List? ?? [];
-      return photos.map<String>((photo) => photo['name'] as String).toList();
+
+      if (photos.isNotEmpty) {
+        // 첫 번째 사진의 name을 반환
+        return photos.first['name'] as String;
+      } else {
+        throw Exception('해당 장소에 사진이 없습니다.');
+      }
     } else {
       throw Exception('장소의 사진을 가져오지 못했습니다.');
     }
   }
 
-  // 2단계: name을 사용해 사진 URL(photoUri)을 얻는 함수
+// 2단계: name을 사용해 사진 URL(photoUri)을 얻는 함수
   Future<String> getPhotoUrl(
-    String photoName, {
-    int maxHeightPx = 400,
-    int maxWidthPx = 400,
-  }) async {
+      String photoName, {
+        int maxHeightPx = 400,
+        int maxWidthPx = 400,
+      }) async {
     final encodedPhotoName = Uri.encodeFull(photoName);
     final url = Uri.parse(
       'https://places.googleapis.com/v1/$encodedPhotoName/media'
-      '?key=$apiKey&maxHeightPx=$maxHeightPx&maxWidthPx=$maxWidthPx&skipHttpRedirect=true',
+          '?key=$apiKey&maxHeightPx=$maxHeightPx&maxWidthPx=$maxWidthPx&skipHttpRedirect=true',
     );
 
     final response = await http.get(url);
@@ -1006,25 +1012,24 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     }
   }
 
-  // 최적화된 fetchAllPhotoUrls: 모든 사진 URL을 병렬로 불러옴
-  Future<List<String>> fetchAllPhotoUrls(String placeId) async {
+// 3단계: 장소의 첫 번째 사진 URL을 가져오는 함수
+  Future<String> fetchFirstPhotoUrl(String placeId) async {
     try {
-      final photoNames = await getPhotoNames(placeId);
-      // 각 사진의 URL을 병렬 요청으로 가져옴
-      final photoUrls = await Future.wait(
-        photoNames.map((photoName) => getPhotoUrl(photoName)),
-      );
-      return photoUrls;
+      // 첫 번째 사진의 name을 가져옴
+      final firstPhotoName = await getFirstPhotoName(placeId);
+      // 해당 name을 사용해 사진 URL을 가져옴
+      final photoUrl = await getPhotoUrl(firstPhotoName);
+      return photoUrl;
     } catch (e) {
       print(e);
-      return [];
+      throw Exception('첫 번째 사진 URL을 가져오는 중 오류가 발생했습니다.');
     }
   }
 
   ///More 버튼을 누르면 나오는 ModalBottomSheet
   void showInfoModal(BuildContext context, String placeId) {
     // Future를 미리 변수에 담아 두면 동일한 Future 인스턴스를 재사용할 수 있습니다.
-    final futurePhotos = fetchAllPhotoUrls(placeId);
+    final futurePhotos = fetchFirstPhotoUrl(placeId);
     final double? userLat = Provider.of<UserDataProvider>(context, listen: false).currentLat;
     final double? userLon = Provider.of<UserDataProvider>(context, listen: false).currentLon;
     final double? locationLat = widget.coordinates['lat'];
@@ -1062,7 +1067,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // FutureBuilder를 사용하여 첫 번째 사진을 CircleAvatar 이미지로 설정
-                        FutureBuilder<List<String>>(
+                        FutureBuilder<String>(
                           future: futurePhotos,
                           builder: (context, snapshot) {
                             String imageUrl = 'https://placehold.co/400.png';
@@ -1115,7 +1120,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 ConnectionState.done) {
                               if (snapshot.hasData &&
                                   snapshot.data!.isNotEmpty) {
-                                imageUrl = snapshot.data!.first;
+                                imageUrl = snapshot.data!;
                               }
                             }
                             return Container(
@@ -1202,32 +1207,46 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ),
                         const Spacer(),
                         // 공유, 닫기 버튼
-                        Container(
-                          width: 40,
-                          height: 40,
-                          margin: const EdgeInsets.only(right: 15),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.black12,
-                          ),
-                          child: const Icon(
-                            CupertinoIcons.share,
-                            size: 20,
-                            color: Colors.black,
+                        GestureDetector(
+                          onTap: (){
+                            Share.share(
+                              ///TODO 실제 영상 ID로 바꿔줘야함
+                              'https://www.youtube.com/shorts/NscOnNp2x8M',
+                              subject: widget.storeName,
+                            );
+                          },
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            margin: const EdgeInsets.only(right: 15),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.black12,
+                            ),
+                            child: const Icon(
+                              CupertinoIcons.share,
+                              size: 20,
+                              color: Colors.black,
+                            ),
                           ),
                         ),
-                        Container(
-                          width: 40,
-                          height: 40,
-                          margin: const EdgeInsets.only(right: 5),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.black12,
-                          ),
-                          child: const Icon(
-                            Icons.close_rounded,
-                            size: 20,
-                            color: Colors.black,
+                        GestureDetector(
+                          onTap: (){
+                            Navigator.pop(context);
+                          },
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            margin: const EdgeInsets.only(right: 5),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.black12,
+                            ),
+                            child: const Icon(
+                              Icons.close_rounded,
+                              size: 20,
+                              color: Colors.black,
+                            ),
                           ),
                         ),
                       ],
@@ -1311,104 +1330,110 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             ),
                           ),
                         ),
-                        Container(
-                          width: MediaQuery.of(context).size.width * 0.3,
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.lightBlue,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(
-                                CupertinoIcons.bookmark,
-                                color: Colors.white,
-                                size: 22,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                'Save',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
+                        GestureDetector(
+                          onTap: (){
+                            Navigator.pop(context);
+                            saveBookmarkInfo(Provider.of<UserDataProvider>(context, listen: false).currentUserUID);
+                          },
+                          child: Container(
+                            width: MediaQuery.of(context).size.width * 0.3,
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.lightBlue,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(
+                                  CupertinoIcons.bookmark,
                                   color: Colors.white,
+                                  size: 22,
                                 ),
-                              ),
-                            ],
+                                SizedBox(width: 8),
+                                Text(
+                                  'Save',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 25),
                     // 사진 리스트: FutureBuilder로 모든 사진을 불러온 후, ListView로 좌우 스크롤 구현
-                    FutureBuilder<List<String>>(
-                      future: futurePhotos,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              Container(
-                                width: MediaQuery.of(context).size.width * 0.3,
-                                height: MediaQuery.of(context).size.width * 0.3,
-                                decoration: BoxDecoration(
-                                  color: Colors.black26,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              Container(
-                                width: MediaQuery.of(context).size.width * 0.3,
-                                height: MediaQuery.of(context).size.width * 0.3,
-                                decoration: BoxDecoration(
-                                  color: Colors.black26,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              Container(
-                                width: MediaQuery.of(context).size.width * 0.3,
-                                height: MediaQuery.of(context).size.width * 0.3,
-                                decoration: BoxDecoration(
-                                  color: Colors.black26,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ],
-                          );
-                        } else if (snapshot.hasError ||
-                            !snapshot.hasData ||
-                            snapshot.data!.isEmpty) {
-                          return SizedBox.shrink();
-                        } else {
-                          final photoUrls = snapshot.data!;
-                          return SizedBox(
-                            height: MediaQuery.of(context).size.width * 0.3,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: photoUrls.length,
-                              itemBuilder: (context, index) {
-                                return Container(
-                                  margin: const EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                  ),
-                                  width: MediaQuery.of(context).size.width * 0.3,
-                                  height: MediaQuery.of(context).size.width * 0.3,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
-                                    image: DecorationImage(
-                                      image: NetworkImage(photoUrls[index]),
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 25),
+                    // FutureBuilder<List<String>>(
+                    //   future: futurePhotos,
+                    //   builder: (context, snapshot) {
+                    //     if (snapshot.connectionState ==
+                    //         ConnectionState.waiting) {
+                    //       return Row(
+                    //         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    //         children: [
+                    //           Container(
+                    //             width: MediaQuery.of(context).size.width * 0.3,
+                    //             height: MediaQuery.of(context).size.width * 0.3,
+                    //             decoration: BoxDecoration(
+                    //               color: Colors.black26,
+                    //               borderRadius: BorderRadius.circular(8),
+                    //             ),
+                    //           ),
+                    //           Container(
+                    //             width: MediaQuery.of(context).size.width * 0.3,
+                    //             height: MediaQuery.of(context).size.width * 0.3,
+                    //             decoration: BoxDecoration(
+                    //               color: Colors.black26,
+                    //               borderRadius: BorderRadius.circular(8),
+                    //             ),
+                    //           ),
+                    //           Container(
+                    //             width: MediaQuery.of(context).size.width * 0.3,
+                    //             height: MediaQuery.of(context).size.width * 0.3,
+                    //             decoration: BoxDecoration(
+                    //               color: Colors.black26,
+                    //               borderRadius: BorderRadius.circular(8),
+                    //             ),
+                    //           ),
+                    //         ],
+                    //       );
+                    //     } else if (snapshot.hasError ||
+                    //         !snapshot.hasData ||
+                    //         snapshot.data!.isEmpty) {
+                    //       return SizedBox.shrink();
+                    //     } else {
+                    //       final photoUrls = snapshot.data!;
+                    //       return SizedBox(
+                    //         height: MediaQuery.of(context).size.width * 0.3,
+                    //         child: ListView.builder(
+                    //           scrollDirection: Axis.horizontal,
+                    //           itemCount: photoUrls.length,
+                    //           itemBuilder: (context, index) {
+                    //             return Container(
+                    //               margin: const EdgeInsets.symmetric(
+                    //                 horizontal: 4,
+                    //               ),
+                    //               width: MediaQuery.of(context).size.width * 0.3,
+                    //               height: MediaQuery.of(context).size.width * 0.3,
+                    //               decoration: BoxDecoration(
+                    //                 borderRadius: BorderRadius.circular(8),
+                    //                 image: DecorationImage(
+                    //                   image: NetworkImage(photoUrls[index]),
+                    //                   fit: BoxFit.cover,
+                    //                 ),
+                    //               ),
+                    //             );
+                    //           },
+                    //         ),
+                    //       );
+                    //     }
+                    //   },
+                    // ),
+                    // const SizedBox(height: 25),
                     // 추가 정보 리스트 (주소, 전화번호, 웹사이트 등)
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -1614,6 +1639,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           onTap: () {
                             Navigator.pop(context);
                             Share.share(
+                              ///TODO 실제 영상 ID로 바꿔줘야함
                               'https://www.youtube.com/shorts/NscOnNp2x8M',
                               subject: widget.storeName,
                             );
