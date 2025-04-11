@@ -220,10 +220,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark.copyWith(
         statusBarColor: Colors.black, // Color for Android
         statusBarIconBrightness: Brightness.light,
-        statusBarBrightness:
-        Platform.isIOS
-            ? Brightness.dark
-            : Brightness.light
+        statusBarBrightness: Brightness.dark
     ));
     /// TODO: 빈 위젯 등 위젯들 분리
     if (widget.isEmpty) {
@@ -323,20 +320,20 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
             // onDoubleTap: () {
             //   print('doubletap');
             // },
-            child: Container(
-              width: MediaQuery.of(context).size.width,
-              height: MediaQuery.of(context).size.height,
-              // color: Color(0xff121212),
-              color: Colors.black,
-              child: Column(
-                children: [
-                  Expanded(
-                    child: Stack(
-                      alignment: Alignment.topCenter,
-                      children: [
-                        Positioned(
-                          top: 115,
-                          child: YoutubeValueBuilder(
+            child: SafeArea(
+              child: Container(
+                width: MediaQuery.of(context).size.width,
+                height: MediaQuery.of(context).size.height,
+                // color: Color(0xff121212),
+                padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.046),
+                color: Colors.black,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: Stack(
+                        alignment: Alignment.topCenter,
+                        children: [
+                          YoutubeValueBuilder(
                             controller: _controller,
                             builder: (context, value) {
                               // _checkAndRestart(value);
@@ -371,63 +368,63 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               );
                             },
                           ),
-                        ),
 
-                        ///위아래 위젯들 가시성을 위한 그림자
-                        // IgnorePointer(
-                        //   child: Container(
-                        //     // color: Colors.black.withOpacity(0.2),
-                        //     decoration: BoxDecoration(
-                        //       gradient: LinearGradient(
-                        //         begin: Alignment.topCenter,
-                        //         end: Alignment.bottomCenter,
-                        //         colors: [
-                        //           Colors.black.withValues(alpha: 0.5),
-                        //           Colors.transparent,
-                        //           Colors.transparent,
-                        //           Colors.black.withValues(alpha: 0.5),
-                        //         ],
-                        //       ),
-                        //     ), // 어두운 투명 레이어
-                        //   ),
-                        // ),
+                          ///위아래 위젯들 가시성을 위한 그림자
+                          // IgnorePointer(
+                          //   child: Container(
+                          //     // color: Colors.black.withOpacity(0.2),
+                          //     decoration: BoxDecoration(
+                          //       gradient: LinearGradient(
+                          //         begin: Alignment.topCenter,
+                          //         end: Alignment.bottomCenter,
+                          //         colors: [
+                          //           Colors.black.withValues(alpha: 0.5),
+                          //           Colors.transparent,
+                          //           Colors.transparent,
+                          //           Colors.black.withValues(alpha: 0.5),
+                          //         ],
+                          //       ),
+                          //     ), // 어두운 투명 레이어
+                          //   ),
+                          // ),
 
-                        ///정지/재개 아이콘
-                        Center(
-                          child: AnimatedOpacity(
-                            opacity: _pauseIconOpacity,
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOutCirc,
-                            child: Container(
-                              padding: const EdgeInsets.all(15),
-                              decoration: const BoxDecoration(
-                                color: Colors.black54,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                _currentIcon,
-                                color: shortPageWhite,
-                                size: 50.0,
+                          ///정지/재개 아이콘
+                          Center(
+                            child: AnimatedOpacity(
+                              opacity: _pauseIconOpacity,
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOutCirc,
+                              child: Container(
+                                padding: const EdgeInsets.all(15),
+                                decoration: const BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  _currentIcon,
+                                  color: shortPageWhite,
+                                  size: 50.0,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  // VideoProgressIndicator(
-                  //   _playerController,
-                  //   padding: EdgeInsets.zero,
-                  //   allowScrubbing: true, // 스크럽 허용
-                  //   colors: const VideoProgressColors(
-                  //     playedColor: Color.fromRGBO(220, 20, 60, 1),
-                  //     // 재생된 부분 색상
-                  //     bufferedColor: Colors.grey,
-                  //     // 버퍼링된 부분 색상
-                  //     backgroundColor: Colors.grey,
-                  //   ),
-                  // ),
-                ],
+                    // VideoProgressIndicator(
+                    //   _playerController,
+                    //   padding: EdgeInsets.zero,
+                    //   allowScrubbing: true, // 스크럽 허용
+                    //   colors: const VideoProgressColors(
+                    //     playedColor: Color.fromRGBO(220, 20, 60, 1),
+                    //     // 재생된 부분 색상
+                    //     bufferedColor: Colors.grey,
+                    //     // 버퍼링된 부분 색상
+                    //     backgroundColor: Colors.grey,
+                    //   ),
+                    // ),
+                  ],
+                ),
               ),
             ),
           ),

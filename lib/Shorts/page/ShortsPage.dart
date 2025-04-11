@@ -65,7 +65,7 @@ class _ShortsPageState extends State<ShortsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      backgroundColor: Color(0xff121212),
+      backgroundColor: Colors.black,
       body: Column(
         children: [
           Expanded(
