@@ -388,7 +388,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               if (value.playerState == PlayerState.playing && !_hasRecordedSeen) {
                                 _hasRecordedSeen = true; // 한 번 기록했음을 표시
                                 // 현재 사용자 UID를 전달하여 recordSeenVideo 실행
-                                // recordSeenVideo(Provider.of<UserDataProvider>(context, listen: false).currentUserUID);
+                                recordSeenVideo(Provider.of<UserDataProvider>(context, listen: false).currentUserUID);
                               }
 
                               if (value.playerState == PlayerState.ended) {
