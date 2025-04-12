@@ -5,6 +5,7 @@ import 'package:shortsmap/Shorts/model/LocationData.dart';
 import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
 import 'package:shortsmap/Shorts/widget/ShimmerWidget.dart';
 import 'package:shortsmap/Shorts/widget/ShortFormWidget.dart';
+import 'package:shortsmap/UserDataProvider.dart';
 import 'package:shortsmap/Widgets/BottomNavBar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -21,38 +22,47 @@ class _ShortsPageState extends State<ShortsPage> {
   final _supabase = Supabase.instance.client;
 
   /// Supabase RPC 호출: search_locations
-  Future<List<LocationData>> _fetchDataFromSupabase(String? region, String? category, bool orderNear, double? lat, double? lon) async {
+  Future<List<LocationData>> _fetchDataFromSupabase(String? region, String? category, bool orderNear, double? lat, double? lon, String? uid) async {
 
 
+    //북마크 캐시 삭제
     await clearCache();
 
-    try {
-      // RPC 파라미터 구성
-      final response = await _supabase.rpc(
-        'get_locations',
-        params: {
-          '_region': region,
-          '_category': category,
-          '_order_near': orderNear,
-          '_lat': lat,
-          '_lon': lon,
-        },
-      );
+    if (uid != null) {
+      try {
+        // RPC 파라미터 구성
+        final response = await _supabase.rpc(
+          'get_locations',
+          params: {
+            '_region': region,
+            '_category': category,
+            '_order_near': orderNear,
+            '_lat': lat,
+            '_lon': lon,
+            '_user_id': uid,
+          },
+        );
 
-      final locationData =
-          (response as List<dynamic>).map((locationJson) {
-            return LocationData.fromJson(locationJson as Map<String, dynamic>);
-          }).toList();
+        final locationData =
+        (response as List<dynamic>).map((locationJson) {
+          return LocationData.fromJson(locationJson as Map<String, dynamic>);
+        }).toList();
 
-      await Future.delayed(const Duration(milliseconds: 700));
+        //로딩 시간이 있는척하기 위한 딜레이
+        await Future.delayed(const Duration(milliseconds: 700));
 
-      return locationData;
-    } on PostgrestException catch (e) {
-      throw Exception("Error fetching posts: ${e.code}, ${e.message}");
+        return locationData;
+      } on PostgrestException catch (e) {
+        throw Exception("Error fetching posts: ${e.code}, ${e.message}");
+      }
+    } else {
+      print('uid null');
+      return [];
     }
   }
 
 
+  ///북마크 캐시 삭제
   Future<void> clearCache() async {
 
     SharedPreferences preferences = await SharedPreferences.getInstance();
@@ -78,6 +88,7 @@ class _ShortsPageState extends State<ShortsPage> {
                     provider.orderNear,
                     provider.filterLat,
                     provider.filterLon,
+                    Provider.of<UserDataProvider>(context, listen: false).currentUserUID!
                   ),
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
