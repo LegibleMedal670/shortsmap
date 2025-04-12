@@ -1558,8 +1558,9 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           _buildListTile(
                             icon: Icons.verified_outlined,
                             title: 'I am owner of this place',
-                            onTap: () {
+                            onTap: () async{
                               // TODO: 소유자 인증 기능 추가
+                              await launchUrl(Uri.parse('https://forms.gle/Ji5br34NseKr8m1Q6'), mode: LaunchMode.inAppBrowserView);
                             },
                           ),
                         ],
