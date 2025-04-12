@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shortsmap/Map/pages/MapPage.dart';
 import 'package:shortsmap/Plan/screens/plan_page.dart';
 import 'package:shortsmap/Shorts/page/ShortsPage.dart';
 
@@ -97,7 +98,7 @@ Widget BottomNavBar(BuildContext context, String page) {
         InkWell(
           onTap: () async {
             HapticFeedback.lightImpact();
-            if (page != 'map') {
+            if (page != 'reserve') {
               // Navigator.pushReplacement(
               //   context,
               //   PageRouteBuilder(
@@ -119,14 +120,14 @@ Widget BottomNavBar(BuildContext context, String page) {
                 child: Icon(
                   // Icons.supervisor_account,
                   CupertinoIcons.tickets,
-                  color: (page == 'map') ? Color(0xff121212) : Colors.grey,
+                  color: (page == 'reserve') ? Color(0xff121212) : Colors.grey,
                   size: MediaQuery.of(context).size.height * (25 / 812),
                 ),
               ),
               Text(
                 'Reserve',
                 style: TextStyle(
-                  color: (page == 'map') ? Color(0xff121212) : Colors.grey,
+                  color: (page == 'reserve') ? Color(0xff121212) : Colors.grey,
                   fontSize: 12,
                 ),
               ),
@@ -137,16 +138,16 @@ Widget BottomNavBar(BuildContext context, String page) {
         InkWell(
           onTap: () async {
             HapticFeedback.lightImpact();
-            if (page != 'profile') {
-              // Navigator.pushReplacement(
-              //   context,
-              //   PageRouteBuilder(
-              //     pageBuilder: (context, animation1, animation2) =>
-              //     const VideoPage(),
-              //     transitionDuration: Duration.zero,
-              //     reverseTransitionDuration: Duration.zero,
-              //   ),
-              // );
+            if (page != 'map') {
+              Navigator.pushReplacement(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation1, animation2) =>
+                  const MapPage(),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
             }
           },
           child: Column(
@@ -158,15 +159,15 @@ Widget BottomNavBar(BuildContext context, String page) {
                 width: MediaQuery.of(context).size.width * 0.25,
                 child: Icon(
                   // Icons.supervisor_account,
-                  Icons.forum_outlined,
-                  color: (page == 'profile') ? Color(0xff121212) : Colors.grey,
+                  Icons.map_outlined,
+                  color: (page == 'map') ? Color(0xff121212) : Colors.grey,
                   size: MediaQuery.of(context).size.height * (25 / 812),
                 ),
               ),
               Text(
-                'Community',
+                'map',
                 style: TextStyle(
-                  color: (page == 'profile') ? Color(0xff121212) : Colors.grey,
+                  color: (page == 'map') ? Color(0xff121212) : Colors.grey,
                   fontSize: 12,
                 ),
               ),
