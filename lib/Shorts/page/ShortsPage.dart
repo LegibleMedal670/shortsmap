@@ -56,8 +56,39 @@ class _ShortsPageState extends State<ShortsPage> {
         throw Exception("Error fetching posts: ${e.code}, ${e.message}");
       }
     } else {
-      print('uid null');
-      return [];
+
+      SharedPreferences preferences = await SharedPreferences.getInstance();
+
+      List<String> seenVideoIds = preferences.getStringList('seenVideoIds') ?? [];
+
+      List<int> intList = seenVideoIds.map((str) => int.parse(str)).toList();
+
+      try {
+        // RPC 파라미터 구성
+        final response = await _supabase.rpc(
+          'get_locations_no_auth',
+          params: {
+            '_region': region,
+            '_category': category,
+            '_order_near': orderNear,
+            '_lat': lat,
+            '_lon': lon,
+            '_exclude_video_ids': intList,
+          },
+        );
+
+        final locationData =
+        (response as List<dynamic>).map((locationJson) {
+          return LocationData.fromJson(locationJson as Map<String, dynamic>);
+        }).toList();
+
+        //로딩 시간이 있는척하기 위한 딜레이
+        await Future.delayed(const Duration(milliseconds: 700));
+
+        return locationData;
+      } on PostgrestException catch (e) {
+        throw Exception("Error fetching posts: ${e.code}, ${e.message}");
+      }
     }
   }
 
