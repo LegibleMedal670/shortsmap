@@ -21,9 +21,22 @@ class _ShortsPageState extends State<ShortsPage> {
   /// Supabase client
   final _supabase = Supabase.instance.client;
 
+  late final PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   /// Supabase RPC 호출: search_locations
   Future<List<LocationData>> _fetchDataFromSupabase(String? region, String? category, bool orderNear, double? lat, double? lon, String? uid) async {
-
 
     //북마크 캐시 삭제
     await clearCache();
@@ -92,7 +105,6 @@ class _ShortsPageState extends State<ShortsPage> {
     }
   }
 
-
   ///북마크 캐시 삭제
   Future<void> clearCache() async {
 
@@ -149,10 +161,12 @@ class _ShortsPageState extends State<ShortsPage> {
                         bookmarkCount: 0,
                         isEmpty: true,
                         coordinates: {},
+                        pageController: _pageController,
                       );
                     }
 
                     return PageView.builder(
+                      controller: _pageController,
                       scrollDirection: Axis.vertical,
                       itemCount: data.length,
                       itemBuilder: (context, index) {
@@ -171,6 +185,7 @@ class _ShortsPageState extends State<ShortsPage> {
                           bookmarkCount: shortFormData.bookmarkCount,
                           isEmpty: false,
                           coordinates: shortFormData.coordinates!,
+                          pageController: _pageController,
                         );
                       },
                     );

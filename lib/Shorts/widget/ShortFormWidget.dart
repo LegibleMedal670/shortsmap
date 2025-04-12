@@ -29,6 +29,7 @@ class ShortFormWidget extends StatefulWidget {
   final int bookmarkCount;
   final bool isEmpty;
   final Map<String, double> coordinates;
+  final PageController pageController;
 
   const ShortFormWidget({
     required this.storeName,
@@ -44,6 +45,7 @@ class ShortFormWidget extends StatefulWidget {
     required this.bookmarkCount,
     required this.isEmpty,
     required this.coordinates,
+    required this.pageController,
     super.key,
   });
 
@@ -1590,8 +1592,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
       ),
       builder: (BuildContext context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.4,
-          minChildSize: 0.3999,
+          initialChildSize: 0.35,
+          minChildSize: 0.35,
           expand: false,
           builder:
               (context, optionScrollController) => SizedBox(
@@ -1632,25 +1634,13 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           ),
                         ),
                         GestureDetector(
-                          child: Container(
-                            color: Colors.transparent,
-                            padding: EdgeInsets.symmetric(vertical: 20),
-                            child: Row(
-                              children: [
-                                Icon(Icons.closed_caption, size: 24),
-                                SizedBox(width: 20),
-                                Text(
-                                  'Subtitle',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        GestureDetector(
+                          onTap: (){
+                            Navigator.pop(context);
+                            widget.pageController.nextPage(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeOut,
+                            );
+                          },
                           child: Container(
                             color: Colors.transparent,
                             padding: EdgeInsets.symmetric(vertical: 20),
