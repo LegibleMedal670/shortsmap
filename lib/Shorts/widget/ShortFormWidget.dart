@@ -386,7 +386,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               if (value.playerState == PlayerState.playing && !_hasRecordedSeen) {
                                 _hasRecordedSeen = true; // 한 번 기록했음을 표시
                                 // 현재 사용자 UID를 전달하여 recordSeenVideo 실행
-                                recordSeenVideo(Provider.of<UserDataProvider>(context, listen: false).currentUserUID);
+                                // recordSeenVideo(Provider.of<UserDataProvider>(context, listen: false).currentUserUID);
                               }
 
                               if (value.playerState == PlayerState.ended) {
@@ -1549,6 +1549,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             title: 'Report',
                             onTap: () {
                               // TODO: 신고 기능 추가
+                              showReportModal(context);
                             },
                           ),
                           const Divider(height: 2),
@@ -1669,6 +1670,9 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           ),
                         ),
                         GestureDetector(
+                          onTap: (){
+                            showReportModal(context);
+                          },
                           child: Container(
                             color: Colors.transparent,
                             padding: EdgeInsets.symmetric(vertical: 20),
@@ -1965,6 +1969,102 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
               },
             );
           },
+        );
+      },
+    );
+  }
+
+  ///신고 모달 TODO 실제신고기능추가필요
+  void showReportModal(BuildContext context) {
+    showModalBottomSheet(
+      backgroundColor: Colors.white,
+      context: context,
+      isScrollControlled: true,
+      enableDrag: true,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20.0),
+          topRight: Radius.circular(20.0),
+        ),
+      ),
+      builder: (BuildContext context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.25,
+          minChildSize: 0.25,
+          expand: false,
+          builder:
+              (context, reportScrollController) => SizedBox(
+            width: MediaQuery.of(context).size.width,
+            child: SingleChildScrollView(
+              // physics: const ClampingScrollPhysics(),
+              controller: reportScrollController,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                      child: Container(
+                        width: MediaQuery.of(context).size.width,
+                        color: Colors.transparent,
+                        padding: EdgeInsets.only(top: 10, bottom: 20),
+                        child: Text(
+                          'Out of service',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.red
+                          ),
+                        ),
+                      ),
+                    ),
+                    Divider(),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                      child: Container(
+                        width: MediaQuery.of(context).size.width,
+                        color: Colors.transparent,
+                        padding: EdgeInsets.only(top: 10, bottom: 20),
+                        child: Text(
+                          'Inappropriate content',
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.red
+                          ),
+                        ),
+                      ),
+                    ),
+                    Divider(),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                      child: Container(
+                        width: MediaQuery.of(context).size.width,
+                        color: Colors.transparent,
+                        padding: EdgeInsets.only(top: 10, bottom: 20),
+                        child: Text(
+                          'Incorrect information',
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.red
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         );
       },
     );
