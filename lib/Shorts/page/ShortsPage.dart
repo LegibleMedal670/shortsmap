@@ -126,11 +126,11 @@ class _ShortsPageState extends State<ShortsPage> {
               builder: (context, provider, child) {
                 return FutureBuilder(
                   future: _fetchDataFromSupabase(
-                    provider.filterRegion,
-                    provider.filterCategory,
+                    provider.filterRegion ?? '',
+                    provider.filterCategory ?? '',
                     provider.orderNear,
-                    provider.filterLat,
-                    provider.filterLon,
+                    provider.filterLat ?? 0.0,
+                    provider.filterLon ?? 0.0,
                     Provider.of<UserDataProvider>(context, listen: false).currentUserUID!
                   ),
                   builder: (context, snapshot) {

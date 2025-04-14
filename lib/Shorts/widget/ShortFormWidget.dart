@@ -223,7 +223,6 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
   ///영상 시청 여부 저장
   Future<void> recordSeenVideo(String? currentUserUid) async {
-
     ///로그인한 경우에는 서버에 저장
     if (currentUserUid != null) {
       try {
@@ -237,11 +236,11 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
         print('Insert 에러: $e');
       }
     } else {
-
       /// 로그인하지 않은 경우에는 캐시에 저장
       SharedPreferences preferences = await SharedPreferences.getInstance();
 
-      List<String> seenVideoIds = preferences.getStringList('seenVideoIds') ?? [];
+      List<String> seenVideoIds =
+          preferences.getStringList('seenVideoIds') ?? [];
 
       // videoId 추가
       seenVideoIds.add(widget.videoId);
@@ -250,7 +249,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
       seenVideoIds = seenVideoIds.toSet().toList();
 
       // 캐시에 200개 이상 쌓이면 초기화
-      if(seenVideoIds.length > 200) {
+      if (seenVideoIds.length > 200) {
         seenVideoIds = [];
       }
 
@@ -258,18 +257,19 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
       await preferences.setStringList('seenVideoIds', seenVideoIds);
 
       print(preferences.getStringList('seenVideoIds') ?? []);
-
-
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark.copyWith(
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle.dark.copyWith(
         statusBarColor: Colors.black, // Color for Android
         statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark
-    ));
+        statusBarBrightness: Brightness.dark,
+      ),
+    );
+
     /// TODO: 빈 위젯 등 위젯들 분리
     if (widget.isEmpty) {
       return Stack(
@@ -373,7 +373,9 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height,
                 // color: Color(0xff121212),
-                padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.046),
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).size.height * 0.046,
+                ),
                 color: Colors.black,
                 child: Column(
                   children: [
@@ -384,11 +386,16 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           YoutubeValueBuilder(
                             controller: _controller,
                             builder: (context, value) {
-
-                              if (value.playerState == PlayerState.playing && !_hasRecordedSeen) {
+                              if (value.playerState == PlayerState.playing &&
+                                  !_hasRecordedSeen) {
                                 _hasRecordedSeen = true; // 한 번 기록했음을 표시
                                 // 현재 사용자 UID를 전달하여 recordSeenVideo 실행
-                                recordSeenVideo(Provider.of<UserDataProvider>(context, listen: false).currentUserUID);
+                                recordSeenVideo(
+                                  Provider.of<UserDataProvider>(
+                                    context,
+                                    listen: false,
+                                  ).currentUserUID,
+                                );
                               }
 
                               if (value.playerState == PlayerState.ended) {
@@ -659,7 +666,10 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ///More 버튼
                         GestureDetector(
                           onTap: () {
-                            showInfoModal(context, 'ChIJydcugP6jfDUR0thfS3gHASk');
+                            showInfoModal(
+                              context,
+                              'ChIJydcugP6jfDUR0thfS3gHASk',
+                            );
                           },
                           child: Container(
                             width: 70,
@@ -1046,14 +1056,14 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
   // 2단계: name을 사용해 사진 URL(photoUri)을 얻는 함수
   Future<String> getPhotoUrl(
-      String photoName, {
-        int maxHeightPx = 400,
-        int maxWidthPx = 400,
-      }) async {
+    String photoName, {
+    int maxHeightPx = 400,
+    int maxWidthPx = 400,
+  }) async {
     final encodedPhotoName = Uri.encodeFull(photoName);
     final url = Uri.parse(
       'https://places.googleapis.com/v1/$encodedPhotoName/media'
-          '?key=$apiKey&maxHeightPx=$maxHeightPx&maxWidthPx=$maxWidthPx&skipHttpRedirect=true',
+      '?key=$apiKey&maxHeightPx=$maxHeightPx&maxWidthPx=$maxWidthPx&skipHttpRedirect=true',
     );
 
     final response = await http.get(url);
@@ -1084,8 +1094,10 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
   void showInfoModal(BuildContext context, String placeId) {
     // Future를 미리 변수에 담아 두면 동일한 Future 인스턴스를 재사용할 수 있습니다.
     final futurePhotos = fetchFirstPhotoUrl(placeId);
-    final double? userLat = Provider.of<UserDataProvider>(context, listen: false).currentLat;
-    final double? userLon = Provider.of<UserDataProvider>(context, listen: false).currentLon;
+    final double? userLat =
+        Provider.of<UserDataProvider>(context, listen: false).currentLat;
+    final double? userLon =
+        Provider.of<UserDataProvider>(context, listen: false).currentLon;
     final double? locationLat = widget.coordinates['lat'];
     final double? locationLon = widget.coordinates['lon'];
 
@@ -1229,7 +1241,10 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                   size: 18,
                                 ),
                                 Text(
-                                  (locationLat != null && userLat != null && locationLon != null && userLon != null)
+                                  (locationLat != null &&
+                                          userLat != null &&
+                                          locationLon != null &&
+                                          userLon != null)
                                       ? ' ${calculateTimeRequired(userLat, userLon, locationLat, locationLon)}분 · ${widget.storeLocation}'
                                       : ' 30분 · ${widget.storeLocation}',
                                   style: const TextStyle(
@@ -1262,7 +1277,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         const Spacer(),
                         // 공유, 닫기 버튼
                         GestureDetector(
-                          onTap: (){
+                          onTap: () {
                             Share.share(
                               ///TODO 실제 영상 ID로 바꿔줘야함
                               'https://www.youtube.com/shorts/NscOnNp2x8M',
@@ -1285,7 +1300,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: (){
+                          onTap: () {
                             Navigator.pop(context);
                           },
                           child: Container(
@@ -1311,16 +1326,16 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         GestureDetector(
-                          onTap: () async{
+                          onTap: () async {
                             final Uri phoneUri = Uri(
                               scheme: 'tel',
                               path: '+82 10 5475 6096', //TODO : 전화번호 적용
                             );
 
                             if (await canLaunchUrl(phoneUri)) {
-                            await launchUrl(phoneUri);
+                              await launchUrl(phoneUri);
                             } else {
-                            debugPrint('전화 걸기 실패');
+                              debugPrint('전화 걸기 실패');
                             }
                           },
                           child: Container(
@@ -1351,10 +1366,13 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: () async{
-                            await launchUrl( ///TODO PlaceId 받아와서 넣어줘야함
-                              Uri.parse('https://www.google.com/maps/dir/?api=1&origin=$userLat,$userLon&destination=${widget.storeName}&destination_place_id=ChIJq5SjCJKlfDURGqkGbzT21Y8&travelmode=transit'),
-                              mode: LaunchMode.externalApplication
+                          onTap: () async {
+                            await launchUrl(
+                              ///TODO PlaceId 받아와서 넣어줘야함
+                              Uri.parse(
+                                'https://www.google.com/maps/dir/?api=1&origin=$userLat,$userLon&destination=${widget.storeName}&destination_place_id=ChIJq5SjCJKlfDURGqkGbzT21Y8&travelmode=transit',
+                              ),
+                              mode: LaunchMode.externalApplication,
                             );
                           },
                           child: Container(
@@ -1385,9 +1403,14 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: (){
+                          onTap: () {
                             Navigator.pop(context);
-                            saveBookmarkInfo(Provider.of<UserDataProvider>(context, listen: false).currentUserUID);
+                            saveBookmarkInfo(
+                              Provider.of<UserDataProvider>(
+                                context,
+                                listen: false,
+                              ).currentUserUID,
+                            );
                           },
                           child: Container(
                             width: MediaQuery.of(context).size.width * 0.3,
@@ -1512,9 +1535,12 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             title: 'Address',
                             subtitle: '주소어쩌구저쩌구~~ \n누르면 구글맵 or 애플맵 or 자체화면',
                             onTap: () async {
-                              await launchUrl( ///TODO PlaceId 받아와서 넣어줘야함
-                              Uri.parse('https://www.google.com/maps/search/?api=1&query=${widget.storeName}&query_place_id=ChIJq5SjCJKlfDURGqkGbzT21Y8'),
-                              mode: LaunchMode.externalApplication
+                              await launchUrl(
+                                ///TODO PlaceId 받아와서 넣어줘야함
+                                Uri.parse(
+                                  'https://www.google.com/maps/search/?api=1&query=${widget.storeName}&query_place_id=ChIJq5SjCJKlfDURGqkGbzT21Y8',
+                                ),
+                                mode: LaunchMode.externalApplication,
                               );
                             },
                           ),
@@ -1530,9 +1556,9 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               );
 
                               if (await canLaunchUrl(phoneUri)) {
-                              await launchUrl(phoneUri);
+                                await launchUrl(phoneUri);
                               } else {
-                              debugPrint('전화 걸기 실패');
+                                debugPrint('전화 걸기 실패');
                               }
                             },
                           ),
@@ -1542,7 +1568,10 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             title: 'Visit Website',
                             subtitle: '웹사이트 있으면 \n누르면 웹사이트로 이동',
                             onTap: () async {
-                              await launchUrl(Uri.parse('https://www.naver.com'), mode: LaunchMode.inAppBrowserView);
+                              await launchUrl(
+                                Uri.parse('https://www.naver.com'),
+                                mode: LaunchMode.inAppBrowserView,
+                              );
                             },
                           ),
                           const Divider(height: 2),
@@ -1558,9 +1587,14 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           _buildListTile(
                             icon: Icons.verified_outlined,
                             title: 'I am owner of this place',
-                            onTap: () async{
+                            onTap: () async {
                               // TODO: 소유자 인증 기능 추가
-                              await launchUrl(Uri.parse('https://forms.gle/Ji5br34NseKr8m1Q6'), mode: LaunchMode.inAppBrowserView);
+                              await launchUrl(
+                                Uri.parse(
+                                  'https://forms.gle/Ji5br34NseKr8m1Q6',
+                                ),
+                                mode: LaunchMode.inAppBrowserView,
+                              );
                             },
                           ),
                         ],
@@ -1635,7 +1669,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: (){
+                          onTap: () {
                             Navigator.pop(context);
                             widget.pageController.nextPage(
                               duration: const Duration(milliseconds: 300),
@@ -1661,7 +1695,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: (){
+                          onTap: () {
                             showReportModal(context);
                           },
                           child: Container(
@@ -1986,76 +2020,76 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
           expand: false,
           builder:
               (context, reportScrollController) => SizedBox(
-            width: MediaQuery.of(context).size.width,
-            child: SingleChildScrollView(
-              // physics: const ClampingScrollPhysics(),
-              controller: reportScrollController,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.pop(context);
-                      },
-                      child: Container(
-                        width: MediaQuery.of(context).size.width,
-                        color: Colors.transparent,
-                        padding: EdgeInsets.only(top: 10, bottom: 20),
-                        child: Text(
-                          'Out of service',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.red
+                width: MediaQuery.of(context).size.width,
+                child: SingleChildScrollView(
+                  // physics: const ClampingScrollPhysics(),
+                  controller: reportScrollController,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pop(context);
+                          },
+                          child: Container(
+                            width: MediaQuery.of(context).size.width,
+                            color: Colors.transparent,
+                            padding: EdgeInsets.only(top: 10, bottom: 20),
+                            child: Text(
+                              'Out of service',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.red,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                    Divider(),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.pop(context);
-                      },
-                      child: Container(
-                        width: MediaQuery.of(context).size.width,
-                        color: Colors.transparent,
-                        padding: EdgeInsets.only(top: 10, bottom: 20),
-                        child: Text(
-                          'Inappropriate content',
-                          style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                              color: Colors.red
+                        Divider(),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pop(context);
+                          },
+                          child: Container(
+                            width: MediaQuery.of(context).size.width,
+                            color: Colors.transparent,
+                            padding: EdgeInsets.only(top: 10, bottom: 20),
+                            child: Text(
+                              'Inappropriate content',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.red,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                    Divider(),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.pop(context);
-                      },
-                      child: Container(
-                        width: MediaQuery.of(context).size.width,
-                        color: Colors.transparent,
-                        padding: EdgeInsets.only(top: 10, bottom: 20),
-                        child: Text(
-                          'Incorrect information',
-                          style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                              color: Colors.red
+                        Divider(),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pop(context);
+                          },
+                          child: Container(
+                            width: MediaQuery.of(context).size.width,
+                            color: Colors.transparent,
+                            padding: EdgeInsets.only(top: 10, bottom: 20),
+                            child: Text(
+                              'Incorrect information',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.red,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ),
         );
       },
     );

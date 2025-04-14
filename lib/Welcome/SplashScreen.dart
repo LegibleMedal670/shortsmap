@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shortsmap/Map/screens/map_page.dart';
 import 'package:shortsmap/Plan/screens/plan_page.dart';
 import 'package:shortsmap/Shorts/page/ShortsPage.dart';
-
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -20,10 +20,7 @@ class _SplashScreenState extends State<SplashScreen> {
   /// 초기 라우트 스택(ShortsPage & PlanPage)을 구성합니다.
   void _navigateToNextScreen() async {
     await Future.delayed(const Duration(milliseconds: 1500));
-    Navigator.pushReplacement(
-      context,
-      _buildPageRoute(MainNavigator()),
-    );
+    Navigator.pushReplacement(context, _buildPageRoute(MainNavigator()));
   }
 
   /// 부드러운 전환을 위한 페이지 전환 애니메이션(없도록 설정)
@@ -56,9 +53,9 @@ class MainNavigator extends StatelessWidget {
       onGenerateInitialRoutes: (navigator, initialRoute) {
         return [
           // 스택의 최상단: PlanPage (최초에 보이는 페이지)
-          MaterialPageRoute(builder: (_) => PlanPage()),
+          MaterialPageRoute(builder: (_) => MapPage()),
           // 스택의 가장 밑: ShortsPage
-          MaterialPageRoute(builder: (_) => ShortsPage()),
+          MaterialPageRoute(builder: (_) => MapPage()),
         ];
       },
     );
