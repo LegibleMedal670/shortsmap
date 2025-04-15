@@ -1,8 +1,16 @@
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'dart:ui';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:provider/provider.dart';
+import 'package:shortsmap/Map/model/BookmarkLocation.dart';
+import 'package:shortsmap/UserDataProvider.dart';
 import 'package:shortsmap/Widgets/BottomNavBar.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -30,6 +38,10 @@ class _MapPageState extends State<MapPage> {
   // double _sheetSize = 0;
 
   bool _isListDetailOpened = false;
+
+  BitmapDescriptor? _currentMarkerIcon;
+
+  Set<Marker> _bookmarkMarkers = {};
 
 // 현재 위치를 가져와서 지도 카메라를 이동시키는 함수
   Future<void> _getInitialLocation() async {
@@ -68,9 +80,96 @@ class _MapPageState extends State<MapPage> {
     _mapController
         .animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
   }
+
+  Future<BitmapDescriptor> getMarkerIcon({
+    required Color backgroundColor,
+    required IconData iconData,
+    double size = 80,     // 논리적 크기 (예: 80x80)
+    double iconSize = 40, // 논리적 내부 아이콘 크기
+  }) async {
+    // 최신 방법으로 devicePixelRatio 가져오기
+    final double scale = PlatformDispatcher.instance.views.first.devicePixelRatio;
+
+    // 1. PictureRecorder와 Canvas 생성, canvas에 scale 적용하여 고해상도 출력 준비
+    final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
+    final Canvas canvas = Canvas(pictureRecorder);
+    canvas.scale(scale);
+
+    // border 두께 (논리 단위)
+    final double borderWidth = 4.0;
+
+    // 2. 흰색 외곽 원 (border) 그리기
+    final Paint borderPaint = Paint()..color = Colors.white;
+    canvas.drawCircle(
+      Offset(size / 2, size / 2),
+      size / 2,
+      borderPaint,
+    );
+
+    // 3. 내부 원 그리기 (border 두께 만큼 작게)
+    final Paint innerPaint = Paint()..color = backgroundColor;
+    canvas.drawCircle(
+      Offset(size / 2, size / 2),
+      (size / 2) - borderWidth,
+      innerPaint,
+    );
+
+    // 4. 텍스트 페인터로 아이콘 글리프를 중앙에 그림
+    final TextPainter textPainter = TextPainter(textDirection: TextDirection.ltr);
+    textPainter.text = TextSpan(
+      text: String.fromCharCode(iconData.codePoint),
+      style: TextStyle(
+        fontFamily: iconData.fontFamily,
+        package: iconData.fontPackage, // Material Icons인 경우 보통 null
+        fontSize: iconSize,
+        color: Colors.white,
+      ),
+    );
+    textPainter.layout();
+    final double xCenter = (size - textPainter.width) / 2;
+    final double yCenter = (size - textPainter.height) / 2;
+    textPainter.paint(canvas, Offset(xCenter, yCenter));
+
+    // 5. 캔버스에 그린 내용을 고해상도 이미지로 생성 (실제 픽셀 크기는 size * scale)
+    final ui.Image hiResImage = await pictureRecorder.endRecording().toImage(
+      (size * scale).toInt(),
+      (size * scale).toInt(),
+    );
+    final ByteData? hiResByteData = await hiResImage.toByteData(format: ui.ImageByteFormat.png);
+    final Uint8List hiResPngBytes = hiResByteData!.buffer.asUint8List();
+
+    // 6. 고해상도 이미지를 논리적 크기(size x size)로 다운스케일링
+    final ui.Codec codec = await ui.instantiateImageCodec(
+      hiResPngBytes,
+      targetWidth: size.toInt(),
+      targetHeight: size.toInt(),
+    );
+    final ui.FrameInfo frameInfo = await codec.getNextFrame();
+    final ui.Image resizedImage = frameInfo.image;
+    final ByteData? resizedByteData = await resizedImage.toByteData(format: ui.ImageByteFormat.png);
+    final Uint8List resizedPngBytes = resizedByteData!.buffer.asUint8List();
+
+    // 7. BitmapDescriptor 생성 (BitmapDescriptor.fromBytes는 여전히 사용 가능한 최신 방식입니다)
+    return BitmapDescriptor.fromBytes(resizedPngBytes);
+  }
+
+
   @override
   void initState() {
     super.initState();
+
+    getMarkerIcon(
+      backgroundColor: Colors.green,
+      iconData: Icons.star_outline,
+      size: 100,
+      iconSize: 60,
+    ).then((icon) {
+      setState(() {
+        _currentMarkerIcon = icon;
+      });
+      _loadBookmarkMarkers();
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       setState(() {
         _widgetHeight = MediaQuery.of(context).size.height;
@@ -100,6 +199,43 @@ class _MapPageState extends State<MapPage> {
     _sheetController.dispose();
     super.dispose();
   }
+
+  // RPC 함수를 호출하여 특정 유저의 북마크 데이터를 가져오고 Marker로 변환하는 함수
+  Future<void> _loadBookmarkMarkers() async {
+    try {
+      // 여기서 'YOUR_USER_UUID'는 현재 로그인한 유저의 UUID로 교체합니다.
+      final response = await Supabase.instance.client
+          .rpc('get_user_bookmarks', params: {'_user_id': Provider.of<UserDataProvider>(context, listen: false).currentUserUID!});
+
+      // RPC 함수가 LocationBookmark 모델 형태의 데이터 목록을 반환한다고 가정
+      final List<dynamic> data = response;
+      // 데이터가 비어 있으면 marker 세트를 빈 Set으로 설정
+      Set<Marker> markers = data.map((raw) {
+        // 이미 작성해둔 LocationBookmark.fromMap() 함수를 사용합니다.
+        final bookmark = BookmarkLocation.fromMap(raw);
+        return Marker(
+          markerId: MarkerId(bookmark.locationId.toString()),
+          position: LatLng(bookmark.latitude, bookmark.longitude),
+          infoWindow: InfoWindow(
+            title: bookmark.name,
+            snippet: bookmark.category,
+          ),
+          icon: _currentMarkerIcon ?? BitmapDescriptor.defaultMarker,
+          onTap: () {
+            print('마커 tapped: ${bookmark.name}');
+            // 마커 탭 시 추가 동작 구현 가능
+          },
+        );
+      }).toSet();
+
+      setState(() {
+        _bookmarkMarkers = markers;
+      });
+    } on PostgrestException catch (e) {
+      print('북마크 Marker 로드 오류: $e');
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -211,68 +347,69 @@ class _MapPageState extends State<MapPage> {
                       myLocationEnabled: true,
                       myLocationButtonEnabled: false,
                       initialCameraPosition: _initialCameraPosition,
+                      markers: _bookmarkMarkers,
                     ),
                   ),
                   // 검색창
-                  Visibility(
-                    visible: (!_isListDetailOpened && _fabPosition < 700),
-                    child: Positioned(
-                      top: 70,
-                      left: 10,
-                      right: 10,
-                      child: Container(
-                        width: MediaQuery.of(context).size.width * 0.9,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: TextField(
-                          onTap: () {
-                            _sheetController.animateTo(
-                              0.05,
-                              duration: Duration(milliseconds: 300),
-                              curve: Curves.easeInOut,
-                            );
-                          },
-                          focusNode: _focusNode,
-                          controller: _textEditingController,
-                          onChanged: (text) {
-                            setState(() {});
-                          },
-                          cursorColor: Colors.black38,
-                          decoration: InputDecoration(
-                            prefixIcon: GestureDetector(
-                              child: InkWell(
-                                onTap: () => print('asd'),
-                                child: Icon(
-                                  Icons.menu,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                              onTap: () {},
-                            ),
-                            suffixIcon: _textEditingController.text.isEmpty
-                                ? null
-                                : InkWell(
-                                    onTap: () => setState(() {
-                                      _textEditingController.clear();
-                                    }),
-                                    child: Icon(
-                                      Icons.clear,
-                                      color: Colors.black54,
-                                    ),
-                                  ),
-                            hintText: 'Search Here!',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                  // Visibility(
+                  //   visible: (!_isListDetailOpened && _fabPosition < 700),
+                  //   child: Positioned(
+                  //     top: 70,
+                  //     left: 10,
+                  //     right: 10,
+                  //     child: Container(
+                  //       width: MediaQuery.of(context).size.width * 0.9,
+                  //       decoration: BoxDecoration(
+                  //         borderRadius: BorderRadius.circular(8),
+                  //       ),
+                  //       child: TextField(
+                  //         onTap: () {
+                  //           _sheetController.animateTo(
+                  //             0.05,
+                  //             duration: Duration(milliseconds: 300),
+                  //             curve: Curves.easeInOut,
+                  //           );
+                  //         },
+                  //         focusNode: _focusNode,
+                  //         controller: _textEditingController,
+                  //         onChanged: (text) {
+                  //           setState(() {});
+                  //         },
+                  //         cursorColor: Colors.black38,
+                  //         decoration: InputDecoration(
+                  //           prefixIcon: GestureDetector(
+                  //             child: InkWell(
+                  //               onTap: () => print('asd'),
+                  //               child: Icon(
+                  //                 Icons.menu,
+                  //                 color: Colors.black54,
+                  //               ),
+                  //             ),
+                  //             onTap: () {},
+                  //           ),
+                  //           suffixIcon: _textEditingController.text.isEmpty
+                  //               ? null
+                  //               : InkWell(
+                  //                   onTap: () => setState(() {
+                  //                     _textEditingController.clear();
+                  //                   }),
+                  //                   child: Icon(
+                  //                     Icons.clear,
+                  //                     color: Colors.black54,
+                  //                   ),
+                  //                 ),
+                  //           hintText: 'Search Here!',
+                  //           border: OutlineInputBorder(
+                  //             borderRadius: BorderRadius.circular(10),
+                  //             borderSide: BorderSide.none,
+                  //           ),
+                  //           filled: true,
+                  //           fillColor: Colors.white,
+                  //         ),
+                  //       ),
+                  //     ),
+                  //   ),
+                  // ),
                   // 내위치버튼
                   Visibility(
                     visible: _fabPosition < 700,
@@ -283,27 +420,54 @@ class _MapPageState extends State<MapPage> {
                               ? _fabPosition - 20
                               : _fabPosition - 40,
                       right: 10,
-                      child: SizedBox(
-                        height: 45,
-                        width: 45,
-                        child: FittedBox(
-                          child: FloatingActionButton(
-                            backgroundColor: Colors.white,
-                            child: const Icon(
-                              CupertinoIcons.paperplane_fill,
-                              color: Colors.black54,
-                              size: 28,
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            height: 45,
+                            width: 45,
+                            child: FittedBox(
+                              child: FloatingActionButton(
+                                backgroundColor: Colors.white,
+                                child: const Icon(
+                                  Icons.filter_alt,
+                                  color: Colors.black54,
+                                  size: 28,
+                                ),
+                                onPressed: () {
+                                  // _moveToCurrentLocation();
+                                  // _sheetController.animateTo(
+                                  //   0.05,
+                                  //   duration: Duration(milliseconds: 300),
+                                  //   curve: Curves.easeInOut,
+                                  // );
+                                },
+                              ),
                             ),
-                            onPressed: () {
-                              _moveToCurrentLocation();
-                              _sheetController.animateTo(
-                                0.05,
-                                duration: Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                              );
-                            },
                           ),
-                        ),
+                          SizedBox(width: 15,),
+                          SizedBox(
+                            height: 45,
+                            width: 45,
+                            child: FittedBox(
+                              child: FloatingActionButton(
+                                backgroundColor: Colors.white,
+                                child: const Icon(
+                                  CupertinoIcons.paperplane_fill,
+                                  color: Colors.black54,
+                                  size: 28,
+                                ),
+                                onPressed: () {
+                                  _moveToCurrentLocation();
+                                  _sheetController.animateTo(
+                                    0.05,
+                                    duration: Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
