@@ -43,7 +43,16 @@ class _MapPageState extends State<MapPage> {
 
   Set<Marker> _bookmarkMarkers = {};
 
+  Set<Marker> _allBookmarkMarkers = {}; // 전체 마커 저장용
+
+
   Map<String, List<BookmarkLocation>> _categorizedBookmarks = {};
+
+  String? _selectedCategory;
+
+  bool _isProgrammaticMove = false;
+
+
 
   // 카테고리별 아이콘 및 컬러
   Map<String, dynamic> categoryStyles = {
@@ -277,8 +286,10 @@ class _MapPageState extends State<MapPage> {
 
       setState(() {
         _bookmarkMarkers = markers;
+        _allBookmarkMarkers = markers; // 전체 마커 백업
         _categorizedBookmarks = categorized;
       });
+
 
     } on PostgrestException catch (e) {
       print('북마크 Marker 로드 오류: $e');
@@ -378,6 +389,11 @@ class _MapPageState extends State<MapPage> {
                         // _getInitialLocation();
                       },
                       onCameraMoveStarted: () {
+                        if (_isProgrammaticMove) {
+                          _isProgrammaticMove = false;
+                          return; // 바텀시트 안 내림
+                        }
+
                         _focusNode.unfocus();
                         _sheetController.animateTo(
                           0.05,
@@ -540,6 +556,7 @@ class _MapPageState extends State<MapPage> {
                             onPressed: () {
                               setState(() {
                                 _isListDetailOpened = false;
+                                _bookmarkMarkers = _allBookmarkMarkers; // 마커 복원
                               });
                               _sheetController.animateTo(
                                 0.4,
@@ -922,15 +939,38 @@ class _MapPageState extends State<MapPage> {
   }) {
     return ListTile(
       onTap: () {
+        final items = _categorizedBookmarks[title]!;
+
+        _isProgrammaticMove = true;
+
+        // 지도 카메라 이동
+        final latest = items.first;
+        _mapController.animateCamera(CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: LatLng(latest.latitude, latest.longitude),
+            zoom: 18,
+          ),
+        ));
+
+        // 마커 필터링
+        final filteredMarkers = _allBookmarkMarkers.where((marker) {
+          final matched = items.any((b) => b.locationId.toString() == marker.markerId.value);
+          return matched;
+        }).toSet();
+
+        setState(() {
+          _bookmarkMarkers = filteredMarkers;
+          _selectedCategory = title;
+          _isListDetailOpened = true;
+        });
+
         _sheetController.animateTo(
           0.5,
           duration: Duration(milliseconds: 300),
           curve: Curves.easeInOut,
         );
-        setState(() {
-          _isListDetailOpened = true;
-        });
       },
+
       leading: CircleAvatar(
         radius: 20,
         backgroundColor: color,
