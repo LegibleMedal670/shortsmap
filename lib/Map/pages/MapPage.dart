@@ -55,6 +55,9 @@ class _MapPageState extends State<MapPage> {
 
   Future<List<Map<String, dynamic>>>? _categoryLocationFuture;
 
+  Map<String, Future<String>> _photoUrlCache = {};
+
+
 
 
 
@@ -692,16 +695,23 @@ class _MapPageState extends State<MapPage> {
                                             itemBuilder: (context, index) {
                                               final p = places[index];
 
+                                              // final placeId = p['location_id'].toString();
+
+                                              // TODO Provider 적용해서 전역적 캐싱 처리 필요
+                                              final placeId = 'ChIJg15J_MypfDURtLH0G1suNq8';
+
+                                              if (!_photoUrlCache.containsKey(placeId)) {
+                                                // 아직 캐시되지 않은 경우, fetch 호출 후 저장
+                                                _photoUrlCache[placeId] = fetchFirstPhotoUrl(placeId);
+                                              }
+
                                               return FutureBuilder<String>(
-                                                // future: fetchFirstPhotoUrl(p['location_id'].toString()),
-                                                // TODO 실제 장소 아이디 불러와서 해줘야함
-                                                // TODO API 사진 한번만 불러오도록 해줘야함
-                                                future: fetchFirstPhotoUrl('ChIJg15J_MypfDURtLH0G1suNq8'),
+                                                future: _photoUrlCache[placeId],
                                                 builder: (context, photoSnapshot) {
-                                                  String? imageUrl = photoSnapshot.data; // fallback 이미지
+                                                  final imageUrl = photoSnapshot.data;
 
                                                   return _locationTile(
-                                                    p['location_id'].toString(),
+                                                    placeId,
                                                     imageUrl,
                                                     p['name'] ?? '',
                                                     p['region'] ?? '',
@@ -712,6 +722,7 @@ class _MapPageState extends State<MapPage> {
                                                   );
                                                 },
                                               );
+
                                             },
                                           );
                                         },
@@ -1069,7 +1080,7 @@ class _MapPageState extends State<MapPage> {
         ));
       },
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+        padding: EdgeInsets.symmetric(vertical: 15, horizontal: 14),
         color: Colors.transparent,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
