@@ -1,11 +1,12 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:ui';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shortsmap/Map/model/BookmarkLocation.dart';
 import 'package:shortsmap/UserDataProvider.dart';
@@ -28,7 +29,7 @@ class _MapPageState extends State<MapPage> {
   late GoogleMapController _mapController;
 
   CameraPosition _initialCameraPosition =
-      CameraPosition(target: LatLng(37.793503213905154, -122.39945983265487), zoom: 20.0);
+      CameraPosition(target: LatLng(600.793503213905154, -600.39945983265487), zoom: 20.0);
 
   double _widgetHeight = 0;
   double _fabPosition = 0;
@@ -51,6 +52,9 @@ class _MapPageState extends State<MapPage> {
   String? _selectedCategory;
 
   bool _isProgrammaticMove = false;
+
+  Future<List<Map<String, dynamic>>>? _categoryLocationFuture;
+
 
 
 
@@ -648,52 +652,70 @@ class _MapPageState extends State<MapPage> {
                                       const SizedBox(height: 30),
                                       // 실제 스크롤 되는 콘텐츠
                                       _isListDetailOpened
-                                          ? Padding(
-                                            padding: const EdgeInsets.only(top: 15,left: 15,),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                                              children: [
-                                                Row(
-                                                  children: [
-                                                    CircleAvatar(
-                                                      radius: 20,
-                                                      backgroundColor: Colors.green,
-                                                      child: Icon(
-                                                        Icons.star_outline,
-                                                        color: Colors.white,
-                                                        size: 25,
-                                                      ),
-                                                    ),
-                                                    SizedBox(
-                                                      width: 10,
-                                                    ),
-                                                    Text(
-                                                      'ㅇㅇㅇ',
-                                                      style: TextStyle(
-                                                        fontSize: 28,
-                                                      ),
-                                                    ),
-                                                    Spacer(),
-                                                    Padding(
-                                                      padding: const EdgeInsets.only(right: 20),
-                                                      child: CircleAvatar(
-                                                        radius: 20,
-                                                        backgroundColor: Colors.grey[300],
-                                                        child: Icon(
-                                                          CupertinoIcons.share,
-                                                          color: Colors.black,
-                                                          size: 18,
-                                                        ),
-                                                      ),
-                                                    ),
+                                          ? FutureBuilder<List<Map<String, dynamic>>>(
+                                        future: _categoryLocationFuture,
+                                        builder: (context, snapshot) {
 
+                                          // TODO Skeleton이나 아예 흰화면으로 바꿔주기
+                                          if (snapshot.connectionState == ConnectionState.waiting) {
+                                            return const Center(child: CircularProgressIndicator());
+                                          }
 
-                                                  ],
-                                                )
+                                          // TODO 비어있거나 에러일 때 보여줄 내용 넣기 ( 빈 화면일 일은 없을거임근데 )
+                                          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                            return const Padding(
+                                              padding: EdgeInsets.all(20),
+                                              child: Text('No locations found.'),
+                                            );
+                                          }
 
-                                              ],
-                                            ),
-                                          )
+                                          final places = snapshot.data!;
+
+                                          return ListView.separated(
+                                            padding: EdgeInsets.zero,
+                                            shrinkWrap: true,
+                                            physics: NeverScrollableScrollPhysics(),
+                                            itemCount: places.length,
+                                            separatorBuilder:
+                                                (context, index) {
+                                              return Padding(
+                                                padding: const EdgeInsets
+                                                    .symmetric(
+                                                    horizontal: 16),
+                                                child: Divider(
+                                                  color: Colors.grey[300],
+                                                  height: 1.5,
+                                                  thickness: 1,
+                                                ),
+                                              );
+                                            },
+                                            itemBuilder: (context, index) {
+                                              final p = places[index];
+
+                                              return FutureBuilder<String>(
+                                                // future: fetchFirstPhotoUrl(p['location_id'].toString()),
+                                                // TODO 실제 장소 아이디 불러와서 해줘야함
+                                                // TODO API 사진 한번만 불러오도록 해줘야함
+                                                future: fetchFirstPhotoUrl('ChIJg15J_MypfDURtLH0G1suNq8'),
+                                                builder: (context, photoSnapshot) {
+                                                  String? imageUrl = photoSnapshot.data; // fallback 이미지
+
+                                                  return _locationTile(
+                                                    p['location_id'].toString(),
+                                                    imageUrl,
+                                                    p['name'] ?? '',
+                                                    p['region'] ?? '',
+                                                    p['open_time'] ?? '00:00',
+                                                    p['close_time'] ?? '00:00',
+                                                    (p['latitude'] as num).toDouble(),
+                                                    (p['longitude'] as num).toDouble(),
+                                                  );
+                                                },
+                                              );
+                                            },
+                                          );
+                                        },
+                                      )
                                           : Column(
                                               crossAxisAlignment:
                                                   CrossAxisAlignment.stretch,
@@ -940,11 +962,12 @@ class _MapPageState extends State<MapPage> {
     return ListTile(
       onTap: () {
         final items = _categorizedBookmarks[title]!;
+        final locationIds = items.map((e) => e.locationId).toList();
 
         _isProgrammaticMove = true;
 
-        // 지도 카메라 이동
         final latest = items.first;
+
         _mapController.animateCamera(CameraUpdate.newCameraPosition(
           CameraPosition(
             target: LatLng(latest.latitude, latest.longitude),
@@ -952,16 +975,19 @@ class _MapPageState extends State<MapPage> {
           ),
         ));
 
-        // 마커 필터링
-        final filteredMarkers = _allBookmarkMarkers.where((marker) {
-          final matched = items.any((b) => b.locationId.toString() == marker.markerId.value);
-          return matched;
-        }).toSet();
-
         setState(() {
-          _bookmarkMarkers = filteredMarkers;
+          _bookmarkMarkers = _allBookmarkMarkers
+              .where((m) => locationIds.contains(int.parse(m.markerId.value)))
+              .toSet();
+
           _selectedCategory = title;
           _isListDetailOpened = true;
+
+          _categoryLocationFuture = Supabase.instance.client
+              .rpc('get_locations_by_ids', params: {
+            '_ids': locationIds,
+          })
+              .then((value) => List<Map<String, dynamic>>.from(value));
         });
 
         _sheetController.animateTo(
@@ -970,6 +996,7 @@ class _MapPageState extends State<MapPage> {
           curve: Curves.easeInOut,
         );
       },
+
 
       leading: CircleAvatar(
         radius: 20,
@@ -1009,6 +1036,199 @@ class _MapPageState extends State<MapPage> {
         child: const Icon(Icons.more_vert),
       ),
     );
+  }
+
+  Widget _locationTile(String locationId, String? imageUrl, String storeName, String region, String openTime, String closeTime, double lat, double lon) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+      color: Colors.transparent,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // FutureBuilder를 사용하여 첫 번째 사진을 CircleAvatar 이미지로 설정
+          if (imageUrl != null)
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.lightBlue,
+                  width: 2,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(2.0),
+                child: CircleAvatar(
+                  radius: 90,
+                  backgroundImage: NetworkImage(imageUrl),
+                  backgroundColor: Colors.grey[200],
+                ),
+              ),
+            ),
+          if (imageUrl == null)
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.lightBlue,
+                  width: 2,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(2.0),
+                child: CircleAvatar(
+                  radius: 90,
+                  // backgroundImage: NetworkImage(imageUrl),
+                  backgroundColor: Colors.grey[300],
+                ),
+              ),
+            ),
+          const SizedBox(width: 15),
+          // 텍스트 정보: 매장명, 카테고리, 평균 가격 등
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  storeName,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      CupertinoIcons.bus,
+                      color: Colors.black26,
+                      size: 18,
+                    ),
+                    Text(
+                      (lat != null && Provider.of<UserDataProvider>(context, listen: false).currentLat != null && lon != null && Provider.of<UserDataProvider>(context, listen: false).currentLon != null)
+                          ? ' ${calculateTimeRequired(Provider.of<UserDataProvider>(context, listen: false).currentLat!, Provider.of<UserDataProvider>(context, listen: false).currentLon!, lat, lon)}분 · location'
+                          : ' 30분 · $region',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      CupertinoIcons.time,
+                      color: Colors.black26,
+                      size: 18,
+                    ),
+                    Text(
+                      ' $openTime ~ $closeTime',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Spacer(),
+          Icon(Icons.more_horiz)
+        ],
+      ),
+    );
+  }
+
+  ///현재 위치와 장소 위치간의 거리를 계산해서 소요시간 계산
+  String calculateTimeRequired(
+      double lat1,
+      double lon1,
+      double lat2,
+      double lon2,
+      ) {
+    double distanceInMeters = Geolocator.distanceBetween(
+      lat1,
+      lon1,
+      lat2,
+      lon2,
+    );
+
+    // 평균속도 30km/h (500미터/분)를 가정하여 소요 시간 계산
+    int travelTimeMinutes = (distanceInMeters / 500).round();
+
+    return travelTimeMinutes.toString();
+  }
+
+  ///TODO API KEY 숨겨야함
+  String apiKey = "AIzaSyC0fC5Xjg33ZeaBChPXIK-ijjblzI4SnB4";
+
+  // 1단계: 특정 장소의 사진들 중 맨 첫번째 사진의 name만 가져오는 함수
+  Future<String> getFirstPhotoName(String placeId) async {
+    final url = Uri.parse(
+      'https://places.googleapis.com/v1/places/$placeId?fields=photos&key=$apiKey',
+    );
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      List photos = data['photos'] as List? ?? [];
+
+      if (photos.isNotEmpty) {
+        // 첫 번째 사진의 name을 반환
+        return photos.first['name'] as String;
+      } else {
+        throw Exception('해당 장소에 사진이 없습니다.');
+      }
+    } else {
+      throw Exception('장소의 사진을 가져오지 못했습니다.');
+    }
+  }
+
+  // 2단계: name을 사용해 사진 URL(photoUri)을 얻는 함수
+  Future<String> getPhotoUrl(
+      String photoName, {
+        int maxHeightPx = 400,
+        int maxWidthPx = 400,
+      }) async {
+    final encodedPhotoName = Uri.encodeFull(photoName);
+    final url = Uri.parse(
+      'https://places.googleapis.com/v1/$encodedPhotoName/media'
+          '?key=$apiKey&maxHeightPx=$maxHeightPx&maxWidthPx=$maxWidthPx&skipHttpRedirect=true',
+    );
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['photoUri'] as String;
+    } else {
+      throw Exception('사진의 URL을 가져오지 못했습니다.');
+    }
+  }
+
+  // 3단계: 장소의 첫 번째 사진 URL을 가져오는 함수
+  Future<String> fetchFirstPhotoUrl(String placeId) async {
+    try {
+      // 첫 번째 사진의 name을 가져옴
+      final firstPhotoName = await getFirstPhotoName(placeId);
+      // 해당 name을 사용해 사진 URL을 가져옴
+      final photoUrl = await getPhotoUrl(firstPhotoName);
+      return photoUrl;
+    } catch (e) {
+      print(e);
+      throw Exception('첫 번째 사진 URL을 가져오는 중 오류가 발생했습니다.');
+    }
   }
 
   // void _showAddNewBottomSheet() {
