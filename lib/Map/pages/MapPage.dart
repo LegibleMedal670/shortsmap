@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shortsmap/Map/model/BookmarkLocation.dart';
+import 'package:shortsmap/Map/pages/MapShortsPage.dart';
 import 'package:shortsmap/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:shortsmap/Widgets/BottomNavBar.dart';
@@ -755,22 +756,46 @@ class _MapPageState extends State<MapPage> {
                                                           }
                                                         }
 
-                                                        return Container(
-                                                          width: 90,
-                                                          height: 90,
-                                                          decoration: BoxDecoration(
-                                                            shape: BoxShape.circle,
-                                                            border: Border.all(
-                                                              color: Colors.lightBlue,
-                                                              width: 2,
+                                                        return GestureDetector(
+                                                          onTap: (){
+                                                            print('123');
+                                                            Navigator.push(
+                                                                context,
+                                                                MaterialPageRoute(
+                                                                    builder: (context) => MapShortsPage(
+                                                                        storeName: location['name'],
+                                                                        videoId: location['location_id'].toString(),
+                                                                        storeCaption: location['description'],
+                                                                        storeLocation: location['region'],
+                                                                        openTime: location['open_time'],
+                                                                        closeTime: location['close_time'],
+                                                                        rating: location['rating'],
+                                                                        category: location['category'],
+                                                                        averagePrice: location['average_price'].toDouble(),
+                                                                        imageUrl: imageUrl!,
+                                                                        coordinates: {
+                                                                          'lat': location['latitude'],
+                                                                          'lon': location['longitude'],
+                                                                        },
+                                                                    )));
+                                                          },
+                                                          child: Container(
+                                                            width: 90,
+                                                            height: 90,
+                                                            decoration: BoxDecoration(
+                                                              shape: BoxShape.circle,
+                                                              border: Border.all(
+                                                                color: Colors.lightBlue,
+                                                                width: 2,
+                                                              ),
                                                             ),
-                                                          ),
-                                                          child: Padding(
-                                                            padding: const EdgeInsets.all(2.0),
-                                                            child: CircleAvatar(
-                                                              radius: 90,
-                                                              backgroundImage: (imageUrl != null) ? NetworkImage(imageUrl) : null,
-                                                              backgroundColor: Colors.grey[300],
+                                                            child: Padding(
+                                                              padding: const EdgeInsets.all(2.0),
+                                                              child: CircleAvatar(
+                                                                radius: 90,
+                                                                backgroundImage: (imageUrl != null) ? NetworkImage(imageUrl) : null,
+                                                                backgroundColor: Colors.grey[300],
+                                                              ),
                                                             ),
                                                           ),
                                                         );
@@ -1062,7 +1087,7 @@ class _MapPageState extends State<MapPage> {
                                         },
                                         )
                                         : _isListDetailOpened
-                                            ? FutureBuilder<List<Map<String, dynamic>>>(
+                                          ? FutureBuilder<List<Map<String, dynamic>>>(
                                         future: _categoryLocationFuture,
                                         builder: (context, snapshot) {
 
