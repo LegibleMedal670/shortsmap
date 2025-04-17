@@ -20,7 +20,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MapPage extends StatefulWidget {
-  const MapPage({super.key});
+  final String? locationId;
+
+  const MapPage({super.key, this.locationId});
+
 
   @override
   State<MapPage> createState() => _MapPageState();
@@ -230,6 +233,16 @@ class _MapPageState extends State<MapPage> {
         }
       });
     });
+
+    if(widget.locationId != null){
+      setState(() {
+        _isListDetailOpened = true;
+        _selectedLocation = widget.locationId;
+        _locationDetailFuture = _fetchLocationDetail(widget.locationId!);
+      });
+
+    }
+
   }
 
   @override
@@ -567,7 +580,13 @@ class _MapPageState extends State<MapPage> {
                               size: 32,
                             ),
                             onPressed: () {
-                              if ( _selectedLocation != null){
+                              if (widget.locationId != null){
+                                setState(() {
+                                  _selectedLocation = null;
+                                  _isListDetailOpened = false;
+                                  _bookmarkMarkers = _allBookmarkMarkers;
+                                });
+                              } else if ( _selectedLocation != null){
                                 setState(() {
                                   _selectedLocation = null;
                                 });
