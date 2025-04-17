@@ -674,56 +674,93 @@ class _MapPageState extends State<MapPage> {
 
                                           final places = snapshot.data!;
 
-                                          return ListView.separated(
-                                            padding: EdgeInsets.zero,
-                                            shrinkWrap: true,
-                                            physics: NeverScrollableScrollPhysics(),
-                                            itemCount: places.length,
-                                            separatorBuilder:
-                                                (context, index) {
-                                              return Padding(
-                                                padding: const EdgeInsets
-                                                    .symmetric(
-                                                    horizontal: 16),
-                                                child: Divider(
-                                                  color: Colors.grey[300],
-                                                  height: 1.5,
-                                                  thickness: 1,
+                                          final style = categoryStyles[_selectedCategory] ?? {
+                                            'icon': Icons.place,
+                                            'color': Colors.blue,
+                                          };
+
+                                          return Column(
+                                            children: [
+                                              Container(
+                                                padding: EdgeInsets.symmetric(horizontal: 18),
+                                                child: Row(
+                                                  children: [
+                                                    CircleAvatar(
+                                                      radius: 25,
+                                                      backgroundColor: style['color'],
+                                                      child: Icon(
+                                                        style['icon'],
+                                                        color: Colors.white,
+                                                        size: 30,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 15,),
+                                                    Text(
+                                                      _selectedCategory!,
+                                                      style: const TextStyle(
+                                                        color: Colors.black,
+                                                        fontSize: 20,
+                                                        fontWeight: FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
-                                              );
-                                            },
-                                            itemBuilder: (context, index) {
-                                              final p = places[index];
-
-                                              // final placeId = p['location_id'].toString();
-
-                                              // TODO Provider 적용해서 전역적 캐싱 처리 필요
-                                              final placeId = 'ChIJg15J_MypfDURtLH0G1suNq8';
-
-                                              if (!_photoUrlCache.containsKey(placeId)) {
-                                                // 아직 캐시되지 않은 경우, fetch 호출 후 저장
-                                                _photoUrlCache[placeId] = fetchFirstPhotoUrl(placeId);
-                                              }
-
-                                              return FutureBuilder<String>(
-                                                future: _photoUrlCache[placeId],
-                                                builder: (context, photoSnapshot) {
-                                                  final imageUrl = photoSnapshot.data;
-
-                                                  return _locationTile(
-                                                    placeId,
-                                                    imageUrl,
-                                                    p['name'] ?? '',
-                                                    p['region'] ?? '',
-                                                    p['open_time'] ?? '00:00',
-                                                    p['close_time'] ?? '00:00',
-                                                    (p['latitude'] as num).toDouble(),
-                                                    (p['longitude'] as num).toDouble(),
+                                              ),
+                                              const SizedBox(
+                                                height: 10,
+                                              ),
+                                              ListView.separated(
+                                                padding: EdgeInsets.zero,
+                                                shrinkWrap: true,
+                                                physics: NeverScrollableScrollPhysics(),
+                                                itemCount: places.length,
+                                                separatorBuilder:
+                                                    (context, index) {
+                                                  return Padding(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 16),
+                                                    child: Divider(
+                                                      color: Colors.grey[300],
+                                                      height: 1.5,
+                                                      thickness: 1,
+                                                    ),
                                                   );
                                                 },
-                                              );
+                                                itemBuilder: (context, index) {
+                                                  final p = places[index];
 
-                                            },
+                                                  // final placeId = p['location_id'].toString();
+
+                                                  // TODO Provider 적용해서 전역적 캐싱 처리 필요
+                                                  final placeId = 'ChIJg15J_MypfDURtLH0G1suNq8';
+
+                                                  if (!_photoUrlCache.containsKey(placeId)) {
+                                                    // 아직 캐시되지 않은 경우, fetch 호출 후 저장
+                                                    _photoUrlCache[placeId] = fetchFirstPhotoUrl(placeId);
+                                                  }
+
+                                                  return FutureBuilder<String>(
+                                                    future: _photoUrlCache[placeId],
+                                                    builder: (context, photoSnapshot) {
+                                                      final imageUrl = photoSnapshot.data;
+
+                                                      return _locationTile(
+                                                        placeId,
+                                                        imageUrl,
+                                                        p['name'] ?? '',
+                                                        p['region'] ?? '',
+                                                        p['open_time'] ?? '00:00',
+                                                        p['close_time'] ?? '00:00',
+                                                        (p['latitude'] as num).toDouble(),
+                                                        (p['longitude'] as num).toDouble(),
+                                                      );
+                                                    },
+                                                  );
+
+                                                },
+                                              ),
+                                            ],
                                           );
                                         },
                                       )
@@ -967,7 +1004,7 @@ class _MapPageState extends State<MapPage> {
     String title = 'default',
     Color color = Colors.green,
     String owner = 'My List',
-    IconData icon = Icons.sports_bar,
+    IconData icon = Icons.star_border,
     int locations = 0,
   }) {
     return ListTile(
