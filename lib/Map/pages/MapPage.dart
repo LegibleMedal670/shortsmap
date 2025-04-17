@@ -703,12 +703,34 @@ class _MapPageState extends State<MapPage> {
                                                         fontWeight: FontWeight.bold,
                                                       ),
                                                     ),
+                                                    Spacer(),
+                                                    Container(
+                                                      width: 40,
+                                                      height: 40,
+                                                      decoration: BoxDecoration(
+                                                        shape: BoxShape.circle,
+                                                        color: Colors.black12,
+                                                      ),
+                                                      child: const Icon(
+                                                        CupertinoIcons.share,
+                                                        size: 20,
+                                                        color: Colors.black,
+                                                      ),
+                                                    ),
                                                   ],
                                                 ),
                                               ),
-                                              const SizedBox(
-                                                height: 10,
+                                              Padding(
+                                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                                child: Divider(
+                                                  color: Colors.grey[300],
+                                                  height: 1.5,
+                                                  thickness: 1,
+                                                ),
                                               ),
+                                              // const SizedBox(
+                                              //   height: 10,
+                                              // ),
                                               ListView.separated(
                                                 padding: EdgeInsets.zero,
                                                 shrinkWrap: true,
