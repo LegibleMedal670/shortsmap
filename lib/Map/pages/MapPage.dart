@@ -983,11 +983,29 @@ class _MapPageState extends State<MapPage> {
           _selectedCategory = title;
           _isListDetailOpened = true;
 
+          final items = _categorizedBookmarks[title]!;
+
+          /// TODO 최신순으로할지 거리순으로할지 설정
+          // 1. 최신순으로 BookmarkLocation 정렬
+          final sortedItems = List<BookmarkLocation>.from(items)
+            ..sort((a, b) => b.bookmarkedAt.compareTo(a.bookmarkedAt));
+
+          final sortedIds = sortedItems.map((e) => e.locationId).toList();
+
+          // 2. 정렬된 순서에 따라 장소 정보 불러오기
           _categoryLocationFuture = Supabase.instance.client
               .rpc('get_locations_by_ids', params: {
-            '_ids': locationIds,
-          })
-              .then((value) => List<Map<String, dynamic>>.from(value));
+            '_ids': sortedIds,
+          }).then((value) {
+            final locations = List<Map<String, dynamic>>.from(value);
+
+            // 3. 정렬된 location_id 순서에 맞게 다시 재정렬
+            locations.sort((a, b) =>
+            sortedIds.indexOf(a['location_id']) - sortedIds.indexOf(b['location_id']));
+
+            return locations;
+          });
+
         });
 
         _sheetController.animateTo(
@@ -1039,112 +1057,124 @@ class _MapPageState extends State<MapPage> {
   }
 
   Widget _locationTile(String locationId, String? imageUrl, String storeName, String region, String openTime, String closeTime, double lat, double lon) {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-      color: Colors.transparent,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // FutureBuilder를 사용하여 첫 번째 사진을 CircleAvatar 이미지로 설정
-          if (imageUrl != null)
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.lightBlue,
-                  width: 2,
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(2.0),
-                child: CircleAvatar(
-                  radius: 90,
-                  backgroundImage: NetworkImage(imageUrl),
-                  backgroundColor: Colors.grey[200],
-                ),
-              ),
-            ),
-          if (imageUrl == null)
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.lightBlue,
-                  width: 2,
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(2.0),
-                child: CircleAvatar(
-                  radius: 90,
-                  // backgroundImage: NetworkImage(imageUrl),
-                  backgroundColor: Colors.grey[300],
-                ),
-              ),
-            ),
-          const SizedBox(width: 15),
-          // 텍스트 정보: 매장명, 카테고리, 평균 가격 등
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  storeName,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+    return GestureDetector(
+      onTap: (){
+        _isProgrammaticMove = true;
+
+        _mapController.animateCamera(CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: LatLng(lat, lon),
+            zoom: 18,
+          ),
+        ));
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+        color: Colors.transparent,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // FutureBuilder를 사용하여 첫 번째 사진을 CircleAvatar 이미지로 설정
+            if (imageUrl != null)
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.lightBlue,
+                    width: 2,
                   ),
                 ),
-                const SizedBox(height: 3),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      CupertinoIcons.bus,
-                      color: Colors.black26,
-                      size: 18,
-                    ),
-                    Text(
-                      (lat != null && Provider.of<UserDataProvider>(context, listen: false).currentLat != null && lon != null && Provider.of<UserDataProvider>(context, listen: false).currentLon != null)
-                          ? ' ${calculateTimeRequired(Provider.of<UserDataProvider>(context, listen: false).currentLat!, Provider.of<UserDataProvider>(context, listen: false).currentLon!, lat, lon)}분 · location'
-                          : ' 30분 · $region',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black54,
-                      ),
-                    ),
-                  ],
+                child: Padding(
+                  padding: const EdgeInsets.all(2.0),
+                  child: CircleAvatar(
+                    radius: 90,
+                    backgroundImage: NetworkImage(imageUrl),
+                    backgroundColor: Colors.grey[200],
+                  ),
                 ),
-                const SizedBox(height: 3),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      CupertinoIcons.time,
-                      color: Colors.black26,
-                      size: 18,
-                    ),
-                    Text(
-                      ' $openTime ~ $closeTime',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black54,
-                      ),
-                    ),
-                  ],
+              ),
+            if (imageUrl == null)
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.lightBlue,
+                    width: 2,
+                  ),
                 ),
-              ],
+                child: Padding(
+                  padding: const EdgeInsets.all(2.0),
+                  child: CircleAvatar(
+                    radius: 90,
+                    // backgroundImage: NetworkImage(imageUrl),
+                    backgroundColor: Colors.grey[300],
+                  ),
+                ),
+              ),
+            const SizedBox(width: 15),
+            // 텍스트 정보: 매장명, 카테고리, 평균 가격 등
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    storeName,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        CupertinoIcons.bus,
+                        color: Colors.black26,
+                        size: 18,
+                      ),
+                      Text(
+                        (lat != null && Provider.of<UserDataProvider>(context, listen: false).currentLat != null && lon != null && Provider.of<UserDataProvider>(context, listen: false).currentLon != null)
+                            ? ' ${calculateTimeRequired(Provider.of<UserDataProvider>(context, listen: false).currentLat!, Provider.of<UserDataProvider>(context, listen: false).currentLon!, lat, lon)}분 · $region'
+                            : ' 30분 · $region',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        CupertinoIcons.time,
+                        color: Colors.black26,
+                        size: 18,
+                      ),
+                      Text(
+                        ' $openTime ~ $closeTime',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          Spacer(),
-          Icon(Icons.more_horiz)
-        ],
+            Spacer(),
+            Icon(Icons.more_horiz)
+          ],
+        ),
       ),
     );
   }
