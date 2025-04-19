@@ -3,9 +3,12 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:shortsmap/Map/pages/MapPage.dart';
 import 'package:shortsmap/Plan/screens/plan_page.dart';
 import 'package:shortsmap/Shorts/page/ShortsPage.dart';
+import 'package:shortsmap/UserDataProvider.dart';
+import 'package:shortsmap/Welcome/LoginPage.dart';
 
 
 Widget BottomNavBar(BuildContext context, String page) {
@@ -139,15 +142,23 @@ Widget BottomNavBar(BuildContext context, String page) {
           onTap: () async {
             HapticFeedback.lightImpact();
             if (page != 'map') {
-              Navigator.pushReplacement(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation1, animation2) =>
-                  const MapPage(),
-                  transitionDuration: Duration.zero,
-                  reverseTransitionDuration: Duration.zero,
-                ),
-              );
+              if (Provider.of<UserDataProvider>(context, listen: false).currentUserUID != null) {
+                Navigator.pushReplacement(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation1, animation2) =>
+                    const MapPage(),
+                    transitionDuration: Duration.zero,
+                    reverseTransitionDuration: Duration.zero,
+                  ),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginPage()),
+                );
+              }
+
             }
           },
           child: Column(
