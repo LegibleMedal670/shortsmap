@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 import 'package:shortsmap/UserDataProvider.dart';
@@ -21,11 +22,11 @@ class _LoginPageState extends State<LoginPage> {
     showDialog(
       barrierDismissible: false,
       context: context,
-      builder: (context) {
+      builder: (BuildContext dialogContext) {
         return Center(
           child: SizedBox(
-            width: MediaQuery.of(context).size.width * (50 / 375),
-            height: MediaQuery.of(context).size.height * (50 / 812),
+            width: MediaQuery.of(dialogContext).size.width * (50 / 375),
+            height: MediaQuery.of(dialogContext).size.height * (50 / 812),
             child: const CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
               strokeWidth: 4.0,
@@ -45,42 +46,33 @@ class _LoginPageState extends State<LoginPage> {
         final accessToken = _authentication.accessToken;
         final idToken = _authentication.idToken;
 
-        if (accessToken == null) {
-          throw 'No Access Token found.';
-        }
-        if (idToken == null) {
-          throw 'No ID Token found.';
-        }
+        if (accessToken == null) throw 'No Access Token found.';
+        if (idToken == null) throw 'No ID Token found.';
 
-        // Supabase 로그인 시도
         await _supabase.auth.signInWithIdToken(
           provider: OAuthProvider.google,
           idToken: idToken,
           accessToken: accessToken,
         );
 
-        // 로그인 성공 시
         if (_supabase.auth.currentUser != null) {
           final uid = _supabase.auth.currentUser!.id;
-          // Provider를 사용해 로그인 상태 업데이트
           Provider.of<UserDataProvider>(context, listen: false).login(uid);
 
-          Navigator.pop(context); // 로딩 다이얼로그 제거
-          Navigator.pop(context); // 이전 화면으로 이동 (필요에 따라 조정)
+          Navigator.of(context, rootNavigator: true).pop(); // 로딩 다이얼로그 제거
+          Navigator.pop(context); // 이전 화면으로 이동
         } else {
-          Navigator.pop(context);
+          Navigator.of(context, rootNavigator: true).pop(); // 다이얼로그 제거
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Something went wrong. Try again later.'),
-            ),
+            const SnackBar(content: Text('Something went wrong. Try again later.')),
           );
         }
       } else {
-        Navigator.pop(context);
+        Navigator.of(context, rootNavigator: true).pop(); // 다이얼로그 제거
       }
     } catch (e) {
       print(e);
-      Navigator.pop(context); // 에러 발생 시 다이얼로그 제거
+      Navigator.of(context, rootNavigator: true).pop(); // 에러 발생 시 다이얼로그 제거
     }
   }
 
