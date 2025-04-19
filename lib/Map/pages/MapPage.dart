@@ -331,6 +331,7 @@ class _MapPageState extends State<MapPage> {
       },
       child: Scaffold(
         resizeToAvoidBottomInset: false,
+        backgroundColor: Colors.grey[200],
         // appBar: PreferredSize(
         //   preferredSize: Size.fromHeight(48),
         //   child: SafeArea(
@@ -1368,7 +1369,7 @@ class _MapPageState extends State<MapPage> {
                                                 //   ],
                                                 // )
                                               ],
-                                            ),
+                                            ), //TODO 북마크한거 없을때 보여줄거 필요
                                     ],
                                   ),
                                 ),
