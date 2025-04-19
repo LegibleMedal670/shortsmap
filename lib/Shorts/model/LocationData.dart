@@ -1,83 +1,78 @@
 import 'dart:convert';
 
 class LocationData {
-  final int locationId;
-  final String name;
-  final String? image;
-  final String description;
-  final String openTime;
-  final String closeTime;
-  final double rating;
-  final int views;
-  final double averagePrice;
-  final String category;
-  final bool verified;
-  final DateTime uploadedTime;
-  final String uploader;
-  final String videoUrl;
+  final String placeId;
+  final String placeName;
+  final String videoId;
   final String region;
-  final Map<String, double>? coordinates; // {'lat': ..., 'lon': ...}
+  final String category;
+  final Map<String, double> coordinates;
   final int bookmarkCount;
+  final String address;
+  final String? description; // optional
+  final String? openTime; // optional
+  final String? closeTime; // optional
+  final double? rating; // optional
+  final double? averagePrice; // optional
+  final String? phoneNumber; // optional
+  final String? websiteLink; // optional
 
   LocationData({
-    required this.locationId,
-    required this.name,
-    this.image,
-    required this.description,
-    required this.openTime,
-    required this.closeTime,
-    required this.rating,
-    required this.views,
-    required this.averagePrice,
-    required this.category,
-    required this.verified,
-    required this.uploadedTime,
-    required this.uploader,
-    required this.videoUrl,
+    required this.placeId,
+    required this.placeName,
+    required this.videoId,
     required this.region,
-    this.coordinates,
+    required this.category,
+    required this.coordinates,
     required this.bookmarkCount,
+    required this.address,
+    this.description,
+    this.openTime,
+    this.closeTime,
+    this.rating,
+    this.averagePrice,
+    this.phoneNumber,
+    this.websiteLink,
   });
 
-  // JSON 데이터를 LocationData 객체로 변환하는 팩토리 생성자
   factory LocationData.fromJson(Map<String, dynamic> json) {
+    // GeoJSON decode 로직 (원본 유지)
     Map<String, double>? coords;
-
     if (json['location'] != null && json['location'] is String) {
       final locationStr = json['location'] as String;
-
-        final geoJson = jsonDecode(locationStr);
-        if (geoJson is Map && geoJson.containsKey('coordinates')) {
-          final coordinatesList = geoJson['coordinates'];
-          if (coordinatesList is List && coordinatesList.length >= 2) {
-            final lon = double.tryParse(coordinatesList[0].toString());
-            final lat = double.tryParse(coordinatesList[1].toString());
-            if (lon != null && lat != null) {
-              coords = {'lat': lat, 'lon': lon};
-            }
+      final geoJson = jsonDecode(locationStr);
+      if (geoJson is Map && geoJson.containsKey('coordinates')) {
+        final coordinatesList = geoJson['coordinates'];
+        if (coordinatesList is List && coordinatesList.length >= 2) {
+          final lon = double.tryParse(coordinatesList[0].toString());
+          final lat = double.tryParse(coordinatesList[1].toString());
+          if (lon != null && lat != null) {
+            coords = {'lat': lat, 'lon': lon};
           }
         }
-
+      }
+    }
+    // coordinates가 반드시 있어야 하므로, 없으면 예외 처리
+    if (coords == null) {
+      throw FormatException('Invalid or missing geojson coordinates');
     }
 
     return LocationData(
-      locationId: json['location_id'] as int,
-      name: json['name'] as String,
-      image: json['image'] as String?,
-      description: json['description'] as String,
-      openTime: json['open_time'] as String,
-      closeTime: json['close_time'] as String,
-      rating: (json['rating'] as num).toDouble(),
-      views: json['views'] as int,
-      averagePrice: (json['average_price'] as num).toDouble(),
-      category: json['category'] as String,
-      verified: json['verified'] as bool,
-      uploadedTime: DateTime.parse(json['uploaded_time'] as String),
-      uploader: json['uploader'] as String,
-      videoUrl: json['video_url'] as String,
+      placeId: json['place_id'] as String,
+      placeName: json['place_name'] as String,
+      videoId: json['video_id'] as String,
       region: json['region'] as String,
+      category: json['category'] as String,
       coordinates: coords,
       bookmarkCount: json['bookmark_count'] as int,
+      address: json['address'] as String,
+      description: json['description'] as String?,
+      openTime: json['open_time'] as String?,
+      closeTime: json['close_time'] as String?,
+      rating: (json['rating'] as num?)?.toDouble(),
+      averagePrice: (json['average_price'] as num?)?.toDouble(),
+      phoneNumber: json['phone_number'] as String?,
+      websiteLink: json['website_link'] as String?,
     );
   }
 }
