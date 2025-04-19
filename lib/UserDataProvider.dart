@@ -22,6 +22,12 @@ class UserDataProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void logout() {
+    _isLoggedIn = false;
+    _currentUserUID = null;
+    notifyListeners();
+  }
+
   Future<void> setCurrentLocation(
     double? currentLat,
     double? currentLon,
