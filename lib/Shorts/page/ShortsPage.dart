@@ -74,8 +74,6 @@ class _ShortsPageState extends State<ShortsPage> {
 
       List<String> seenVideoIds = preferences.getStringList('seenVideoIds') ?? [];
 
-      List<int> intList = seenVideoIds.map((str) => int.parse(str)).toList();
-
       try {
         // RPC 파라미터 구성
         final response = await _supabase.rpc(
@@ -86,7 +84,7 @@ class _ShortsPageState extends State<ShortsPage> {
             '_order_near': orderNear,
             '_lat': lat,
             '_lon': lon,
-            '_exclude_video_ids': intList,
+            '_exclude_video_ids': seenVideoIds,
           },
         );
 
@@ -148,10 +146,9 @@ class _ShortsPageState extends State<ShortsPage> {
 
                     if (data.isEmpty) {
                       return ShortFormWidget(
-                        storeName: 'shortFormData.name',
-                        videoURL: 'shortFormData.videoUrl',
-                        storeCaption: 'shortFormData.description',
-                        storeLocation: 'shortFormData.region',
+                        placeName: 'shortFormData.name',
+                        description: 'shortFormData.description',
+                        placeRegion: 'shortFormData.region',
                         averagePrice: 0,
                         openTime: 'shortFormData.openTime',
                         closeTime: 'shortFormData.closeTime',
@@ -162,6 +159,7 @@ class _ShortsPageState extends State<ShortsPage> {
                         isEmpty: true,
                         coordinates: {},
                         pageController: _pageController,
+                        placeId: '',
                       );
                     }
 
@@ -172,20 +170,20 @@ class _ShortsPageState extends State<ShortsPage> {
                       itemBuilder: (context, index) {
                         final LocationData shortFormData = data[index];
                         return ShortFormWidget(
-                          storeName: shortFormData.name,
-                          videoURL: shortFormData.videoUrl,
-                          storeCaption: shortFormData.description,
-                          storeLocation: shortFormData.region,
+                          placeName: shortFormData.placeName,
+                          description: shortFormData.description,
+                          placeRegion: shortFormData.region,
                           averagePrice: shortFormData.averagePrice,
                           openTime: shortFormData.openTime,
                           closeTime: shortFormData.closeTime,
                           rating: shortFormData.rating,
                           category: shortFormData.category,
-                          videoId: shortFormData.locationId.toString(),
+                          videoId: shortFormData.videoId,
                           bookmarkCount: shortFormData.bookmarkCount,
                           isEmpty: false,
-                          coordinates: shortFormData.coordinates!,
+                          coordinates: shortFormData.coordinates,
                           pageController: _pageController,
+                          placeId: shortFormData.placeId,
                         );
                       },
                     );
