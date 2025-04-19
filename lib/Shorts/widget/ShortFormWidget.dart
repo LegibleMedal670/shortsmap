@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shortsmap/Map/pages/MapPage.dart';
 import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
 import 'package:shortsmap/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
@@ -16,26 +17,25 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 class ShortFormWidget extends StatefulWidget {
-  final String storeName;
-  final String videoURL;
-  final String storeCaption;
-  final String storeLocation;
-  final String openTime;
-  final String closeTime;
-  final double rating;
+  final String placeName;
+  final String? description;
+  final String placeRegion;
+  final String? openTime;
+  final String? closeTime;
+  final double? rating;
   final String category;
-  final double averagePrice;
+  final double? averagePrice;
   final String videoId;
   final int bookmarkCount;
   final bool isEmpty;
   final Map<String, double> coordinates;
   final PageController pageController;
+  final String placeId;
 
   const ShortFormWidget({
-    required this.storeName,
-    required this.videoURL,
-    required this.storeCaption,
-    required this.storeLocation,
+    required this.placeName,
+    required this.description,
+    required this.placeRegion,
     required this.openTime,
     required this.closeTime,
     required this.rating,
@@ -46,6 +46,7 @@ class ShortFormWidget extends StatefulWidget {
     required this.isEmpty,
     required this.coordinates,
     required this.pageController,
+    required this.placeId,
     super.key,
   });
 
@@ -123,7 +124,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
         ),
       );
 
-      _controller.loadVideoById(videoId: 'NscOnNp2x8M');
+      _controller.loadVideoById(videoId: widget.videoId);
     }
   }
 
@@ -230,7 +231,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
         // 서버에 저장
         await _supabase.from('seenvideos').insert({
           'user_id': currentUserUid,
-          'location_id': widget.videoId,
+          'video_id': widget.videoId,
         });
       } catch (e) {
         // 예외가 발생하면 에러 메시지를 출력합니다. TODO 에러 처리 어떻게할지 고민
@@ -388,7 +389,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               if (value.playerState == PlayerState.playing && !_hasRecordedSeen) {
                                 _hasRecordedSeen = true; // 한 번 기록했음을 표시
                                 // 현재 사용자 UID를 전달하여 recordSeenVideo 실행
-                                recordSeenVideo(Provider.of<UserDataProvider>(context, listen: false).currentUserUID);
+                                // recordSeenVideo(Provider.of<UserDataProvider>(context, listen: false).currentUserUID);
                               }
 
                               if (value.playerState == PlayerState.ended) {
@@ -443,21 +444,24 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           // ),
 
                           ///정지/재개 아이콘
-                          Center(
-                            child: AnimatedOpacity(
-                              opacity: _pauseIconOpacity,
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeInOutCirc,
-                              child: Container(
-                                padding: const EdgeInsets.all(15),
-                                decoration: const BoxDecoration(
-                                  color: Colors.black54,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  _currentIcon,
-                                  color: shortPageWhite,
-                                  size: 50.0,
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 150.0),
+                            child: Center(
+                              child: AnimatedOpacity(
+                                opacity: _pauseIconOpacity,
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOutCirc,
+                                child: Container(
+                                  padding: const EdgeInsets.all(15),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.black54,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    _currentIcon,
+                                    color: shortPageWhite,
+                                    size: 50.0,
+                                  ),
                                 ),
                               ),
                             ),
@@ -532,6 +536,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         color: Colors.transparent,
                         child: Text(
                           '${filterProvider.orderNear == true ? 'Near Me' : filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory ?? 'All'} ',
+                          // '${filterProvider.filterRegion ?? '대전'} · ${filterProvider.filterCategory ?? '전시'} ',
                           style: TextStyle(
                             fontSize: 21,
                             fontWeight: FontWeight.w600,
@@ -633,7 +638,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           radius: 20,
                           backgroundColor: shortPageWhite,
                           child: Icon(
-                            restaurantCategory,
+                            // restaurantCategory,
+                            Icons.history_edu, // TODO 사진으로 바꾸고 캐시
                             color: Colors.black,
                             size: 30,
                           ),
@@ -643,8 +649,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ///이름
                         Flexible(
                           child: Text(
-                            widget.storeName,
-                            // '대왕암공원',
+                            widget.placeName,
+                            // '국립중앙과학관',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
@@ -659,7 +665,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ///More 버튼
                         GestureDetector(
                           onTap: () {
-                            showInfoModal(context, 'ChIJydcugP6jfDUR0thfS3gHASk');
+                            showInfoModal(context, widget.placeId);
                           },
                           child: Container(
                             width: 70,
@@ -718,7 +724,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                         MediaQuery.of(context).size.width * 0.8,
                                     color: Colors.transparent,
                                     child: Text(
-                                      widget.storeCaption,
+                                      widget.description ?? 'descriptionNull',
                                       style: TextStyle(
                                         fontSize:
                                             MediaQuery.of(context).size.width *
@@ -733,8 +739,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                       MediaQuery.of(context).size.width * 0.8,
                                   color: Colors.transparent,
                                   child: Text(
-                                    widget.storeCaption,
-                                    // '대왕암 공원은 우리나라에서 울주군 간절곶과 함께 해가 가장 빨리 뜨는 대왕암이 있는 곳이다. 우리나라 동남단에서 동해 쪽으로 가장 뾰족하게 나온 부분의 끝 지점에 해당하는 대왕암공원은 동해의 길잡이를 하는 울기항로표지소로도 유명하다. ',
+                                    widget.description ?? 'descriptionNull',
+                                    // '과학은 ‘노잼’이라고 생각하는 아이들과 대전으로 떠나보자. 자타가 공인하는 ‘과학의 도시’ 대전에는 과학을 흥미롭게 풀어낸 공간이 많다. 그중 단연 1순위는 우리나라 과학관을 대표하는 국립중앙과학관이고, 지난해 문을 연 넥스페리움도 색다른 재미를 선사한다.',
                                     style: TextStyle(
                                       fontSize:
                                           MediaQuery.of(context).size.width *
@@ -776,7 +782,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               ),
                               SizedBox(width: 5),
                               Text(
-                                '${widget.openTime} ~ ${widget.closeTime}',
+                                '${widget.openTime ?? '09:00'} ~ ${widget.closeTime ?? '22:00'}',
                                 style: TextStyle(
                                   color: shortPageWhite,
                                   fontSize:
@@ -810,7 +816,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               Icon(Icons.star, size: 18, color: shortPageWhite),
                               SizedBox(width: 5),
                               Text(
-                                widget.rating.toString(),
+                                widget.rating == null ? '4.0' : widget.rating.toString(),
                                 style: TextStyle(
                                   color: shortPageWhite,
                                   fontSize:
@@ -847,7 +853,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               ),
                               SizedBox(width: 5),
                               Text(
-                                '\$${widget.averagePrice}~',
+                                '\$${widget.averagePrice == null ? '3' : widget.averagePrice!.round()}~',
                                 style: TextStyle(
                                   color: shortPageWhite,
                                   fontSize:
@@ -876,32 +882,34 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
       // 눌렀을 때 진동
       HapticFeedback.lightImpact();
 
-      // 먼저 캐시에 저장
+      // 먼저 캐시에서 불러옴
       SharedPreferences preferences = await SharedPreferences.getInstance();
       List<String> bookMarkList =
           preferences.getStringList('bookMarkList') ?? [];
 
       // 북마크되지 않은 영상의 경우
       if (!bookMarkList.contains(widget.videoId)) {
-        bookMarkList.add(widget.videoId);
-
-        // bookmarked를 True로 바꿔줘 색상을 채우고 현재 값에 +1 해줌
-        setState(() {
-          _isBookmarked = true;
-          _bookmarkCount++;
-        });
-
-        // 캐시 업데이트
-        await preferences.setStringList('bookMarkList', bookMarkList);
 
         try {
           // 서버에 저장
           await _supabase.from('bookmarks').insert({
             'user_id': currentUserUid,
-            'location_id': widget.videoId,
+            'video_id': widget.videoId,
             'category': widget.category,
             'bookmarked_at': DateTime.now().toIso8601String(),
+            'place_id': widget.placeId,
           });
+
+          bookMarkList.add(widget.videoId);
+
+          // bookmarked를 True로 바꿔줘 색상을 채우고 현재 값에 +1 해줌
+          setState(() {
+            _isBookmarked = true;
+            _bookmarkCount++;
+          });
+
+          // 캐시 업데이트
+          await preferences.setStringList('bookMarkList', bookMarkList);
 
           // 저장 되었음을 표시해주는 스낵바 TODO ( UI 조정 필요 )
           ScaffoldMessenger.of(context).showSnackBar(
@@ -912,7 +920,10 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                 label: 'Plan',
                 textColor: Color(0xff121212),
                 onPressed: () {
-                  print('plan');
+                  Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (context) => MapPage(placeId: widget.placeId)),
+                          (route) => false);
                 },
               ),
               behavior: SnackBarBehavior.floating,
@@ -928,24 +939,27 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
           print('Insert 에러: $e');
         }
       } else {
-        // 북마크된 영상의 경우 캐시에서 삭제
-        bookMarkList.remove(widget.videoId);
 
-        // bookmarked를 false로 바꿔줘 색상을 비우고 현재 값에 -1 해줌
-        setState(() {
-          _isBookmarked = false;
-          _bookmarkCount--;
-        });
-
-        // 캐시 업데이트
-        await preferences.setStringList('bookMarkList', bookMarkList);
 
         try {
           // 서버에서 삭제
           await _supabase.from('bookmarks').delete().match({
             'user_id': currentUserUid,
-            'location_id': widget.videoId,
+            'video_id': widget.videoId,
           });
+
+          // 북마크된 영상의 경우 캐시에서 삭제
+          bookMarkList.remove(widget.videoId);
+
+          // bookmarked를 false로 바꿔줘 색상을 비우고 현재 값에 -1 해줌
+          setState(() {
+            _isBookmarked = false;
+            _bookmarkCount--;
+          });
+
+          // 캐시 업데이트
+          await preferences.setStringList('bookMarkList', bookMarkList);
+
           // 삭제 되었음을 알려주는 스낵바 TODO ( UI 조정 필요 )
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -1204,7 +1218,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              widget.storeName,
+                              widget.placeName,
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -1213,7 +1227,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              '${widget.category} · \$${widget.averagePrice.round()}~',
+                              '${widget.category} · \$${widget.averagePrice == null ? '3' : widget.averagePrice!.round()}~',
                               style: const TextStyle(
                                 fontSize: 14,
                                 color: Colors.black54,
@@ -1230,8 +1244,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 ),
                                 Text(
                                   (locationLat != null && userLat != null && locationLon != null && userLon != null)
-                                      ? ' ${calculateTimeRequired(userLat, userLon, locationLat, locationLon)}분 · ${widget.storeLocation}'
-                                      : ' 30분 · ${widget.storeLocation}',
+                                      ? ' ${calculateTimeRequired(userLat, userLon, locationLat, locationLon)}분 · ${widget.placeRegion}'
+                                      : ' 30분 · ${widget.placeRegion}',
                                   style: const TextStyle(
                                     fontSize: 14,
                                     color: Colors.black54,
@@ -1249,7 +1263,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                   size: 18,
                                 ),
                                 Text(
-                                  ' ${widget.openTime} ~ ${widget.closeTime}',
+                                  ' ${widget.openTime ?? '09:00'} ~ ${widget.closeTime ?? '22:00'}',
                                   style: const TextStyle(
                                     fontSize: 14,
                                     color: Colors.black54,
@@ -1264,9 +1278,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         GestureDetector(
                           onTap: (){
                             Share.share(
-                              ///TODO 실제 영상 ID로 바꿔줘야함
-                              'https://www.youtube.com/shorts/NscOnNp2x8M',
-                              subject: widget.storeName,
+                              'https://www.youtube.com/shorts/${widget.videoId}',
+                              subject: widget.placeName,
                             );
                           },
                           child: Container(
@@ -1352,8 +1365,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ),
                         GestureDetector(
                           onTap: () async{
-                            await launchUrl( ///TODO PlaceId 받아와서 넣어줘야함
-                              Uri.parse('https://www.google.com/maps/dir/?api=1&origin=$userLat,$userLon&destination=${widget.storeName}&destination_place_id=ChIJq5SjCJKlfDURGqkGbzT21Y8&travelmode=transit'),
+                            await launchUrl(
+                              Uri.parse('https://www.google.com/maps/dir/?api=1&origin=$userLat,$userLon&destination=${widget.placeName}&destination_place_id=${widget.placeId}&travelmode=transit'),
                               mode: LaunchMode.externalApplication
                             );
                           },
@@ -1512,8 +1525,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             title: 'Address',
                             subtitle: '주소어쩌구저쩌구~~ \n누르면 구글맵 or 애플맵 or 자체화면',
                             onTap: () async {
-                              await launchUrl( ///TODO PlaceId 받아와서 넣어줘야함
-                              Uri.parse('https://www.google.com/maps/search/?api=1&query=${widget.storeName}&query_place_id=ChIJq5SjCJKlfDURGqkGbzT21Y8'),
+                              await launchUrl(
+                              Uri.parse('https://www.google.com/maps/search/?api=1&query=${widget.placeName}&query_place_id=${widget.placeId}'),
                               mode: LaunchMode.externalApplication
                               );
                             },
@@ -1686,9 +1699,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           onTap: () {
                             Navigator.pop(context);
                             Share.share(
-                              ///TODO 실제 영상 ID로 바꿔줘야함
-                              'https://www.youtube.com/shorts/NscOnNp2x8M',
-                              subject: widget.storeName,
+                              'https://www.youtube.com/shorts/${widget.videoId}',
+                              subject: widget.placeName,
                             );
                           },
                           child: Container(
