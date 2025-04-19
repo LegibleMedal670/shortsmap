@@ -131,7 +131,7 @@ class _ShortsPageState extends State<ShortsPage> {
                     provider.orderNear,
                     provider.filterLat,
                     provider.filterLon,
-                    Provider.of<UserDataProvider>(context, listen: false).currentUserUID!
+                    Provider.of<UserDataProvider>(context, listen: false).currentUserUID
                   ),
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
