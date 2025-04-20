@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
@@ -20,9 +19,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MapPage extends StatefulWidget {
-  final String? locationId;
+  final String? placeId;
 
-  const MapPage({super.key, this.locationId});
+  const MapPage({super.key, this.placeId});
 
 
   @override
@@ -234,11 +233,11 @@ class _MapPageState extends State<MapPage> {
       });
     });
 
-    if(widget.locationId != null){
+    if(widget.placeId != null){
       setState(() {
         _isListDetailOpened = true;
-        _selectedLocation = widget.locationId;
-        _locationDetailFuture = _fetchLocationDetail(widget.locationId!);
+        _selectedLocation = widget.placeId;
+        _locationDetailFuture = _fetchLocationDetail(widget.placeId!);
       });
 
     }
@@ -294,11 +293,11 @@ class _MapPageState extends State<MapPage> {
         );
 
         markers.add(Marker(
-          markerId: MarkerId(bookmark.locationId.toString()),
+          markerId: MarkerId(bookmark.placeId),
           position: LatLng(bookmark.latitude, bookmark.longitude),
           icon: icon,
           onTap: () {
-            print('마커 tapped: ${bookmark.name}, lat: ${bookmark.latitude}, lon: ${bookmark.longitude}');
+            print('마커 tapped: ${bookmark.placeName}, lat: ${bookmark.latitude}, lon: ${bookmark.longitude}');
           },
         ));
       }
@@ -581,7 +580,7 @@ class _MapPageState extends State<MapPage> {
                               size: 32,
                             ),
                             onPressed: () {
-                              if (widget.locationId != null){
+                              if (widget.placeId != null){
                                 setState(() {
                                   _selectedLocation = null;
                                   _isListDetailOpened = false;
@@ -626,14 +625,14 @@ class _MapPageState extends State<MapPage> {
                               size: 32,
                             ),
                             onPressed: () {
-                              setState(() {
-                                _isListDetailOpened = false;
-                              });
-                              _sheetController.animateTo(
-                                0.4,
-                                duration: Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                              );
+                              // setState(() {
+                              //   _isListDetailOpened = false;
+                              // });
+                              // _sheetController.animateTo(
+                              //   0.4,
+                              //   duration: Duration(milliseconds: 300),
+                              //   curve: Curves.easeInOut,
+                              // );
                             },
                           ),
                         ),
@@ -696,15 +695,16 @@ class _MapPageState extends State<MapPage> {
 
                                           // TODO 비어있거나 에러일 때 보여줄 내용 넣기 ( 빈 화면일 일은 없을거임근데 )
                                           if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                            print(snapshot.error);
                                             return const Padding(
                                               padding: EdgeInsets.all(20),
                                               child: Text('No locations found.'),
                                             );
                                           }
 
-                                          final location = snapshot.data!;
-                                          //TODO locationID 제대로
-                                          final futurePhoto = _photoUrlCache['ChIJg15J_MypfDURtLH0G1suNq8']!;
+                                          final placeData = snapshot.data!;
+
+                                          final futurePhoto = _photoUrlCache[placeData['place_id']]!;
 
                                           double? userLat = Provider.of<UserDataProvider>(context, listen: false).currentLat;
                                           double? userLon = Provider.of<UserDataProvider>(context, listen: false).currentLon;
@@ -783,19 +783,20 @@ class _MapPageState extends State<MapPage> {
                                                                 context,
                                                                 MaterialPageRoute(
                                                                     builder: (context) => MapShortsPage(
-                                                                        storeName: location['name'],
-                                                                        videoId: location['location_id'].toString(),
-                                                                        storeCaption: location['description'],
-                                                                        storeLocation: location['region'],
-                                                                        openTime: location['open_time'],
-                                                                        closeTime: location['close_time'],
-                                                                        rating: location['rating'],
-                                                                        category: location['category'],
-                                                                        averagePrice: location['average_price'].toDouble(),
+                                                                        storeName: placeData['place_name'],
+                                                                        placeId: placeData['place_id'],
+                                                                        videoId: placeData['video_id'],
+                                                                        storeCaption: placeData['description'] ?? 'descriptionNull',
+                                                                        storeLocation: placeData['region'],
+                                                                        openTime: placeData['open_time'] ?? '09:00',
+                                                                        closeTime: placeData['close_time'] ?? '20:00',
+                                                                        rating: placeData['rating'] ?? 4.0,
+                                                                        category: placeData['category'],
+                                                                        averagePrice: placeData['average_price'] == null ? 3 : placeData['average_price'].toDouble(),
                                                                         imageUrl: imageUrl!,
                                                                         coordinates: {
-                                                                          'lat': location['latitude'],
-                                                                          'lon': location['longitude'],
+                                                                          'lat': placeData['latitude'],
+                                                                          'lon': placeData['longitude'],
                                                                         },
                                                                     )));
                                                           },
@@ -826,7 +827,7 @@ class _MapPageState extends State<MapPage> {
                                                       crossAxisAlignment: CrossAxisAlignment.start,
                                                       children: [
                                                         Text(
-                                                          location['name'],
+                                                          placeData['place_name'],
                                                           style: const TextStyle(
                                                             fontSize: 18,
                                                             fontWeight: FontWeight.bold,
@@ -835,7 +836,7 @@ class _MapPageState extends State<MapPage> {
                                                         ),
                                                         const SizedBox(height: 3),
                                                         Text(
-                                                          '${location['category']} · \$${location['average_price'].round()}~',
+                                                          '${placeData['category']} · \$${placeData['average_price'] == null ? '3' : placeData['average_price'].round()}~',
                                                           style: const TextStyle(
                                                             fontSize: 14,
                                                             color: Colors.black54,
@@ -851,9 +852,9 @@ class _MapPageState extends State<MapPage> {
                                                               size: 18,
                                                             ),
                                                             Text(
-                                                              (location['latitude'] != null && userLat != null && location['longitude'] != null && userLon != null)
-                                                                  ? ' ${calculateTimeRequired(userLat, userLon, location['latitude'], location['longitude'])}분 · ${location['region']}'
-                                                                  : ' 30분 · ${location['region']}',
+                                                              (placeData['latitude'] != null && userLat != null && placeData['longitude'] != null && userLon != null)
+                                                                  ? ' ${calculateTimeRequired(userLat, userLon, placeData['latitude'], placeData['longitude'])}분 · ${placeData['region']}'
+                                                                  : ' 30분 · ${placeData['region']}',
                                                               style: const TextStyle(
                                                                 fontSize: 14,
                                                                 color: Colors.black54,
@@ -871,7 +872,7 @@ class _MapPageState extends State<MapPage> {
                                                               size: 18,
                                                             ),
                                                             Text(
-                                                              ' ${location['open_time']} ~ ${location['close_time']}',
+                                                              ' ${placeData['openTime'] ?? '09:00'} ~ ${placeData['closeTime'] ?? '22:00'}',
                                                               style: const TextStyle(
                                                                 fontSize: 14,
                                                                 color: Colors.black54,
@@ -886,9 +887,8 @@ class _MapPageState extends State<MapPage> {
                                                     GestureDetector(
                                                       onTap: (){
                                                         Share.share(
-                                                          ///TODO 실제 영상 ID로 바꿔줘야함
-                                                          'https://www.youtube.com/shorts/NscOnNp2x8M',
-                                                          subject: location['name']!,
+                                                          'https://www.youtube.com/shorts/${placeData['video_id']}',
+                                                          subject: placeData['place_name']!,
                                                         );
                                                       },
                                                       child: Container(
@@ -955,8 +955,8 @@ class _MapPageState extends State<MapPage> {
                                                     ),
                                                     GestureDetector(
                                                       onTap: () async{
-                                                        await launchUrl( ///TODO PlaceId 받아와서 넣어줘야함
-                                                            Uri.parse('https://www.google.com/maps/dir/?api=1&origin=$userLat,$userLon&destination=${location['name']}&destination_place_id=ChIJq5SjCJKlfDURGqkGbzT21Y8&travelmode=transit'),
+                                                        await launchUrl(
+                                                            Uri.parse('https://www.google.com/maps/dir/?api=1&origin=$userLat,$userLon&destination=${placeData['place_name']}&destination_place_id=${placeData['place_id']}&travelmode=transit'),
                                                             mode: LaunchMode.externalApplication
                                                         );
                                                       },
@@ -989,8 +989,26 @@ class _MapPageState extends State<MapPage> {
                                                     ),
                                                     GestureDetector(
                                                       onTap: (){
-                                                        Navigator.pop(context);
-                                                        saveBookmarkInfo(Provider.of<UserDataProvider>(context, listen: false).currentUserUID, location['location_id'], location['category']);
+                                                        Navigator.push(
+                                                            context,
+                                                            MaterialPageRoute(
+                                                                builder: (context) => MapShortsPage(
+                                                                  storeName: placeData['place_name'],
+                                                                  placeId: placeData['place_id'],
+                                                                  videoId: placeData['video_id'],
+                                                                  storeCaption: placeData['description'] ?? 'descriptionNull',
+                                                                  storeLocation: placeData['region'],
+                                                                  openTime: placeData['open_time'] ?? '09:00',
+                                                                  closeTime: placeData['close_time'] ?? '20:00',
+                                                                  rating: placeData['rating'] ?? 4.0,
+                                                                  category: placeData['category'],
+                                                                  averagePrice: placeData['average_price'] == null ? 3 : placeData['average_price'].toDouble(),
+                                                                  imageUrl: 'https://placehold.co/400.png', //TODO 사진 정보 캐시해서 넘겨주기
+                                                                  coordinates: {
+                                                                    'lat': placeData['latitude'],
+                                                                    'lon': placeData['longitude'],
+                                                                  },
+                                                                )));
                                                       },
                                                       child: Container(
                                                         width: MediaQuery.of(context).size.width * 0.3,
@@ -1003,13 +1021,13 @@ class _MapPageState extends State<MapPage> {
                                                           mainAxisAlignment: MainAxisAlignment.center,
                                                           children: const [
                                                             Icon(
-                                                              CupertinoIcons.bookmark,
+                                                              CupertinoIcons.play_arrow_solid,
                                                               color: Colors.white,
                                                               size: 22,
                                                             ),
                                                             SizedBox(width: 8),
                                                             Text(
-                                                              'Save',
+                                                              'Explore',
                                                               style: TextStyle(
                                                                 fontSize: 16,
                                                                 fontWeight: FontWeight.w500,
@@ -1044,10 +1062,10 @@ class _MapPageState extends State<MapPage> {
                                                       _buildListTile(
                                                         icon: Icons.location_on_outlined,
                                                         title: 'Address',
-                                                        subtitle: '주소어쩌구저쩌구~~ \n누르면 구글맵 or 애플맵 or 자체화면',
+                                                        subtitle: placeData['address'],
                                                         onTap: () async {
-                                                          await launchUrl( ///TODO PlaceId 받아와서 넣어줘야함
-                                                              Uri.parse('https://www.google.com/maps/search/?api=1&query=${location['name']}&query_place_id=ChIJq5SjCJKlfDURGqkGbzT21Y8'),
+                                                          await launchUrl(
+                                                              Uri.parse('https://www.google.com/maps/search/?api=1&query=${placeData['place_name']}&query_place_id=${placeData['place_id']}'),
                                                               mode: LaunchMode.externalApplication
                                                           );
                                                         },
@@ -1118,6 +1136,7 @@ class _MapPageState extends State<MapPage> {
 
                                           // TODO 비어있거나 에러일 때 보여줄 내용 넣기 ( 빈 화면일 일은 없을거임근데 )
                                           if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                            print(snapshot.error);
                                             return const Padding(
                                               padding: EdgeInsets.all(20),
                                               child: Text('No locations found.'),
@@ -1204,10 +1223,9 @@ class _MapPageState extends State<MapPage> {
                                                 itemBuilder: (context, index) {
                                                   final p = places[index];
 
-                                                  // final placeId = p['location_id'].toString();
+                                                  final placeId = p['place_id'];
 
                                                   // TODO Provider 적용해서 전역적 캐싱 처리 필요
-                                                  final placeId = 'ChIJg15J_MypfDURtLH0G1suNq8';
 
                                                   if (!_photoUrlCache.containsKey(placeId)) {
                                                     // 아직 캐시되지 않은 경우, fetch 호출 후 저장
@@ -1222,7 +1240,7 @@ class _MapPageState extends State<MapPage> {
                                                       return _locationTile(
                                                         placeId,
                                                         imageUrl,
-                                                        p['name'] ?? '',
+                                                        p['place_name'] ?? '',
                                                         p['region'] ?? '',
                                                         p['open_time'] ?? '00:00',
                                                         p['close_time'] ?? '00:00',
@@ -1484,7 +1502,7 @@ class _MapPageState extends State<MapPage> {
     return ListTile(
       onTap: () {
         final items = _categorizedBookmarks[title]!;
-        final locationIds = items.map((e) => e.locationId).toList();
+        final locationIds = items.map((e) => e.placeId).toList();
 
         _isProgrammaticMove = true;
 
@@ -1499,7 +1517,7 @@ class _MapPageState extends State<MapPage> {
 
         setState(() {
           _bookmarkMarkers = _allBookmarkMarkers
-              .where((m) => locationIds.contains(int.parse(m.markerId.value)))
+              .where((m) => locationIds.contains(m.markerId.value))
               .toSet();
 
           _selectedCategory = title;
@@ -1512,7 +1530,7 @@ class _MapPageState extends State<MapPage> {
           final sortedItems = List<BookmarkLocation>.from(items)
             ..sort((a, b) => b.bookmarkedAt.compareTo(a.bookmarkedAt));
 
-          final sortedIds = sortedItems.map((e) => e.locationId).toList();
+          final sortedIds = sortedItems.map((e) => e.placeId).toList();
 
           // 2. 정렬된 순서에 따라 장소 정보 불러오기
           _categoryLocationFuture = Supabase.instance.client
@@ -1523,7 +1541,7 @@ class _MapPageState extends State<MapPage> {
 
             // 3. 정렬된 location_id 순서에 맞게 다시 재정렬
             locations.sort((a, b) =>
-            sortedIds.indexOf(a['location_id']) - sortedIds.indexOf(b['location_id']));
+            sortedIds.indexOf(a['place_id']) - sortedIds.indexOf(b['place_id']));
 
             return locations;
           });
@@ -1783,7 +1801,7 @@ class _MapPageState extends State<MapPage> {
   Future<String> fetchFirstPhotoUrl(String placeId) async {
     try {
       // 첫 번째 사진의 name을 가져옴
-      final firstPhotoName = await getFirstPhotoName('ChIJg15J_MypfDURtLH0G1suNq8');
+      final firstPhotoName = await getFirstPhotoName(placeId);
       // 해당 name을 사용해 사진 URL을 가져옴
       final photoUrl = await getPhotoUrl(firstPhotoName);
       return photoUrl;
@@ -1794,14 +1812,14 @@ class _MapPageState extends State<MapPage> {
   }
 
 
-  Future<Map<String, dynamic>> _fetchLocationDetail(String locationId) async {
+  Future<Map<String, dynamic>> _fetchLocationDetail(String placeId) async {
 
-    print(locationId);
+    print(placeId);
 
     try{
       final response = await Supabase.instance.client
           .rpc('get_location_detail_by_id', params: {
-        '_location_id': 7, //TODO 실제 장소 아이디로 변경해야함
+        '_place_id': placeId,
       });
 
       List<dynamic> data = response;
@@ -1809,8 +1827,8 @@ class _MapPageState extends State<MapPage> {
       if (data.isEmpty) print('empty'); // TODO 비었을 때 처리 ( 빌일은 없을거긴함 )
 
       // 사진 캐싱이 없다면 추가
-      if (!_photoUrlCache.containsKey(locationId)) {
-        _photoUrlCache[locationId] = fetchFirstPhotoUrl(locationId);
+      if (!_photoUrlCache.containsKey(placeId)) {
+        _photoUrlCache[placeId] = fetchFirstPhotoUrl(placeId);
       }
 
       Map<String, dynamic> locationData = data[0];
@@ -1823,7 +1841,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   ///북마크 저장
-  Future<void> saveBookmarkInfo(String? currentUserUid, String videoId, String category) async {
+  Future<void> saveBookmarkInfo(String? currentUserUid, String videoId, String placeId, String category) async {
     // 로그인 되어있는 경우
     if (currentUserUid != null) {
       // 눌렀을 때 진동
@@ -1836,19 +1854,22 @@ class _MapPageState extends State<MapPage> {
 
       // 북마크되지 않은 영상의 경우
       if (!bookMarkList.contains(videoId)) {
-        bookMarkList.add(videoId);
-
-        // 캐시 업데이트
-        await preferences.setStringList('bookMarkList', bookMarkList);
 
         try {
           // 서버에 저장
           await Supabase.instance.client.from('bookmarks').insert({
             'user_id': currentUserUid,
-            'location_id': videoId,
+            'video_id': videoId,
             'category': category,
             'bookmarked_at': DateTime.now().toIso8601String(),
+            'place_id': placeId
           });
+
+          bookMarkList.add(videoId);
+
+          // 캐시 업데이트
+          await preferences.setStringList('bookMarkList', bookMarkList);
+
 
           // 저장 되었음을 표시해주는 스낵바 TODO ( UI 조정 필요 )
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1875,18 +1896,20 @@ class _MapPageState extends State<MapPage> {
           print('Insert 에러: $e');
         }
       } else {
-        // 북마크된 영상의 경우 캐시에서 삭제
-        bookMarkList.remove(videoId);
-
-        // 캐시 업데이트
-        await preferences.setStringList('bookMarkList', bookMarkList);
 
         try {
           // 서버에서 삭제
           await Supabase.instance.client.from('bookmarks').delete().match({
             'user_id': currentUserUid,
-            'location_id': videoId,
+            'video_id': videoId,
           });
+
+          // 북마크된 영상의 경우 캐시에서 삭제
+          bookMarkList.remove(videoId);
+
+          // 캐시 업데이트
+          await preferences.setStringList('bookMarkList', bookMarkList);
+
           // 삭제 되었음을 알려주는 스낵바 TODO ( UI 조정 필요 )
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
