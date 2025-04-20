@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shortsmap/Provider/ImageCacheProvider.dart';
 import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/SplashScreen.dart';
@@ -44,6 +45,7 @@ class _MyAppState extends State<MyApp> {
       providers: [
         ChangeNotifierProvider(create: (_) => FilterProvider()),
         ChangeNotifierProvider.value(value: widget.userDataProvider),
+        ChangeNotifierProvider(create: (_) => PhotoCacheProvider(apiKey: 'AIzaSyC0fC5Xjg33ZeaBChPXIK-ijjblzI4SnB4')), // TODO API KEY 숨기기
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
