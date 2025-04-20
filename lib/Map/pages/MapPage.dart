@@ -12,6 +12,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shortsmap/Map/model/BookmarkLocation.dart';
 import 'package:shortsmap/Map/pages/MapShortsPage.dart';
+import 'package:shortsmap/Provider/ImageCacheProvider.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:shortsmap/Widgets/BottomNavBar.dart';
@@ -65,19 +66,21 @@ class _MapPageState extends State<MapPage> {
 
   Future<Map<String, dynamic>>? _locationDetailFuture;
 
-  Map<String, Future<String>> _photoUrlCache = {};
+  // Map<String, Future<String>> _photoUrlCache = {};
+
+  final Map<String, Future<String>> _photoFutures = {};
 
   String? _selectedLocation;
 
   // 카테고리별 아이콘 및 컬러
   Map<String, dynamic> categoryStyles = {
-    'Food & Dining': {'icon': Icons.restaurant, 'color': Color(0xFFFF7043)},
+    'restaurant': {'icon': Icons.restaurant, 'color': Color(0xFFFF7043)},
     'Nature': {'icon': Icons.forest, 'color': Color(0xFF4CAF50)},
     'Exhibitions': {'icon': Icons.palette_outlined, 'color': Color(0xFF9C27B0)},
     'Historical Site': {'icon': Icons.account_balance, 'color': Color(0xFF795548)},
     'Sports': {'icon': Icons.sports_tennis, 'color': Color(0xFF2196F3)},
     'Shopping': {'icon': Icons.shopping_bag_outlined, 'color': Color(0xFFFFC107)},
-    'Cafe & Desserts': {'icon': Icons.local_cafe_outlined, 'color': Color(0xFF8D6E63)},
+    'Cafe': {'icon': Icons.local_cafe_outlined, 'color': Color(0xFF8D6E63)},
     'Bar & Pub': {'icon': Icons.sports_bar, 'color': Color(0xFFB71C1C)},
   };
 
@@ -686,14 +689,12 @@ class _MapPageState extends State<MapPage> {
                                       const SizedBox(height: 30),
                                       // 실제 스크롤 되는 콘텐츠
                                       _selectedLocation != null
-                                        ? FutureBuilder<Map<String,dynamic>>(
-                                          future: _locationDetailFuture,
-                                        builder: (context, snapshot){
+                                        ? FutureBuilder<Map<String, dynamic>>(
+                                        future: _locationDetailFuture,
+                                        builder: (context, snapshot) {
                                           if (snapshot.connectionState == ConnectionState.waiting) {
                                             return const Center(child: CircularProgressIndicator());
                                           }
-
-                                          // TODO 비어있거나 에러일 때 보여줄 내용 넣기 ( 빈 화면일 일은 없을거임근데 )
                                           if (!snapshot.hasData || snapshot.data!.isEmpty) {
                                             print(snapshot.error);
                                             return const Padding(
@@ -703,101 +704,55 @@ class _MapPageState extends State<MapPage> {
                                           }
 
                                           final placeData = snapshot.data!;
+                                          final placeId = placeData['place_id'] as String;
 
-                                          final futurePhoto = _photoUrlCache[placeData['place_id']]!;
+                                          // 1) photoFuture 메모이제이션
+                                          _photoFutures[placeId] ??=
+                                              Provider.of<PhotoCacheProvider>(context, listen: false)
+                                                  .getPhotoUrlForPlace(placeId);
+                                          final photoFuture = _photoFutures[placeId]!;
 
-                                          double? userLat = Provider.of<UserDataProvider>(context, listen: false).currentLat;
-                                          double? userLon = Provider.of<UserDataProvider>(context, listen: false).currentLon;
+                                          final userLat = Provider.of<UserDataProvider>(context, listen: false).currentLat;
+                                          final userLon = Provider.of<UserDataProvider>(context, listen: false).currentLon;
 
+                                          // 2) photoFuture 로 전체 상세 UI 감싸기
+                                          return FutureBuilder<String>(
+                                            future: photoFuture,
+                                            builder: (context, photoSnapshot) {
+                                              final imageUrl = photoSnapshot.data;
+                                              final isLoading = photoSnapshot.connectionState == ConnectionState.waiting;
+                                              final isEmpty = photoSnapshot.hasData && photoSnapshot.data!.isEmpty;
 
-                                          return Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 14.0),
-                                            child: Column(
-                                              children: [
-                                                Row(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                              return Padding(
+                                                padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                                                child: Column(
                                                   children: [
-                                                    FutureBuilder<String?>(
-                                                      future: futurePhoto,
-                                                      builder: (context, photoSnapshot){
-
-                                                        String? imageUrl;
-
-                                                        if (photoSnapshot.connectionState ==
-                                                            ConnectionState.waiting) {
-                                                          return Container(
-                                                            width: 90,
-                                                            height: 90,
-                                                            decoration: BoxDecoration(
-                                                              shape: BoxShape.circle,
-                                                              border: Border.all(
-                                                                color: Colors.lightBlue,
-                                                                width: 2,
-                                                              ),
-                                                            ),
-                                                            child: Padding(
-                                                              padding: const EdgeInsets.all(2.0),
-                                                              child: CircleAvatar(
-                                                                radius: 90,
-                                                                backgroundColor: Colors.black26,
-                                                              ),
-                                                            ),
-                                                          );
-                                                        }
-
-                                                        if (photoSnapshot.hasData && photoSnapshot.data!.isEmpty) {
-                                                          return Container(
-                                                            width: 90,
-                                                            height: 90,
-                                                            decoration: BoxDecoration(
-                                                              shape: BoxShape.circle,
-                                                              border: Border.all(
-                                                                color: Colors.lightBlue,
-                                                                width: 2,
-                                                              ),
-                                                            ),
-                                                            child: Padding(
-                                                              padding: const EdgeInsets.all(2.0),
-                                                              child: CircleAvatar(
-                                                                radius: 90,
-                                                                backgroundColor: Colors.black26,
-                                                                child: Text('빔'), //TODO 빈거처리
-                                                              ),
-                                                            ),
-                                                          );
-                                                        }
-
-                                                        if (photoSnapshot.connectionState ==
-                                                            ConnectionState.done) {
-                                                          if (photoSnapshot.hasData &&
-                                                              snapshot.data!.isNotEmpty) {
-                                                            imageUrl = photoSnapshot.data!;
-
-                                                          }
-                                                        }
-
-                                                        return GestureDetector(
+                                                    // --- 상단 Row (Avatar + 텍스트 + 공유 버튼) ---
+                                                    Row(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        GestureDetector(
                                                           onTap: (){
                                                             print('123');
                                                             Navigator.push(
                                                                 context,
                                                                 MaterialPageRoute(
                                                                     builder: (context) => MapShortsPage(
-                                                                        storeName: placeData['place_name'],
-                                                                        placeId: placeData['place_id'],
-                                                                        videoId: placeData['video_id'],
-                                                                        storeCaption: placeData['description'] ?? 'descriptionNull',
-                                                                        storeLocation: placeData['region'],
-                                                                        openTime: placeData['open_time'] ?? '09:00',
-                                                                        closeTime: placeData['close_time'] ?? '20:00',
-                                                                        rating: placeData['rating'] ?? 4.0,
-                                                                        category: placeData['category'],
-                                                                        averagePrice: placeData['average_price'] == null ? 3 : placeData['average_price'].toDouble(),
-                                                                        imageUrl: imageUrl!,
-                                                                        coordinates: {
-                                                                          'lat': placeData['latitude'],
-                                                                          'lon': placeData['longitude'],
-                                                                        },
+                                                                      storeName: placeData['place_name'],
+                                                                      placeId: placeData['place_id'],
+                                                                      videoId: placeData['video_id'],
+                                                                      storeCaption: placeData['description'] ?? 'descriptionNull',
+                                                                      storeLocation: placeData['region'],
+                                                                      openTime: placeData['open_time'] ?? '09:00',
+                                                                      closeTime: placeData['close_time'] ?? '20:00',
+                                                                      rating: placeData['rating'] ?? 4.0,
+                                                                      category: placeData['category'],
+                                                                      averagePrice: placeData['average_price'] == null ? 3 : placeData['average_price'].toDouble(),
+                                                                      imageUrl: imageUrl,
+                                                                      coordinates: {
+                                                                        'lat': placeData['latitude'],
+                                                                        'lon': placeData['longitude'],
+                                                                      },
                                                                     )));
                                                           },
                                                           child: Container(
@@ -805,194 +760,156 @@ class _MapPageState extends State<MapPage> {
                                                             height: 90,
                                                             decoration: BoxDecoration(
                                                               shape: BoxShape.circle,
-                                                              border: Border.all(
-                                                                color: Colors.lightBlue,
-                                                                width: 2,
-                                                              ),
+                                                              border: Border.all(color: Colors.lightBlue, width: 2),
                                                             ),
                                                             child: Padding(
                                                               padding: const EdgeInsets.all(2.0),
                                                               child: CircleAvatar(
                                                                 radius: 90,
-                                                                backgroundImage: (imageUrl != null) ? NetworkImage(imageUrl) : null,
+                                                                backgroundImage: imageUrl == null ? null : NetworkImage(imageUrl),
                                                                 backgroundColor: Colors.grey[300],
+                                                                child: imageUrl == null ? Icon(
+                                                                  Icons.location_on_outlined,
+                                                                  color: Colors.black,
+                                                                  size: 30,
+                                                                ) : null,
                                                               ),
                                                             ),
                                                           ),
-                                                        );
-                                                      },
-                                                    ),
-                                                    const SizedBox(width: 10),
-                                                    Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        Text(
-                                                          placeData['place_name'],
-                                                          style: const TextStyle(
-                                                            fontSize: 18,
-                                                            fontWeight: FontWeight.bold,
-                                                            color: Colors.black,
-                                                          ),
                                                         ),
-                                                        const SizedBox(height: 3),
-                                                        Text(
-                                                          '${placeData['category']} · \$${placeData['average_price'] == null ? '3' : placeData['average_price'].round()}~',
-                                                          style: const TextStyle(
-                                                            fontSize: 14,
-                                                            color: Colors.black54,
-                                                          ),
-                                                        ),
-                                                        const SizedBox(height: 3),
-                                                        Row(
-                                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                                        const SizedBox(width: 10),
+                                                        Column(
+                                                          crossAxisAlignment: CrossAxisAlignment.start,
                                                           children: [
-                                                            const Icon(
-                                                              CupertinoIcons.bus,
-                                                              color: Colors.black26,
-                                                              size: 18,
-                                                            ),
                                                             Text(
-                                                              (placeData['latitude'] != null && userLat != null && placeData['longitude'] != null && userLon != null)
-                                                                  ? ' ${calculateTimeRequired(userLat, userLon, placeData['latitude'], placeData['longitude'])}분 · ${placeData['region']}'
-                                                                  : ' 30분 · ${placeData['region']}',
+                                                              placeData['place_name'],
                                                               style: const TextStyle(
-                                                                fontSize: 14,
-                                                                color: Colors.black54,
+                                                                fontSize: 18,
+                                                                fontWeight: FontWeight.bold,
+                                                                color: Colors.black,
                                                               ),
+                                                            ),
+                                                            const SizedBox(height: 3),
+                                                            Text(
+                                                              '${placeData['category']} · \$${placeData['average_price'] == null ? '3' : placeData['average_price'].round()}~',
+                                                              style: const TextStyle(fontSize: 14, color: Colors.black54),
+                                                            ),
+                                                            const SizedBox(height: 3),
+                                                            Row(
+                                                              children: [
+                                                                const Icon(CupertinoIcons.bus, color: Colors.black26, size: 18),
+                                                                Text(
+                                                                  (placeData['latitude'] != null &&
+                                                                      userLat != null &&
+                                                                      placeData['longitude'] != null &&
+                                                                      userLon != null)
+                                                                      ? ' ${calculateTimeRequired(userLat, userLon, placeData['latitude'], placeData['longitude'])}분 · ${placeData['region']}'
+                                                                      : ' 30분 · ${placeData['region']}',
+                                                                  style: const TextStyle(fontSize: 14, color: Colors.black54),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                            const SizedBox(height: 3),
+                                                            Row(
+                                                              children: [
+                                                                const Icon(CupertinoIcons.time, color: Colors.black26, size: 18),
+                                                                Text(
+                                                                  ' ${placeData['openTime'] ?? '09:00'} ~ ${placeData['closeTime'] ?? '22:00'}',
+                                                                  style: const TextStyle(fontSize: 14, color: Colors.black54),
+                                                                ),
+                                                              ],
                                                             ),
                                                           ],
                                                         ),
-                                                        const SizedBox(height: 3),
-                                                        Row(
-                                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                                          children: [
-                                                            const Icon(
-                                                              CupertinoIcons.time,
-                                                              color: Colors.black26,
-                                                              size: 18,
+                                                        const Spacer(),
+                                                        GestureDetector(
+                                                          onTap: () {
+                                                            Share.share(
+                                                              'https://www.youtube.com/shorts/${placeData['video_id']}',
+                                                              subject: placeData['place_name']!,
+                                                            );
+                                                          },
+                                                          child: Container(
+                                                            width: 40,
+                                                            height: 40,
+                                                            margin: const EdgeInsets.only(right: 15),
+                                                            decoration: BoxDecoration(
+                                                              shape: BoxShape.circle,
+                                                              color: Colors.black12,
                                                             ),
-                                                            Text(
-                                                              ' ${placeData['openTime'] ?? '09:00'} ~ ${placeData['closeTime'] ?? '22:00'}',
-                                                              style: const TextStyle(
-                                                                fontSize: 14,
-                                                                color: Colors.black54,
-                                                              ),
-                                                            ),
-                                                          ],
+                                                            child: const Icon(CupertinoIcons.share, size: 20, color: Colors.black),
+                                                          ),
                                                         ),
                                                       ],
                                                     ),
-                                                    const Spacer(),
-                                                    // 공유, 닫기 버튼
-                                                    GestureDetector(
-                                                      onTap: (){
-                                                        Share.share(
-                                                          'https://www.youtube.com/shorts/${placeData['video_id']}',
-                                                          subject: placeData['place_name']!,
-                                                        );
-                                                      },
-                                                      child: Container(
-                                                        width: 40,
-                                                        height: 40,
-                                                        margin: const EdgeInsets.only(right: 15),
-                                                        decoration: BoxDecoration(
-                                                          shape: BoxShape.circle,
-                                                          color: Colors.black12,
-                                                        ),
-                                                        child: const Icon(
-                                                          CupertinoIcons.share,
-                                                          size: 20,
-                                                          color: Colors.black,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(height: 25),
-                                                // 버튼 Row (Call, Route, Save)
-                                                Row(
-                                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                                  children: [
-                                                    GestureDetector(
-                                                      onTap: () async{
-                                                        final Uri phoneUri = Uri(
-                                                          scheme: 'tel',
-                                                          path: '+82 10 5475 6096', //TODO : 전화번호 적용
-                                                        );
 
-                                                        if (await canLaunchUrl(phoneUri)) {
-                                                          await launchUrl(phoneUri);
-                                                        } else {
-                                                          debugPrint('전화 걸기 실패');
-                                                        }
-                                                      },
-                                                      child: Container(
-                                                        width: MediaQuery.of(context).size.width * 0.3,
-                                                        padding: const EdgeInsets.symmetric(vertical: 6),
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.black12,
-                                                          borderRadius: BorderRadius.circular(20),
-                                                        ),
-                                                        child: Row(
-                                                          mainAxisAlignment: MainAxisAlignment.center,
-                                                          children: const [
-                                                            Icon(
-                                                              CupertinoIcons.phone,
-                                                              color: Colors.black,
-                                                              size: 22,
+                                                    const SizedBox(height: 25),
+
+                                                    // --- 버튼 Row (Call, Route, Explore) ---
+                                                    Row(
+                                                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                                      children: [
+                                                        // Call
+                                                        GestureDetector(
+                                                          onTap: () async {
+                                                            final Uri phoneUri = Uri(scheme: 'tel', path: '+82 10 5475 6096');
+                                                            if (await canLaunchUrl(phoneUri)) await launchUrl(phoneUri);
+                                                          },
+                                                          child: Container(
+                                                            width: MediaQuery.of(context).size.width * 0.3,
+                                                            padding: const EdgeInsets.symmetric(vertical: 6),
+                                                            decoration: BoxDecoration(
+                                                              color: Colors.black12,
+                                                              borderRadius: BorderRadius.circular(20),
                                                             ),
-                                                            SizedBox(width: 8),
-                                                            Text(
-                                                              'Call',
-                                                              style: TextStyle(
-                                                                fontSize: 16,
-                                                                fontWeight: FontWeight.w500,
+                                                            child: Row(
+                                                              mainAxisAlignment: MainAxisAlignment.center,
+                                                              children: const [
+                                                                Icon(CupertinoIcons.phone, color: Colors.black, size: 22),
+                                                                SizedBox(width: 8),
+                                                                Text('Call', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        // Route
+                                                        GestureDetector(
+                                                          onTap: () async {
+                                                            await launchUrl(
+                                                              Uri.parse(
+                                                                'https://www.google.com/maps/dir/?api=1'
+                                                                    '&origin=$userLat,$userLon'
+                                                                    '&destination=${Uri.encodeComponent(placeData['place_name'])}'
+                                                                    '&destination_place_id=${placeData['place_id']}'
+                                                                    '&travelmode=transit',
                                                               ),
+                                                              mode: LaunchMode.externalApplication,
+                                                            );
+                                                          },
+                                                          child: Container(
+                                                            width: MediaQuery.of(context).size.width * 0.3,
+                                                            padding: const EdgeInsets.symmetric(vertical: 6),
+                                                            decoration: BoxDecoration(
+                                                              color: Colors.black12,
+                                                              borderRadius: BorderRadius.circular(20),
                                                             ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    GestureDetector(
-                                                      onTap: () async{
-                                                        await launchUrl(
-                                                            Uri.parse('https://www.google.com/maps/dir/?api=1&origin=$userLat,$userLon&destination=${placeData['place_name']}&destination_place_id=${placeData['place_id']}&travelmode=transit'),
-                                                            mode: LaunchMode.externalApplication
-                                                        );
-                                                      },
-                                                      child: Container(
-                                                        width: MediaQuery.of(context).size.width * 0.3,
-                                                        padding: const EdgeInsets.symmetric(vertical: 6),
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.black12,
-                                                          borderRadius: BorderRadius.circular(20),
-                                                        ),
-                                                        child: Row(
-                                                          mainAxisAlignment: MainAxisAlignment.center,
-                                                          children: const [
-                                                            Icon(
-                                                              Icons.directions_car,
-                                                              color: Colors.black,
-                                                              size: 22,
+                                                            child: Row(
+                                                              mainAxisAlignment: MainAxisAlignment.center,
+                                                              children: const [
+                                                                Icon(Icons.directions_car, color: Colors.black, size: 22),
+                                                                SizedBox(width: 8),
+                                                                Text('Route', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                                                              ],
                                                             ),
-                                                            SizedBox(width: 8),
-                                                            Text(
-                                                              'Route',
-                                                              style: TextStyle(
-                                                                fontSize: 16,
-                                                                fontWeight: FontWeight.w500,
-                                                              ),
-                                                            ),
-                                                          ],
+                                                          ),
                                                         ),
-                                                      ),
-                                                    ),
-                                                    GestureDetector(
-                                                      onTap: (){
-                                                        Navigator.push(
-                                                            context,
-                                                            MaterialPageRoute(
-                                                                builder: (context) => MapShortsPage(
+                                                        // Explore
+                                                        GestureDetector(
+                                                          onTap: () {
+                                                            Navigator.push(
+                                                              context,
+                                                              MaterialPageRoute(
+                                                                builder: (_) => MapShortsPage(
                                                                   storeName: placeData['place_name'],
                                                                   placeId: placeData['place_id'],
                                                                   videoId: placeData['video_id'],
@@ -1002,128 +919,117 @@ class _MapPageState extends State<MapPage> {
                                                                   closeTime: placeData['close_time'] ?? '20:00',
                                                                   rating: placeData['rating'] ?? 4.0,
                                                                   category: placeData['category'],
-                                                                  averagePrice: placeData['average_price'] == null ? 3 : placeData['average_price'].toDouble(),
-                                                                  imageUrl: 'https://placehold.co/400.png', //TODO 사진 정보 캐시해서 넘겨주기
+                                                                  averagePrice: placeData['average_price'] == null
+                                                                      ? 3
+                                                                      : placeData['average_price'].toDouble(),
+                                                                  imageUrl: imageUrl, // ← 여기!
                                                                   coordinates: {
                                                                     'lat': placeData['latitude'],
                                                                     'lon': placeData['longitude'],
                                                                   },
-                                                                )));
-                                                      },
-                                                      child: Container(
-                                                        width: MediaQuery.of(context).size.width * 0.3,
-                                                        padding: const EdgeInsets.symmetric(vertical: 6),
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.lightBlue,
-                                                          borderRadius: BorderRadius.circular(20),
-                                                        ),
-                                                        child: Row(
-                                                          mainAxisAlignment: MainAxisAlignment.center,
-                                                          children: const [
-                                                            Icon(
-                                                              CupertinoIcons.play_arrow_solid,
-                                                              color: Colors.white,
-                                                              size: 22,
-                                                            ),
-                                                            SizedBox(width: 8),
-                                                            Text(
-                                                              'Explore',
-                                                              style: TextStyle(
-                                                                fontSize: 16,
-                                                                fontWeight: FontWeight.w500,
-                                                                color: Colors.white,
+                                                                ),
                                                               ),
+                                                            );
+                                                          },
+                                                          child: Container(
+                                                            width: MediaQuery.of(context).size.width * 0.3,
+                                                            padding: const EdgeInsets.symmetric(vertical: 6),
+                                                            decoration: BoxDecoration(
+                                                              color: Colors.lightBlue,
+                                                              borderRadius: BorderRadius.circular(20),
                                                             ),
-                                                          ],
+                                                            child: Row(
+                                                              mainAxisAlignment: MainAxisAlignment.center,
+                                                              children: const [
+                                                                Icon(CupertinoIcons.play_arrow_solid, color: Colors.white, size: 22),
+                                                                SizedBox(width: 8),
+                                                                Text(
+                                                                  'Explore',
+                                                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
                                                         ),
+                                                      ],
+                                                    ),
+
+                                                    const SizedBox(height: 25),
+
+                                                    // --- 추가 정보 리스트 ---
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.grey[200],
+                                                        borderRadius: BorderRadius.circular(8),
+                                                        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+                                                      ),
+                                                      child: Column(
+                                                        children: [
+                                                          _buildListTile(
+                                                            icon: Icons.location_on_outlined,
+                                                            title: 'Address',
+                                                            subtitle: placeData['address'],
+                                                            onTap: () async {
+                                                              await launchUrl(
+                                                                Uri.parse(
+                                                                  'https://www.google.com/maps/search/?api=1'
+                                                                      '&query=${Uri.encodeComponent(placeData['place_name'])}'
+                                                                      '&query_place_id=${placeData['place_id']}',
+                                                                ),
+                                                                mode: LaunchMode.externalApplication,
+                                                              );
+                                                            },
+                                                          ),
+                                                          const Divider(height: 2),
+                                                          _buildListTile(
+                                                            icon: Icons.phone,
+                                                            title: 'Call',
+                                                            subtitle: '전화번호~~ \n누르면 전화걸어줌',
+                                                            onTap: () async {
+                                                              final Uri phoneUri = Uri(scheme: 'tel', path: '+82 10 5475 6096');
+                                                              if (await canLaunchUrl(phoneUri)) await launchUrl(phoneUri);
+                                                            },
+                                                          ),
+                                                          const Divider(height: 2),
+                                                          _buildListTile(
+                                                            icon: Icons.language,
+                                                            title: 'Visit Website',
+                                                            subtitle: '웹사이트 있으면 \n누르면 웹사이트로 이동',
+                                                            onTap: () async {
+                                                              await launchUrl(Uri.parse('https://www.naver.com'),
+                                                                  mode: LaunchMode.inAppBrowserView);
+                                                            },
+                                                          ),
+                                                          const Divider(height: 2),
+                                                          _buildListTile(
+                                                            icon: Icons.flag,
+                                                            title: 'Report',
+                                                            onTap: () {
+                                                              showReportModal(context);
+                                                            },
+                                                          ),
+                                                          const Divider(height: 2),
+                                                          _buildListTile(
+                                                            icon: Icons.verified_outlined,
+                                                            title: 'I am owner of this place',
+                                                            onTap: () async {
+                                                              await launchUrl(
+                                                                Uri.parse('https://forms.gle/Ji5br34NseKr8m1Q6'),
+                                                                mode: LaunchMode.inAppBrowserView,
+                                                              );
+                                                            },
+                                                          ),
+                                                        ],
                                                       ),
                                                     ),
                                                   ],
                                                 ),
-                                                const SizedBox(height: 25),
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(
-                                                    horizontal: 12,
-                                                    vertical: 6,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.grey[200],
-                                                    borderRadius: BorderRadius.circular(8),
-                                                    boxShadow: const [
-                                                      BoxShadow(
-                                                        color: Colors.black12,
-                                                        blurRadius: 4,
-                                                        offset: Offset(0, 2),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  child: Column(
-                                                    children: [
-                                                      _buildListTile(
-                                                        icon: Icons.location_on_outlined,
-                                                        title: 'Address',
-                                                        subtitle: placeData['address'],
-                                                        onTap: () async {
-                                                          await launchUrl(
-                                                              Uri.parse('https://www.google.com/maps/search/?api=1&query=${placeData['place_name']}&query_place_id=${placeData['place_id']}'),
-                                                              mode: LaunchMode.externalApplication
-                                                          );
-                                                        },
-                                                      ),
-                                                      const Divider(height: 2),
-                                                      _buildListTile(
-                                                        icon: Icons.phone,
-                                                        title: 'Call',
-                                                        subtitle: '전화번호~~ \n누르면 전화걸어줌',
-                                                        onTap: () async {
-                                                          final Uri phoneUri = Uri(
-                                                            scheme: 'tel',
-                                                            path: '+82 10 5475 6096', //TODO : 전화번호 적용
-                                                          );
-
-                                                          if (await canLaunchUrl(phoneUri)) {
-                                                            await launchUrl(phoneUri);
-                                                          } else {
-                                                            debugPrint('전화 걸기 실패');
-                                                          }
-                                                        },
-                                                      ),
-                                                      const Divider(height: 2),
-                                                      _buildListTile(
-                                                        icon: Icons.language,
-                                                        title: 'Visit Website',
-                                                        subtitle: '웹사이트 있으면 \n누르면 웹사이트로 이동',
-                                                        onTap: () async {
-                                                          await launchUrl(Uri.parse('https://www.naver.com'), mode: LaunchMode.inAppBrowserView);
-                                                        },
-                                                      ),
-                                                      const Divider(height: 2),
-                                                      _buildListTile(
-                                                        icon: Icons.flag,
-                                                        title: 'Report',
-                                                        onTap: () {
-                                                          // TODO: 신고 기능 추가
-                                                          showReportModal(context);
-                                                        },
-                                                      ),
-                                                      const Divider(height: 2),
-                                                      _buildListTile(
-                                                        icon: Icons.verified_outlined,
-                                                        title: 'I am owner of this place',
-                                                        onTap: () async{
-                                                          // TODO: 소유자 인증 기능 추가
-                                                          await launchUrl(Uri.parse('https://forms.gle/Ji5br34NseKr8m1Q6'), mode: LaunchMode.inAppBrowserView);
-                                                        },
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
+                                              );
+                                            },
                                           );
-
                                         },
-                                        )
+                                      )
                                         : _isListDetailOpened
                                           ? FutureBuilder<List<Map<String, dynamic>>>(
                                         future: _categoryLocationFuture,
@@ -1225,15 +1131,10 @@ class _MapPageState extends State<MapPage> {
 
                                                   final placeId = p['place_id'];
 
-                                                  // TODO Provider 적용해서 전역적 캐싱 처리 필요
-
-                                                  if (!_photoUrlCache.containsKey(placeId)) {
-                                                    // 아직 캐시되지 않은 경우, fetch 호출 후 저장
-                                                    _photoUrlCache[placeId] = fetchFirstPhotoUrl(placeId);
-                                                  }
+                                                  _photoFutures[placeId] ??= Provider.of<PhotoCacheProvider>(context, listen: false).getPhotoUrlForPlace(placeId);
 
                                                   return FutureBuilder<String>(
-                                                    future: _photoUrlCache[placeId],
+                                                    future: _photoFutures[placeId],
                                                     builder: (context, photoSnapshot) {
                                                       final imageUrl = photoSnapshot.data;
 
@@ -1662,6 +1563,11 @@ class _MapPageState extends State<MapPage> {
                     radius: 90,
                     // backgroundImage: NetworkImage(imageUrl),
                     backgroundColor: Colors.grey[300],
+                    child: Icon(
+                      Icons.location_on_outlined,
+                      color: Colors.black,
+                      size: 30,
+                    ),
                   ),
                 ),
               ),
@@ -1749,67 +1655,6 @@ class _MapPageState extends State<MapPage> {
     return travelTimeMinutes.toString();
   }
 
-  ///TODO API KEY 숨겨야함
-  String apiKey = "AIzaSyC0fC5Xjg33ZeaBChPXIK-ijjblzI4SnB4";
-
-  // 1단계: 특정 장소의 사진들 중 맨 첫번째 사진의 name만 가져오는 함수
-  Future<String> getFirstPhotoName(String placeId) async {
-    final url = Uri.parse(
-      'https://places.googleapis.com/v1/places/$placeId?fields=photos&key=$apiKey',
-    );
-
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      List photos = data['photos'] as List? ?? [];
-
-      if (photos.isNotEmpty) {
-        // 첫 번째 사진의 name을 반환
-        return photos.first['name'] as String;
-      } else {
-        throw Exception('해당 장소에 사진이 없습니다.');
-      }
-    } else {
-      throw Exception('장소의 사진을 가져오지 못했습니다.');
-    }
-  }
-
-  // 2단계: name을 사용해 사진 URL(photoUri)을 얻는 함수
-  Future<String> getPhotoUrl(
-      String photoName, {
-        int maxHeightPx = 400,
-        int maxWidthPx = 400,
-      }) async {
-    final encodedPhotoName = Uri.encodeFull(photoName);
-    final url = Uri.parse(
-      'https://places.googleapis.com/v1/$encodedPhotoName/media'
-          '?key=$apiKey&maxHeightPx=$maxHeightPx&maxWidthPx=$maxWidthPx&skipHttpRedirect=true',
-    );
-
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data['photoUri'] as String;
-    } else {
-      throw Exception('사진의 URL을 가져오지 못했습니다.');
-    }
-  }
-
-  // 3단계: 장소의 첫 번째 사진 URL을 가져오는 함수
-  Future<String> fetchFirstPhotoUrl(String placeId) async {
-    try {
-      // 첫 번째 사진의 name을 가져옴
-      final firstPhotoName = await getFirstPhotoName(placeId);
-      // 해당 name을 사용해 사진 URL을 가져옴
-      final photoUrl = await getPhotoUrl(firstPhotoName);
-      return photoUrl;
-    } catch (e) {
-      print(e);
-      throw Exception('첫 번째 사진 URL을 가져오는 중 오류가 발생했습니다.');
-    }
-  }
 
 
   Future<Map<String, dynamic>> _fetchLocationDetail(String placeId) async {
@@ -1825,11 +1670,6 @@ class _MapPageState extends State<MapPage> {
       List<dynamic> data = response;
 
       if (data.isEmpty) print('empty'); // TODO 비었을 때 처리 ( 빌일은 없을거긴함 )
-
-      // 사진 캐싱이 없다면 추가
-      if (!_photoUrlCache.containsKey(placeId)) {
-        _photoUrlCache[placeId] = fetchFirstPhotoUrl(placeId);
-      }
 
       Map<String, dynamic> locationData = data[0];
 

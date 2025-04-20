@@ -19,7 +19,7 @@ class MapShortsPage extends StatefulWidget {
   final double rating;
   final String category;
   final double averagePrice;
-  final String imageUrl;
+  final String? imageUrl;
   final Map<String, double> coordinates;
 
   const MapShortsPage({
@@ -290,16 +290,26 @@ class _MapShortsPageState extends State<MapShortsPage> {
                           Row(
                             children: [
                               ///사진 or 카테고리 아이콘
-                              CircleAvatar(
-                                radius: 20,
-                                backgroundColor: shortPageWhite,
-                                // child: Icon(
-                                //   // restaurantCategory,
-                                //   Icons.history_edu,
-                                //   color: Colors.black,
-                                //   size: 30,
-                                // ),
-                                backgroundImage: NetworkImage(widget.imageUrl),
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: shortPageWhite,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor: Colors.grey[300],
+                                  backgroundImage: widget.imageUrl == null ? null : NetworkImage(widget.imageUrl!),
+                                  child: widget.imageUrl == null ? Icon(
+                                    Icons.location_on_outlined,
+                                    color: Colors.black,
+                                    size: 30,
+                                  ) : null,
+                                ),
                               ),
                               SizedBox(width: 10),
 
@@ -604,8 +614,13 @@ class _MapShortsPageState extends State<MapShortsPage> {
                             padding: const EdgeInsets.all(2.0),
                             child: CircleAvatar(
                               radius: 90,
-                              backgroundImage: NetworkImage(widget.imageUrl),
-                              backgroundColor: shortPageWhite,
+                              backgroundColor: Colors.black12,
+                              backgroundImage: widget.imageUrl == null ? null : NetworkImage(widget.imageUrl!),
+                              child: widget.imageUrl == null ? Icon(
+                                Icons.location_on_outlined,
+                                color: Colors.black,
+                                size: 30,
+                              ) : null,
                             ),
                           ),
                         ),
