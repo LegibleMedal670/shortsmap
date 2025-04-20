@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 /// 유저 로그인 여부, 유저 정보 등 모든 페이지에서 쓰이는 데이터를 관리하기 위한 프로바이더
 class UserDataProvider extends ChangeNotifier {
   bool _isLoggedIn = false;
+  String? _loginId;
   String? _currentUserUID;
   double? _currentLat;
   double? _currentLon;
@@ -12,19 +13,23 @@ class UserDataProvider extends ChangeNotifier {
 
   String? get currentUserUID => _currentUserUID;
 
+  String? get loginId => _loginId;
+
   double? get currentLat => _currentLat;
 
   double? get currentLon => _currentLon;
 
-  void login(String uid) {
+  void login(String uid, String loginId) {
     _isLoggedIn = true;
     _currentUserUID = uid;
+    _loginId = loginId;
     notifyListeners();
   }
 
   void logout() {
     _isLoggedIn = false;
     _currentUserUID = null;
+    _loginId = null;
     notifyListeners();
   }
 
