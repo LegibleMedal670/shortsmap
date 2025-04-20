@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
-import 'package:shortsmap/UserDataProvider.dart';
+import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 

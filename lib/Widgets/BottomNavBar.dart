@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:shortsmap/Map/pages/MapPage.dart';
 import 'package:shortsmap/Plan/screens/plan_page.dart';
 import 'package:shortsmap/Shorts/page/ShortsPage.dart';
-import 'package:shortsmap/UserDataProvider.dart';
+import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
 
 

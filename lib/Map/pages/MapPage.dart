@@ -12,7 +12,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shortsmap/Map/model/BookmarkLocation.dart';
 import 'package:shortsmap/Map/pages/MapShortsPage.dart';
-import 'package:shortsmap/UserDataProvider.dart';
+import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:shortsmap/Widgets/BottomNavBar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

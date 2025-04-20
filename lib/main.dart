@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
-import 'package:shortsmap/UserDataProvider.dart';
+import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/SplashScreen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

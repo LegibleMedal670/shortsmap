@@ -5,7 +5,7 @@ import 'package:shortsmap/Shorts/model/LocationData.dart';
 import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
 import 'package:shortsmap/Shorts/widget/ShimmerWidget.dart';
 import 'package:shortsmap/Shorts/widget/ShortFormWidget.dart';
-import 'package:shortsmap/UserDataProvider.dart';
+import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Widgets/BottomNavBar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
