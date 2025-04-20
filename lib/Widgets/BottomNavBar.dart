@@ -1,11 +1,9 @@
 import 'dart:io';
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:shortsmap/Map/pages/MapPage.dart';
-import 'package:shortsmap/Plan/screens/plan_page.dart';
+import 'package:shortsmap/Map/page/MapPage.dart';
+import 'package:shortsmap/Profile/page/ProfilePage.dart';
 import 'package:shortsmap/Shorts/page/ShortsPage.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
@@ -23,7 +21,7 @@ Widget BottomNavBar(BuildContext context, String page) {
     ),
     child: Row(
       children: [
-        // explore
+        /// explore
         InkWell(
           onTap: () async {
             HapticFeedback.lightImpact();
@@ -40,7 +38,7 @@ Widget BottomNavBar(BuildContext context, String page) {
                 padding: EdgeInsets.only(
                     top: MediaQuery.of(context).size.height * (16 / 812)),
                 color: Colors.transparent,
-                width: MediaQuery.of(context).size.width * 0.25,
+                width: MediaQuery.of(context).size.width * 0.33,
                 child: Icon(
                   Icons.travel_explore,
                   color: (page == 'shorts') ? Colors.white : Colors.grey,
@@ -57,87 +55,87 @@ Widget BottomNavBar(BuildContext context, String page) {
             ],
           ),
         ),
-        // plan
-        InkWell(
-          onTap: () async {
-            HapticFeedback.lightImpact();
-            if (page != 'plan') {
-              Navigator.pushReplacement(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation1, animation2) =>
-                  const PlanPage(),
-                  transitionDuration: Duration.zero,
-                  reverseTransitionDuration: Duration.zero,
-                ),
-              );
-            }
-          },
-          child: Column(
-            children: [
-              Container(
-                padding: EdgeInsets.only(
-                    top: MediaQuery.of(context).size.height * (16 / 812)),
-                color: Colors.transparent,
-                width: MediaQuery.of(context).size.width * 0.25,
-                child: Icon(
-                  // Icons.supervisor_account,
-                  Icons.calendar_month,
-                  color: (page == 'plan') ? Color(0xff121212) : Colors.grey,
-                  size: MediaQuery.of(context).size.height * (25 / 812),
-                ),
-              ),
-              Text(
-                'Plan',
-                style: TextStyle(
-                  color: (page == 'plan') ? Color(0xff121212) : Colors.grey,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ),
-        // book
-        InkWell(
-          onTap: () async {
-            HapticFeedback.lightImpact();
-            if (page != 'reserve') {
-              // Navigator.pushReplacement(
-              //   context,
-              //   PageRouteBuilder(
-              //     pageBuilder: (context, animation1, animation2) =>
-              //     const VideoPage(),
-              //     transitionDuration: Duration.zero,
-              //     reverseTransitionDuration: Duration.zero,
-              //   ),
-              // );
-            }
-          },
-          child: Column(
-            children: [
-              Container(
-                padding: EdgeInsets.only(
-                    top: MediaQuery.of(context).size.height * (16 / 812)),
-                color: Colors.transparent,
-                width: MediaQuery.of(context).size.width * 0.25,
-                child: Icon(
-                  // Icons.supervisor_account,
-                  CupertinoIcons.tickets,
-                  color: (page == 'reserve') ? Color(0xff121212) : Colors.grey,
-                  size: MediaQuery.of(context).size.height * (25 / 812),
-                ),
-              ),
-              Text(
-                'Reserve',
-                style: TextStyle(
-                  color: (page == 'reserve') ? Color(0xff121212) : Colors.grey,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ),
-        // community
+        // // plan
+        // InkWell(
+        //   onTap: () async {
+        //     HapticFeedback.lightImpact();
+        //     if (page != 'plan') {
+        //       Navigator.pushReplacement(
+        //         context,
+        //         PageRouteBuilder(
+        //           pageBuilder: (context, animation1, animation2) =>
+        //           const PlanPage(),
+        //           transitionDuration: Duration.zero,
+        //           reverseTransitionDuration: Duration.zero,
+        //         ),
+        //       );
+        //     }
+        //   },
+        //   child: Column(
+        //     children: [
+        //       Container(
+        //         padding: EdgeInsets.only(
+        //             top: MediaQuery.of(context).size.height * (16 / 812)),
+        //         color: Colors.transparent,
+        //         width: MediaQuery.of(context).size.width * 0.25,
+        //         child: Icon(
+        //           // Icons.supervisor_account,
+        //           Icons.calendar_month,
+        //           color: (page == 'plan') ? Color(0xff121212) : Colors.grey,
+        //           size: MediaQuery.of(context).size.height * (25 / 812),
+        //         ),
+        //       ),
+        //       Text(
+        //         'Plan',
+        //         style: TextStyle(
+        //           color: (page == 'plan') ? Color(0xff121212) : Colors.grey,
+        //           fontSize: 12,
+        //         ),
+        //       ),
+        //     ],
+        //   ),
+        // ),
+        // // book
+        // InkWell(
+        //   onTap: () async {
+        //     HapticFeedback.lightImpact();
+        //     if (page != 'reserve') {
+        //       // Navigator.pushReplacement(
+        //       //   context,
+        //       //   PageRouteBuilder(
+        //       //     pageBuilder: (context, animation1, animation2) =>
+        //       //     const VideoPage(),
+        //       //     transitionDuration: Duration.zero,
+        //       //     reverseTransitionDuration: Duration.zero,
+        //       //   ),
+        //       // );
+        //     }
+        //   },
+        //   child: Column(
+        //     children: [
+        //       Container(
+        //         padding: EdgeInsets.only(
+        //             top: MediaQuery.of(context).size.height * (16 / 812)),
+        //         color: Colors.transparent,
+        //         width: MediaQuery.of(context).size.width * 0.25,
+        //         child: Icon(
+        //           // Icons.supervisor_account,
+        //           CupertinoIcons.tickets,
+        //           color: (page == 'reserve') ? Color(0xff121212) : Colors.grey,
+        //           size: MediaQuery.of(context).size.height * (25 / 812),
+        //         ),
+        //       ),
+        //       Text(
+        //         'Reserve',
+        //         style: TextStyle(
+        //           color: (page == 'reserve') ? Color(0xff121212) : Colors.grey,
+        //           fontSize: 12,
+        //         ),
+        //       ),
+        //     ],
+        //   ),
+        // ),
+        /// map
         InkWell(
           onTap: () async {
             HapticFeedback.lightImpact();
@@ -167,7 +165,7 @@ Widget BottomNavBar(BuildContext context, String page) {
                 padding: EdgeInsets.only(
                     top: MediaQuery.of(context).size.height * (16 / 812)),
                 color: Colors.transparent,
-                width: MediaQuery.of(context).size.width * 0.25,
+                width: MediaQuery.of(context).size.width * 0.33,
                 child: Icon(
                   // Icons.supervisor_account,
                   Icons.map_outlined,
@@ -179,6 +177,46 @@ Widget BottomNavBar(BuildContext context, String page) {
                 'map',
                 style: TextStyle(
                   color: (page == 'map') ? Color(0xff121212) : Colors.grey,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        /// profile
+        InkWell(
+          onTap: () async {
+            HapticFeedback.lightImpact();
+            if (page != 'profile') {
+              Navigator.pushReplacement(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation1, animation2) =>
+                  const ProfilePage(),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
+            }
+          },
+          child: Column(
+            children: [
+              Container(
+                padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).size.height * (16 / 812)),
+                color: Colors.transparent,
+                width: MediaQuery.of(context).size.width * 0.33,
+                child: Icon(
+                  // Icons.supervisor_account,
+                  Icons.account_circle_outlined,
+                  color: (page == 'profile') ? Color(0xff121212) : Colors.grey,
+                  size: MediaQuery.of(context).size.height * (25 / 812),
+                ),
+              ),
+              Text(
+                'profile',
+                style: TextStyle(
+                  color: (page == 'profile') ? Color(0xff121212) : Colors.grey,
                   fontSize: 12,
                 ),
               ),
