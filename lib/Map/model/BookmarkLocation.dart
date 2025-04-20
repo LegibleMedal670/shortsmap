@@ -1,15 +1,15 @@
 class BookmarkLocation {
-  final int locationId;
+  final String placeId;
   final String category;
-  final String name;
+  final String placeName;
   final double longitude;
   final double latitude;
   final DateTime bookmarkedAt;
 
   BookmarkLocation({
-    required this.locationId,
+    required this.placeId,
     required this.category,
-    required this.name,
+    required this.placeName,
     required this.longitude,
     required this.latitude,
     required this.bookmarkedAt,
@@ -17,9 +17,9 @@ class BookmarkLocation {
 
   factory BookmarkLocation.fromMap(Map<String, dynamic> map) {
     return BookmarkLocation(
-      locationId: map['location_id'],
+      placeId: map['place_id'],
       category: map['category'],
-      name: map['name'],
+      placeName: map['place_name'],
       longitude: (map['longitude'] as num).toDouble(),
       latitude: (map['latitude'] as num).toDouble(),
       bookmarkedAt: DateTime.parse(map['bookmarked_at']),
