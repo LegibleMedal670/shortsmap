@@ -10,6 +10,7 @@ import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 class MapShortsPage extends StatefulWidget {
   final String storeName;
+  final String placeId;
   final String videoId;
   final String storeCaption;
   final String storeLocation;
@@ -24,6 +25,7 @@ class MapShortsPage extends StatefulWidget {
   const MapShortsPage({
     super.key,
     required this.storeName,
+    required this.placeId,
     required this.videoId,
     required this.storeCaption,
     required this.storeLocation,
@@ -61,7 +63,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
       ),
     );
 
-    _controller.loadVideoById(videoId: 'RDAzBwbEF50');
+    _controller.loadVideoById(videoId: widget.videoId);
   }
 
   void _toggleVideo() {
@@ -89,12 +91,13 @@ class _MapShortsPageState extends State<MapShortsPage> {
 
   @override
   Widget build(BuildContext context) {
-
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark.copyWith(
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle.dark.copyWith(
         statusBarColor: Colors.black, // Color for Android
         statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark
-    ));
+        statusBarBrightness: Brightness.dark,
+      ),
+    );
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -174,21 +177,24 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                 ),
 
                                 ///정지/재개 아이콘
-                                Center(
-                                  child: AnimatedOpacity(
-                                    opacity: _pauseIconOpacity,
-                                    duration: const Duration(milliseconds: 300),
-                                    curve: Curves.easeInOutCirc,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(15),
-                                      decoration: const BoxDecoration(
-                                        color: Colors.black54,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        _currentIcon,
-                                        color: shortPageWhite,
-                                        size: 50.0,
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 150.0),
+                                  child: Center(
+                                    child: AnimatedOpacity(
+                                      opacity: _pauseIconOpacity,
+                                      duration: const Duration(milliseconds: 300),
+                                      curve: Curves.easeInOutCirc,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(15),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.black54,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          _currentIcon,
+                                          color: shortPageWhite,
+                                          size: 50.0,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -315,15 +321,19 @@ class _MapShortsPageState extends State<MapShortsPage> {
                               ///More 버튼
                               GestureDetector(
                                 onTap: () {
-                                  showInfoModal(
-                                    context,
-                                    'ChIJydcugP6jfDUR0thfS3gHASk', // TODO 실제 placeId
-                                  );
+                                  showInfoModal(context, widget.placeId);
                                 },
                                 child: Container(
                                   width: 70,
                                   height: 30,
                                   padding: EdgeInsets.only(bottom: 3),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(3),
+                                    border: Border.all(
+                                      width: 1.2,
+                                      color: shortPageWhite,
+                                    ),
+                                  ),
                                   child: Center(
                                     child: Text(
                                       'More',
@@ -332,13 +342,6 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                         fontSize: 16,
                                         color: shortPageWhite,
                                       ),
-                                    ),
-                                  ),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(3),
-                                    border: Border.all(
-                                      width: 1.2,
-                                      color: shortPageWhite,
                                     ),
                                   ),
                                 ),
@@ -549,8 +552,6 @@ class _MapShortsPageState extends State<MapShortsPage> {
 
   ///More 버튼을 누르면 나오는 ModalBottomSheet
   void showInfoModal(BuildContext context, String placeId) {
-    // Future를 미리 변수에 담아 두면 동일한 Future 인스턴스를 재사용할 수 있습니다.
-    // final futurePhotos = fetchFirstPhotoUrl(placeId);
     final double? userLat =
         Provider.of<UserDataProvider>(context, listen: false).currentLat;
     final double? userLon =
@@ -590,24 +591,24 @@ class _MapShortsPageState extends State<MapShortsPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                                width: 90,
-                                height: 90,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.lightBlue,
-                                    width: 2,
-                                  ),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(2.0),
-                                  child: CircleAvatar(
-                                    radius: 90,
-                                    backgroundImage: NetworkImage(widget.imageUrl),
-                                    backgroundColor: shortPageWhite,
-                                  ),
-                                ),
-                              ),
+                          width: 90,
+                          height: 90,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.lightBlue,
+                              width: 2,
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(2.0),
+                            child: CircleAvatar(
+                              radius: 90,
+                              backgroundImage: NetworkImage(widget.imageUrl),
+                              backgroundColor: shortPageWhite,
+                            ),
+                          ),
+                        ),
                         const SizedBox(width: 10),
                         // 텍스트 정보: 매장명, 카테고리, 평균 가격 등
                         Column(
@@ -677,8 +678,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                         GestureDetector(
                           onTap: () {
                             Share.share(
-                              ///TODO 실제 영상 ID로 바꿔줘야함
-                              'https://www.youtube.com/shorts/NscOnNp2x8M',
+                              'https://www.youtube.com/shorts/${widget.videoId}',
                               subject: widget.storeName,
                             );
                           },
@@ -766,9 +766,8 @@ class _MapShortsPageState extends State<MapShortsPage> {
                         GestureDetector(
                           onTap: () async {
                             await launchUrl(
-                              ///TODO PlaceId 받아와서 넣어줘야함
                               Uri.parse(
-                                'https://www.google.com/maps/dir/?api=1&origin=$userLat,$userLon&destination=${widget.storeName}&destination_place_id=ChIJq5SjCJKlfDURGqkGbzT21Y8&travelmode=transit',
+                                'https://www.google.com/maps/dir/?api=1&origin=$userLat,$userLon&destination=${widget.storeName}&destination_place_id=$placeId&travelmode=transit',
                               ),
                               mode: LaunchMode.externalApplication,
                             );
@@ -931,7 +930,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                               await launchUrl(
                                 ///TODO PlaceId 받아와서 넣어줘야함
                                 Uri.parse(
-                                  'https://www.google.com/maps/search/?api=1&query=${widget.storeName}&query_place_id=ChIJq5SjCJKlfDURGqkGbzT21Y8',
+                                  'https://www.google.com/maps/search/?api=1&query=${widget.storeName}&query_place_id=$placeId',
                                 ),
                                 mode: LaunchMode.externalApplication,
                               );
@@ -1059,8 +1058,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                           onTap: () {
                             Navigator.pop(context);
                             Share.share(
-                              ///TODO 실제 영상 ID로 바꿔줘야함
-                              'https://www.youtube.com/shorts/NscOnNp2x8M',
+                              'https://www.youtube.com/shorts/${widget.videoId}',
                               subject: widget.storeName,
                             );
                           },
