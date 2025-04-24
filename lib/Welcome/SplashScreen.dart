@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shortsmap/Map/page/MapPage.dart';
 import 'package:shortsmap/Plan/screens/plan_page.dart';
 import 'package:shortsmap/Shorts/page/ShortsPage.dart';
 
@@ -55,9 +56,9 @@ class MainNavigator extends StatelessWidget {
     return Navigator(
       onGenerateInitialRoutes: (navigator, initialRoute) {
         return [
-          // 스택의 최상단: PlanPage (최초에 보이는 페이지)
-          MaterialPageRoute(builder: (_) => PlanPage()),
-          // 스택의 가장 밑: ShortsPage
+          // 스택 하단에 MapPage
+          MaterialPageRoute(builder: (_) => MapPage()),
+          // 먼저 보여지는 ShortsPage
           MaterialPageRoute(builder: (_) => ShortsPage()),
         ];
       },
