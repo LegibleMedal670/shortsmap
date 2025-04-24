@@ -11,7 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shortsmap/Map/model/BookmarkLocation.dart';
-import 'package:shortsmap/Map/pages/MapShortsPage.dart';
+import 'package:shortsmap/Map/page/MapShortsPage.dart';
 import 'package:shortsmap/Provider/ImageCacheProvider.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
@@ -198,10 +198,12 @@ class _MapPageState extends State<MapPage> {
   }
 
 
+
   @override
   void initState() {
     super.initState();
 
+    // 1) 마커 아이콘 로드
     getMarkerIcon(
       backgroundColor: Colors.green,
       iconData: Icons.star_outline,
@@ -215,36 +217,25 @@ class _MapPageState extends State<MapPage> {
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() {
-        _widgetHeight = MediaQuery.of(context).size.height;
-        _fabPosition = _sheetController.size * _widgetHeight;
-        _mapBottomPadding = (_sheetController.size <= 0.5)
-            ? _sheetController.size * _widgetHeight
-            : 0.5 * _widgetHeight;
-      });
-    });
-    _sheetController.addListener(() {
-      setState(() {
-        _fabPosition = _sheetController.size * _widgetHeight;
-        // print(_sheetController.size);
-        if (_sheetController.size <= 0.5) {
-          _mapBottomPadding = _sheetController.size * _widgetHeight;
-        } else {
-          // 0.5 초과일 경우 원하는 값으로 고정하거나 추가 로직을 적용
-          _mapBottomPadding = 0.5 * _widgetHeight;
-        }
-      });
+      _widgetHeight = MediaQuery.of(context).size.height;
+
+      // 1-2) initialChildSize(0.4) 기준으로 FAB 위치와 맵 패딩 설정
+      _fabPosition     = 0.4 * _widgetHeight;
+      _mapBottomPadding = 0.4 <= 0.5
+          ? 0.4 * _widgetHeight
+          : 0.5 * _widgetHeight;
+
+      setState(() {});
     });
 
-    if(widget.placeId != null){
+    // 4) placeId가 전달된 경우 바로 상세 뷰 열기
+    if (widget.placeId != null) {
       setState(() {
-        _isListDetailOpened = true;
-        _selectedLocation = widget.placeId;
-        _locationDetailFuture = _fetchLocationDetail(widget.placeId!);
+        _isListDetailOpened    = true;
+        _selectedLocation      = widget.placeId;
+        _locationDetailFuture  = _fetchLocationDetail(widget.placeId!);
       });
-
     }
-
   }
 
   @override
@@ -516,11 +507,69 @@ class _MapPageState extends State<MapPage> {
                       right: 10,
                       child: Row(
                         children: [
+                          // SizedBox(
+                          //   height: 45,
+                          //   width: 95,
+                          //   child: FittedBox(
+                          //     child: FloatingActionButton.extended(
+                          //       label: const Text(
+                          //         '화장실',
+                          //         style: TextStyle(
+                          //           color: Colors.black,
+                          //           fontSize: 16,
+                          //           fontWeight: FontWeight.bold,
+                          //         ),
+                          //       ),
+                          //       backgroundColor: Colors.white,
+                          //       // child: const Text(
+                          //       //   '화장실',
+                          //       //   style: TextStyle(
+                          //       //     color: Colors.black,
+                          //       //   ),
+                          //       // ),
+                          //       onPressed: () {
+                          //         // _moveToCurrentLocation();
+                          //         // _sheetController.animateTo(
+                          //         //   0.05,
+                          //         //   duration: Duration(milliseconds: 300),
+                          //         //   curve: Curves.easeInOut,
+                          //         // );
+                          //       },
+                          //     ),
+                          //   ),
+                          // ),
+                          // SizedBox(
+                          //   height: 45,
+                          //   width: 45,
+                          //   child: FittedBox(
+                          //     child: FloatingActionButton(
+                          //       backgroundColor: Colors.white,
+                          //       child: Padding(
+                          //         padding: const EdgeInsets.only(right: 6.0),
+                          //         child: const Icon(
+                          //           FontAwesomeIcons.restroom,
+                          //           color: Colors.black54,
+                          //           size: 24,
+                          //         ),
+                          //       ),
+                          //       onPressed: () {
+                          //         // _moveToCurrentLocation();
+                          //         // _sheetController.animateTo(
+                          //         //   0.05,
+                          //         //   duration: Duration(milliseconds: 300),
+                          //         //   curve: Curves.easeInOut,
+                          //         // );
+                          //       },
+                          //     ),
+                          //   ),
+                          // ),
+                          // SizedBox(width: 15,),
                           SizedBox(
                             height: 45,
                             width: 45,
                             child: FittedBox(
                               child: FloatingActionButton(
+                                heroTag: UniqueKey().toString(),
                                 backgroundColor: Colors.white,
                                 child: const Icon(
                                   Icons.filter_alt,
@@ -544,6 +593,7 @@ class _MapPageState extends State<MapPage> {
                             width: 45,
                             child: FittedBox(
                               child: FloatingActionButton(
+                                heroTag: UniqueKey().toString(),
                                 backgroundColor: Colors.white,
                                 child: const Icon(
                                   CupertinoIcons.paperplane_fill,
@@ -646,678 +696,729 @@ class _MapPageState extends State<MapPage> {
                   Positioned(
                     bottom: 0,
                     top: 0,
-                    child: DraggableScrollableSheet(
-                      controller: _sheetController,
-                      maxChildSize: 0.9,
-                      initialChildSize: 0.4,
-                      minChildSize: 0.09,
-                      expand: false,
-                      snap: true,
-                      snapSizes: const [0.09, 0.4],
-                      builder: (context, scrollController) {
-                        return Container(
-                          clipBehavior: Clip.hardEdge,
-                          width: MediaQuery.of(context).size.width,
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.5),
-                                spreadRadius: 8,
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                            color: Colors.grey[200],
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(30),
-                              topRight: Radius.circular(30),
-                            ),
-                          ),
-                          child: Stack(
-                            children: [
-                              /// 스크롤 가능한 전체 콘텐츠 영역
-                              ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  minHeight: MediaQuery.of(context).size.height, // 또는 원하는 최소 높이
+                    child: NotificationListener<DraggableScrollableNotification>(
+                      onNotification: (notification) {
+                        // 시트 크기 비율(extent)로 FAB 위치와 맵 패딩 실시간 조정
+                        final e = notification.extent;
+                        _fabPosition     = e * _widgetHeight;
+                        _mapBottomPadding = e <= 0.5
+                            ? e * _widgetHeight
+                            : 0.5 * _widgetHeight;
+                        setState(() {});
+                        return true;
+                      },
+                      child: DraggableScrollableSheet(
+                        controller: _sheetController,
+                        maxChildSize:   0.9,
+                        initialChildSize: 0.4,
+                        minChildSize:   0.1,
+                        expand:         false,
+                        snap:           true,
+                        snapSizes:      const [0.1, 0.4],
+                        builder: (context, scrollController) {
+                          return Container(
+                            clipBehavior: Clip.hardEdge,
+                            width: MediaQuery.of(context).size.width,
+                            decoration: BoxDecoration(
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  spreadRadius: 8,
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
                                 ),
-                                child: SingleChildScrollView(
-                                  controller: scrollController,
-                                  physics: const ClampingScrollPhysics(),
-                                  child: Column(
-                                    children: [
-                                      // 헤더 공간만큼의 빈 공간(헤더는 오버레이로 표시됨)
-                                      const SizedBox(height: 30),
-                                      // 실제 스크롤 되는 콘텐츠
-                                      _selectedLocation != null
-                                        ? FutureBuilder<Map<String, dynamic>>(
-                                        future: _locationDetailFuture,
-                                        builder: (context, snapshot) {
-                                          if (snapshot.connectionState == ConnectionState.waiting) {
-                                            return const Center(child: CircularProgressIndicator());
-                                          }
-                                          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                                            print(snapshot.error);
-                                            return const Padding(
-                                              padding: EdgeInsets.all(20),
-                                              child: Text('No locations found.'),
-                                            );
-                                          }
+                              ],
+                              color: Colors.grey[200],
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(30),
+                                topRight: Radius.circular(30),
+                              ),
+                            ),
+                            child: Stack(
+                              children: [
+                                /// 스크롤 가능한 전체 콘텐츠 영역
+                                ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    minHeight: MediaQuery.of(context).size.height, // 또는 원하는 최소 높이
+                                  ),
+                                  child: SingleChildScrollView(
+                                    controller: scrollController,
+                                    physics: const ClampingScrollPhysics(),
+                                    child: Column(
+                                      children: [
+                                        // 헤더 공간만큼의 빈 공간(헤더는 오버레이로 표시됨)
+                                        const SizedBox(height: 30),
+                                        // 실제 스크롤 되는 콘텐츠
+                                        _selectedLocation != null
+                                            ? FutureBuilder<Map<String, dynamic>>(
+                                          future: _locationDetailFuture,
+                                          builder: (context, snapshot) {
+                                            if (snapshot.connectionState == ConnectionState.waiting) {
+                                              return const Center(child: CircularProgressIndicator());
+                                            }
+                                            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                              print(snapshot.error);
+                                              return const Padding(
+                                                padding: EdgeInsets.all(20),
+                                                child: Text('No locations found.'),
+                                              );
+                                            }
 
-                                          final placeData = snapshot.data!;
-                                          final placeId = placeData['place_id'] as String;
+                                            final placeData = snapshot.data!;
+                                            final placeId = placeData['place_id'] as String;
 
-                                          // 1) photoFuture 메모이제이션
-                                          _photoFutures[placeId] ??=
-                                              Provider.of<PhotoCacheProvider>(context, listen: false)
-                                                  .getPhotoUrlForPlace(placeId);
-                                          final photoFuture = _photoFutures[placeId]!;
+                                            // 1) photoFuture 메모이제이션
+                                            _photoFutures[placeId] ??=
+                                                Provider.of<PhotoCacheProvider>(context, listen: false)
+                                                    .getPhotoUrlForPlace(placeId);
+                                            final photoFuture = _photoFutures[placeId]!;
 
-                                          final userLat = Provider.of<UserDataProvider>(context, listen: false).currentLat;
-                                          final userLon = Provider.of<UserDataProvider>(context, listen: false).currentLon;
+                                            final userLat = Provider.of<UserDataProvider>(context, listen: false).currentLat;
+                                            final userLon = Provider.of<UserDataProvider>(context, listen: false).currentLon;
 
-                                          // 2) photoFuture 로 전체 상세 UI 감싸기
-                                          return FutureBuilder<String>(
-                                            future: photoFuture,
-                                            builder: (context, photoSnapshot) {
-                                              final imageUrl = photoSnapshot.data;
-                                              final isLoading = photoSnapshot.connectionState == ConnectionState.waiting;
-                                              final isEmpty = photoSnapshot.hasData && photoSnapshot.data!.isEmpty;
+                                            // 2) photoFuture 로 전체 상세 UI 감싸기
+                                            return FutureBuilder<String>(
+                                              future: photoFuture,
+                                              builder: (context, photoSnapshot) {
+                                                final imageUrl = photoSnapshot.data;
+                                                final isLoading = photoSnapshot.connectionState == ConnectionState.waiting;
+                                                final isEmpty = photoSnapshot.hasData && photoSnapshot.data!.isEmpty;
 
-                                              return Padding(
-                                                padding: const EdgeInsets.symmetric(horizontal: 14.0),
-                                                child: Column(
-                                                  children: [
-                                                    // --- 상단 Row (Avatar + 텍스트 + 공유 버튼) ---
-                                                    Row(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        GestureDetector(
-                                                          onTap: (){
-                                                            print('123');
-                                                            Navigator.push(
-                                                                context,
-                                                                MaterialPageRoute(
-                                                                    builder: (context) => MapShortsPage(
-                                                                      storeName: placeData['place_name'],
-                                                                      placeId: placeData['place_id'],
-                                                                      videoId: placeData['video_id'],
-                                                                      storeCaption: placeData['description'] ?? 'descriptionNull',
-                                                                      storeLocation: placeData['region'],
-                                                                      openTime: placeData['open_time'] ?? '09:00',
-                                                                      closeTime: placeData['close_time'] ?? '20:00',
-                                                                      rating: placeData['rating'] ?? 4.0,
-                                                                      category: placeData['category'],
-                                                                      averagePrice: placeData['average_price'] == null ? 3 : placeData['average_price'].toDouble(),
-                                                                      imageUrl: imageUrl,
-                                                                      coordinates: {
-                                                                        'lat': placeData['latitude'],
-                                                                        'lon': placeData['longitude'],
-                                                                      },
-                                                                    )));
-                                                          },
-                                                          child: Container(
-                                                            width: 90,
-                                                            height: 90,
-                                                            decoration: BoxDecoration(
-                                                              shape: BoxShape.circle,
-                                                              border: Border.all(color: Colors.lightBlue, width: 2),
-                                                            ),
-                                                            child: Padding(
-                                                              padding: const EdgeInsets.all(2.0),
-                                                              child: CircleAvatar(
-                                                                radius: 90,
-                                                                backgroundImage: imageUrl == null ? null : NetworkImage(imageUrl),
-                                                                backgroundColor: Colors.grey[300],
-                                                                child: imageUrl == null ? Icon(
-                                                                  Icons.location_on_outlined,
-                                                                  color: Colors.black,
-                                                                  size: 30,
-                                                                ) : null,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        const SizedBox(width: 10),
-                                                        Column(
-                                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                                          children: [
-                                                            Text(
-                                                              placeData['place_name'],
-                                                              style: const TextStyle(
-                                                                fontSize: 18,
-                                                                fontWeight: FontWeight.bold,
-                                                                color: Colors.black,
-                                                              ),
-                                                            ),
-                                                            const SizedBox(height: 3),
-                                                            Text(
-                                                              '${placeData['category']} · \$${placeData['average_price'] == null ? '3' : placeData['average_price'].round()}~',
-                                                              style: const TextStyle(fontSize: 14, color: Colors.black54),
-                                                            ),
-                                                            const SizedBox(height: 3),
-                                                            Row(
-                                                              children: [
-                                                                const Icon(CupertinoIcons.bus, color: Colors.black26, size: 18),
-                                                                Text(
-                                                                  (placeData['latitude'] != null &&
-                                                                      userLat != null &&
-                                                                      placeData['longitude'] != null &&
-                                                                      userLon != null)
-                                                                      ? ' ${calculateTimeRequired(userLat, userLon, placeData['latitude'], placeData['longitude'])}분 · ${placeData['region']}'
-                                                                      : ' 30분 · ${placeData['region']}',
-                                                                  style: const TextStyle(fontSize: 14, color: Colors.black54),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                            const SizedBox(height: 3),
-                                                            Row(
-                                                              children: [
-                                                                const Icon(CupertinoIcons.time, color: Colors.black26, size: 18),
-                                                                Text(
-                                                                  ' ${placeData['openTime'] ?? '09:00'} ~ ${placeData['closeTime'] ?? '22:00'}',
-                                                                  style: const TextStyle(fontSize: 14, color: Colors.black54),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        const Spacer(),
-                                                        GestureDetector(
-                                                          onTap: () {
-                                                            Share.share(
-                                                              'https://www.youtube.com/shorts/${placeData['video_id']}',
-                                                              subject: placeData['place_name']!,
-                                                            );
-                                                          },
-                                                          child: Container(
-                                                            width: 40,
-                                                            height: 40,
-                                                            margin: const EdgeInsets.only(right: 15),
-                                                            decoration: BoxDecoration(
-                                                              shape: BoxShape.circle,
-                                                              color: Colors.black12,
-                                                            ),
-                                                            child: const Icon(CupertinoIcons.share, size: 20, color: Colors.black),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-
-                                                    const SizedBox(height: 25),
-
-                                                    // --- 버튼 Row (Call, Route, Explore) ---
-                                                    Row(
-                                                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                                      children: [
-                                                        // Call
-                                                        GestureDetector(
-                                                          onTap: () async {
-                                                            final Uri phoneUri = Uri(scheme: 'tel', path: '+82 10 5475 6096');
-                                                            if (await canLaunchUrl(phoneUri)) await launchUrl(phoneUri);
-                                                          },
-                                                          child: Container(
-                                                            width: MediaQuery.of(context).size.width * 0.3,
-                                                            padding: const EdgeInsets.symmetric(vertical: 6),
-                                                            decoration: BoxDecoration(
-                                                              color: Colors.black12,
-                                                              borderRadius: BorderRadius.circular(20),
-                                                            ),
-                                                            child: Row(
-                                                              mainAxisAlignment: MainAxisAlignment.center,
-                                                              children: const [
-                                                                Icon(CupertinoIcons.phone, color: Colors.black, size: 22),
-                                                                SizedBox(width: 8),
-                                                                Text('Call', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-                                                              ],
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        // Route
-                                                        GestureDetector(
-                                                          onTap: () async {
-                                                            await launchUrl(
-                                                              Uri.parse(
-                                                                'https://www.google.com/maps/dir/?api=1'
-                                                                    '&origin=$userLat,$userLon'
-                                                                    '&destination=${Uri.encodeComponent(placeData['place_name'])}'
-                                                                    '&destination_place_id=${placeData['place_id']}'
-                                                                    '&travelmode=transit',
-                                                              ),
-                                                              mode: LaunchMode.externalApplication,
-                                                            );
-                                                          },
-                                                          child: Container(
-                                                            width: MediaQuery.of(context).size.width * 0.3,
-                                                            padding: const EdgeInsets.symmetric(vertical: 6),
-                                                            decoration: BoxDecoration(
-                                                              color: Colors.black12,
-                                                              borderRadius: BorderRadius.circular(20),
-                                                            ),
-                                                            child: Row(
-                                                              mainAxisAlignment: MainAxisAlignment.center,
-                                                              children: const [
-                                                                Icon(Icons.directions_car, color: Colors.black, size: 22),
-                                                                SizedBox(width: 8),
-                                                                Text('Route', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-                                                              ],
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        // Explore
-                                                        GestureDetector(
-                                                          onTap: () {
-                                                            Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                                builder: (_) => MapShortsPage(
-                                                                  storeName: placeData['place_name'],
-                                                                  placeId: placeData['place_id'],
-                                                                  videoId: placeData['video_id'],
-                                                                  storeCaption: placeData['description'] ?? 'descriptionNull',
-                                                                  storeLocation: placeData['region'],
-                                                                  openTime: placeData['open_time'] ?? '09:00',
-                                                                  closeTime: placeData['close_time'] ?? '20:00',
-                                                                  rating: placeData['rating'] ?? 4.0,
-                                                                  category: placeData['category'],
-                                                                  averagePrice: placeData['average_price'] == null
-                                                                      ? 3
-                                                                      : placeData['average_price'].toDouble(),
-                                                                  imageUrl: imageUrl, // ← 여기!
-                                                                  coordinates: {
-                                                                    'lat': placeData['latitude'],
-                                                                    'lon': placeData['longitude'],
-                                                                  },
-                                                                ),
-                                                              ),
-                                                            );
-                                                          },
-                                                          child: Container(
-                                                            width: MediaQuery.of(context).size.width * 0.3,
-                                                            padding: const EdgeInsets.symmetric(vertical: 6),
-                                                            decoration: BoxDecoration(
-                                                              color: Colors.lightBlue,
-                                                              borderRadius: BorderRadius.circular(20),
-                                                            ),
-                                                            child: Row(
-                                                              mainAxisAlignment: MainAxisAlignment.center,
-                                                              children: const [
-                                                                Icon(CupertinoIcons.play_arrow_solid, color: Colors.white, size: 22),
-                                                                SizedBox(width: 8),
-                                                                Text(
-                                                                  'Explore',
-                                                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-
-                                                    const SizedBox(height: 25),
-
-                                                    // --- 추가 정보 리스트 ---
-                                                    Container(
-                                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.grey[200],
-                                                        borderRadius: BorderRadius.circular(8),
-                                                        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
-                                                      ),
-                                                      child: Column(
+                                                return Padding(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                                                  child: Column(
+                                                    children: [
+                                                      // --- 상단 Row (Avatar + 텍스트 + 공유 버튼) ---
+                                                      Row(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
                                                         children: [
-                                                          _buildListTile(
-                                                            icon: Icons.location_on_outlined,
-                                                            title: 'Address',
-                                                            subtitle: placeData['address'],
-                                                            onTap: () async {
-                                                              await launchUrl(
-                                                                Uri.parse(
-                                                                  'https://www.google.com/maps/search/?api=1'
-                                                                      '&query=${Uri.encodeComponent(placeData['place_name'])}'
-                                                                      '&query_place_id=${placeData['place_id']}',
+                                                          GestureDetector(
+                                                            onTap: (){
+                                                              print('123');
+                                                              Navigator.push(
+                                                                  context,
+                                                                  MaterialPageRoute(
+                                                                      builder: (context) => MapShortsPage(
+                                                                        storeName: placeData['place_name'],
+                                                                        placeId: placeData['place_id'],
+                                                                        videoId: placeData['video_id'],
+                                                                        storeCaption: placeData['description'] ?? 'descriptionNull',
+                                                                        storeLocation: placeData['region'],
+                                                                        openTime: placeData['open_time'] ?? '09:00',
+                                                                        closeTime: placeData['close_time'] ?? '20:00',
+                                                                        rating: placeData['rating'] ?? 4.0,
+                                                                        category: placeData['category'],
+                                                                        averagePrice: placeData['average_price'] == null ? 3 : placeData['average_price'].toDouble(),
+                                                                        imageUrl: imageUrl,
+                                                                        coordinates: {
+                                                                          'lat': placeData['latitude'],
+                                                                          'lon': placeData['longitude'],
+                                                                        },
+                                                                      )));
+                                                            },
+                                                            child: Container(
+                                                              width: 90,
+                                                              height: 90,
+                                                              decoration: BoxDecoration(
+                                                                shape: BoxShape.circle,
+                                                                border: Border.all(color: Colors.lightBlue, width: 2),
+                                                              ),
+                                                              child: Padding(
+                                                                padding: const EdgeInsets.all(2.0),
+                                                                child: CircleAvatar(
+                                                                  radius: 90,
+                                                                  backgroundImage: imageUrl == null ? null : NetworkImage(imageUrl),
+                                                                  backgroundColor: Colors.grey[300],
+                                                                  child: imageUrl == null ? Icon(
+                                                                    Icons.location_on_outlined,
+                                                                    color: Colors.black,
+                                                                    size: 30,
+                                                                  ) : null,
                                                                 ),
-                                                                mode: LaunchMode.externalApplication,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          const SizedBox(width: 10),
+                                                          Column(
+                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                            children: [
+                                                              Text(
+                                                                placeData['place_name'],
+                                                                style: const TextStyle(
+                                                                  fontSize: 18,
+                                                                  fontWeight: FontWeight.bold,
+                                                                  color: Colors.black,
+                                                                ),
+                                                              ),
+                                                              const SizedBox(height: 3),
+                                                              Text(
+                                                                '${placeData['category']} · \$${placeData['average_price'] == null ? '3' : placeData['average_price'].round()}~',
+                                                                style: const TextStyle(fontSize: 14, color: Colors.black54),
+                                                              ),
+                                                              const SizedBox(height: 3),
+                                                              Row(
+                                                                children: [
+                                                                  const Icon(CupertinoIcons.bus, color: Colors.black26, size: 18),
+                                                                  Text(
+                                                                    (placeData['latitude'] != null &&
+                                                                        userLat != null &&
+                                                                        placeData['longitude'] != null &&
+                                                                        userLon != null)
+                                                                        ? ' ${calculateTimeRequired(userLat, userLon, placeData['latitude'], placeData['longitude'])}분 · ${placeData['region']}'
+                                                                        : ' 30분 · ${placeData['region']}',
+                                                                    style: const TextStyle(fontSize: 14, color: Colors.black54),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                              const SizedBox(height: 3),
+                                                              Row(
+                                                                children: [
+                                                                  const Icon(CupertinoIcons.time, color: Colors.black26, size: 18),
+                                                                  Text(
+                                                                    ' ${placeData['openTime'] ?? '09:00'} ~ ${placeData['closeTime'] ?? '22:00'}',
+                                                                    style: const TextStyle(fontSize: 14, color: Colors.black54),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ],
+                                                          ),
+                                                          const Spacer(),
+                                                          GestureDetector(
+                                                            onTap: () {
+                                                              Share.share(
+                                                                'https://www.youtube.com/shorts/${placeData['video_id']}',
+                                                                subject: placeData['place_name']!,
                                                               );
                                                             },
+                                                            child: Container(
+                                                              width: 40,
+                                                              height: 40,
+                                                              margin: const EdgeInsets.only(right: 15),
+                                                              decoration: BoxDecoration(
+                                                                shape: BoxShape.circle,
+                                                                color: Colors.black12,
+                                                              ),
+                                                              child: const Icon(CupertinoIcons.share, size: 20, color: Colors.black),
+                                                            ),
                                                           ),
-                                                          const Divider(height: 2),
-                                                          _buildListTile(
-                                                            icon: Icons.phone,
-                                                            title: 'Call',
-                                                            subtitle: '전화번호~~ \n누르면 전화걸어줌',
+                                                        ],
+                                                      ),
+
+                                                      const SizedBox(height: 25),
+
+                                                      // --- 버튼 Row (Call, Route, Explore) ---
+                                                      Row(
+                                                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                                        children: [
+                                                          // Call
+                                                          GestureDetector(
                                                             onTap: () async {
                                                               final Uri phoneUri = Uri(scheme: 'tel', path: '+82 10 5475 6096');
                                                               if (await canLaunchUrl(phoneUri)) await launchUrl(phoneUri);
                                                             },
+                                                            child: Container(
+                                                              width: MediaQuery.of(context).size.width * 0.3,
+                                                              padding: const EdgeInsets.symmetric(vertical: 6),
+                                                              decoration: BoxDecoration(
+                                                                color: Colors.black12,
+                                                                borderRadius: BorderRadius.circular(20),
+                                                              ),
+                                                              child: Row(
+                                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                                children: const [
+                                                                  Icon(CupertinoIcons.phone, color: Colors.black, size: 22),
+                                                                  SizedBox(width: 8),
+                                                                  Text('Call', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                                                                ],
+                                                              ),
+                                                            ),
                                                           ),
-                                                          const Divider(height: 2),
-                                                          _buildListTile(
-                                                            icon: Icons.language,
-                                                            title: 'Visit Website',
-                                                            subtitle: '웹사이트 있으면 \n누르면 웹사이트로 이동',
-                                                            onTap: () async {
-                                                              await launchUrl(Uri.parse('https://www.naver.com'),
-                                                                  mode: LaunchMode.inAppBrowserView);
-                                                            },
-                                                          ),
-                                                          const Divider(height: 2),
-                                                          _buildListTile(
-                                                            icon: Icons.flag,
-                                                            title: 'Report',
-                                                            onTap: () {
-                                                              showReportModal(context);
-                                                            },
-                                                          ),
-                                                          const Divider(height: 2),
-                                                          _buildListTile(
-                                                            icon: Icons.verified_outlined,
-                                                            title: 'I am owner of this place',
+                                                          // Route
+                                                          GestureDetector(
                                                             onTap: () async {
                                                               await launchUrl(
-                                                                Uri.parse('https://forms.gle/Ji5br34NseKr8m1Q6'),
-                                                                mode: LaunchMode.inAppBrowserView,
+                                                                Uri.parse(
+                                                                  'https://www.google.com/maps/dir/?api=1'
+                                                                      '&origin=$userLat,$userLon'
+                                                                      '&destination=${Uri.encodeComponent(placeData['place_name'])}'
+                                                                      '&destination_place_id=${placeData['place_id']}'
+                                                                      '&travelmode=transit',
+                                                                ),
+                                                                mode: LaunchMode.externalApplication,
                                                               );
                                                             },
+                                                            child: Container(
+                                                              width: MediaQuery.of(context).size.width * 0.3,
+                                                              padding: const EdgeInsets.symmetric(vertical: 6),
+                                                              decoration: BoxDecoration(
+                                                                color: Colors.black12,
+                                                                borderRadius: BorderRadius.circular(20),
+                                                              ),
+                                                              child: Row(
+                                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                                children: const [
+                                                                  Icon(Icons.directions_car, color: Colors.black, size: 22),
+                                                                  SizedBox(width: 8),
+                                                                  Text('Route', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          // Explore
+                                                          GestureDetector(
+                                                            onTap: () {
+                                                              Navigator.push(
+                                                                context,
+                                                                MaterialPageRoute(
+                                                                  builder: (_) => MapShortsPage(
+                                                                    storeName: placeData['place_name'],
+                                                                    placeId: placeData['place_id'],
+                                                                    videoId: placeData['video_id'],
+                                                                    storeCaption: placeData['description'] ?? 'descriptionNull',
+                                                                    storeLocation: placeData['region'],
+                                                                    openTime: placeData['open_time'] ?? '09:00',
+                                                                    closeTime: placeData['close_time'] ?? '20:00',
+                                                                    rating: placeData['rating'] ?? 4.0,
+                                                                    category: placeData['category'],
+                                                                    averagePrice: placeData['average_price'] == null
+                                                                        ? 3
+                                                                        : placeData['average_price'].toDouble(),
+                                                                    imageUrl: imageUrl, // ← 여기!
+                                                                    coordinates: {
+                                                                      'lat': placeData['latitude'],
+                                                                      'lon': placeData['longitude'],
+                                                                    },
+                                                                  ),
+                                                                ),
+                                                              );
+                                                            },
+                                                            child: Container(
+                                                              width: MediaQuery.of(context).size.width * 0.3,
+                                                              padding: const EdgeInsets.symmetric(vertical: 6),
+                                                              decoration: BoxDecoration(
+                                                                color: Colors.lightBlue,
+                                                                borderRadius: BorderRadius.circular(20),
+                                                              ),
+                                                              child: Row(
+                                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                                children: const [
+                                                                  Icon(CupertinoIcons.play_arrow_solid, color: Colors.white, size: 22),
+                                                                  SizedBox(width: 8),
+                                                                  Text(
+                                                                    'Explore',
+                                                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
                                                           ),
                                                         ],
+                                                      ),
+
+                                                      const SizedBox(height: 25),
+
+                                                      // --- 추가 정보 리스트 ---
+                                                      Container(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.grey[200],
+                                                          borderRadius: BorderRadius.circular(8),
+                                                          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+                                                        ),
+                                                        child: Column(
+                                                          children: [
+                                                            _buildListTile(
+                                                              icon: Icons.location_on_outlined,
+                                                              title: 'Address',
+                                                              subtitle: placeData['address'],
+                                                              onTap: () async {
+                                                                await launchUrl(
+                                                                  Uri.parse(
+                                                                    'https://www.google.com/maps/search/?api=1'
+                                                                        '&query=${Uri.encodeComponent(placeData['place_name'])}'
+                                                                        '&query_place_id=${placeData['place_id']}',
+                                                                  ),
+                                                                  mode: LaunchMode.externalApplication,
+                                                                );
+                                                              },
+                                                            ),
+                                                            const Divider(height: 2),
+                                                            _buildListTile(
+                                                              icon: Icons.phone,
+                                                              title: 'Call',
+                                                              subtitle: '전화번호~~ \n누르면 전화걸어줌',
+                                                              onTap: () async {
+                                                                final Uri phoneUri = Uri(scheme: 'tel', path: '+82 10 5475 6096');
+                                                                if (await canLaunchUrl(phoneUri)) await launchUrl(phoneUri);
+                                                              },
+                                                            ),
+                                                            const Divider(height: 2),
+                                                            _buildListTile(
+                                                              icon: Icons.language,
+                                                              title: 'Visit Website',
+                                                              subtitle: '웹사이트 있으면 \n누르면 웹사이트로 이동',
+                                                              onTap: () async {
+                                                                await launchUrl(Uri.parse('https://www.naver.com'),
+                                                                    mode: LaunchMode.inAppBrowserView);
+                                                              },
+                                                            ),
+                                                            const Divider(height: 2),
+                                                            _buildListTile(
+                                                              icon: Icons.flag,
+                                                              title: 'Report',
+                                                              onTap: () {
+                                                                showReportModal(context);
+                                                              },
+                                                            ),
+                                                            const Divider(height: 2),
+                                                            _buildListTile(
+                                                              icon: Icons.verified_outlined,
+                                                              title: 'I am owner of this place',
+                                                              onTap: () async {
+                                                                await launchUrl(
+                                                                  Uri.parse('https://forms.gle/Ji5br34NseKr8m1Q6'),
+                                                                  mode: LaunchMode.inAppBrowserView,
+                                                                );
+                                                              },
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                            );
+                                          },
+                                        )
+                                            : _isListDetailOpened
+                                            ? FutureBuilder<List<Map<String, dynamic>>>(
+                                          future: _categoryLocationFuture,
+                                          builder: (context, snapshot) {
+
+                                            // TODO Skeleton이나 아예 흰화면으로 바꿔주기
+                                            if (snapshot.connectionState == ConnectionState.waiting) {
+                                              return const Center(child: CircularProgressIndicator());
+                                            }
+
+                                            // TODO 비어있거나 에러일 때 보여줄 내용 넣기 ( 빈 화면일 일은 없을거임근데 )
+                                            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                              print(snapshot.error);
+                                              return Center(
+                                                child: Column(
+                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                  children: [
+                                                    Text(
+                                                      'Something went wrong',
+                                                      style: TextStyle(
+                                                        color: Colors.black,
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize: 20,
+                                                      ),
+                                                    ),
+                                                    SizedBox(height: 30),
+                                                    Text(
+                                                      'Restart App',
+                                                      style: TextStyle(
+                                                        color: Colors.black,
+                                                        fontSize: 18,
                                                       ),
                                                     ),
                                                   ],
                                                 ),
                                               );
-                                            },
-                                          );
-                                        },
-                                      )
-                                        : _isListDetailOpened
-                                          ? FutureBuilder<List<Map<String, dynamic>>>(
-                                        future: _categoryLocationFuture,
-                                        builder: (context, snapshot) {
+                                            }
 
-                                          // TODO Skeleton이나 아예 흰화면으로 바꿔주기
-                                          if (snapshot.connectionState == ConnectionState.waiting) {
-                                            return const Center(child: CircularProgressIndicator());
-                                          }
+                                            final places = snapshot.data!;
 
-                                          // TODO 비어있거나 에러일 때 보여줄 내용 넣기 ( 빈 화면일 일은 없을거임근데 )
-                                          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                                            print(snapshot.error);
-                                            return const Padding(
-                                              padding: EdgeInsets.all(20),
-                                              child: Text('No locations found.'),
-                                            );
-                                          }
+                                            final style = categoryStyles[_selectedCategory] ?? {
+                                              'icon': Icons.place,
+                                              'color': Colors.blue,
+                                            };
 
-                                          final places = snapshot.data!;
-
-                                          final style = categoryStyles[_selectedCategory] ?? {
-                                            'icon': Icons.place,
-                                            'color': Colors.blue,
-                                          };
-
-                                          return Column(
-                                            children: [
-                                              Container(
-                                                padding: EdgeInsets.symmetric(horizontal: 18),
-                                                child: Row(
-                                                  children: [
-                                                    CircleAvatar(
-                                                      radius: 25,
-                                                      backgroundColor: style['color'],
-                                                      child: Icon(
-                                                        style['icon'],
-                                                        color: Colors.white,
-                                                        size: 30,
+                                            return Column(
+                                              children: [
+                                                Container(
+                                                  padding: EdgeInsets.symmetric(horizontal: 18),
+                                                  child: Row(
+                                                    children: [
+                                                      CircleAvatar(
+                                                        radius: 25,
+                                                        backgroundColor: style['color'],
+                                                        child: Icon(
+                                                          style['icon'],
+                                                          color: Colors.white,
+                                                          size: 30,
+                                                        ),
                                                       ),
-                                                    ),
-                                                    const SizedBox(width: 15,),
-                                                    Text(
-                                                      _selectedCategory!,
-                                                      style: const TextStyle(
-                                                        color: Colors.black,
-                                                        fontSize: 20,
-                                                        fontWeight: FontWeight.bold,
+                                                      const SizedBox(width: 15,),
+                                                      Text(
+                                                        _selectedCategory!,
+                                                        style: const TextStyle(
+                                                          color: Colors.black,
+                                                          fontSize: 20,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
                                                       ),
-                                                    ),
-                                                    Spacer(),
-                                                    Container(
-                                                      width: 40,
-                                                      height: 40,
-                                                      decoration: BoxDecoration(
-                                                        shape: BoxShape.circle,
-                                                        color: Colors.black12,
+                                                      Spacer(),
+                                                      Container(
+                                                        width: 40,
+                                                        height: 40,
+                                                        decoration: BoxDecoration(
+                                                          shape: BoxShape.circle,
+                                                          color: Colors.black12,
+                                                        ),
+                                                        child: const Icon(
+                                                          CupertinoIcons.share,
+                                                          size: 20,
+                                                          color: Colors.black,
+                                                        ),
                                                       ),
-                                                      child: const Icon(
-                                                        CupertinoIcons.share,
-                                                        size: 20,
-                                                        color: Colors.black,
-                                                      ),
-                                                    ),
-                                                  ],
+                                                    ],
+                                                  ),
                                                 ),
-                                              ),
-                                              Padding(
-                                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                                Padding(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                                  child: Divider(
+                                                    color: Colors.grey[300],
+                                                    height: 1.5,
+                                                    thickness: 1,
+                                                  ),
+                                                ),
+                                                // const SizedBox(
+                                                //   height: 10,
+                                                // ),
+                                                ListView.separated(
+                                                  padding: EdgeInsets.zero,
+                                                  shrinkWrap: true,
+                                                  physics: NeverScrollableScrollPhysics(),
+                                                  itemCount: places.length,
+                                                  separatorBuilder:
+                                                      (context, index) {
+                                                    return Padding(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 16),
+                                                      child: Divider(
+                                                        color: Colors.grey[300],
+                                                        height: 1.5,
+                                                        thickness: 1,
+                                                      ),
+                                                    );
+                                                  },
+                                                  itemBuilder: (context, index) {
+                                                    final p = places[index];
+
+                                                    final placeId = p['place_id'];
+
+                                                    _photoFutures[placeId] ??= Provider.of<PhotoCacheProvider>(context, listen: false).getPhotoUrlForPlace(placeId);
+
+                                                    return FutureBuilder<String>(
+                                                      future: _photoFutures[placeId],
+                                                      builder: (context, photoSnapshot) {
+                                                        final imageUrl = photoSnapshot.data;
+
+                                                        if (snapshot.connectionState == ConnectionState.waiting) {
+                                                          return _locationTile(
+                                                            true,
+                                                            placeId,
+                                                            imageUrl,
+                                                            p['place_name'] ?? '',
+                                                            p['region'] ?? '',
+                                                            p['open_time'] ?? '00:00',
+                                                            p['close_time'] ?? '00:00',
+                                                            (p['latitude'] as num).toDouble(),
+                                                            (p['longitude'] as num).toDouble(),
+                                                          );
+                                                        }
+
+                                                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                                          print(snapshot.error);
+                                                        }
+
+                                                        return _locationTile(
+                                                          false,
+                                                          placeId,
+                                                          imageUrl,
+                                                          p['place_name'] ?? '',
+                                                          p['region'] ?? '',
+                                                          p['open_time'] ?? '00:00',
+                                                          p['close_time'] ?? '00:00',
+                                                          (p['latitude'] as num).toDouble(),
+                                                          (p['longitude'] as num).toDouble(),
+                                                        );
+                                                      },
+                                                    );
+
+                                                  },
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        )
+                                            : Column(
+                                          crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                          children: [
+                                            // "Add New List" 영역
+                                            // Padding(
+                                            //   padding: const EdgeInsets.only(
+                                            //       top: 12),
+                                            //   child: Column(
+                                            //     children: [
+                                            //       ListTile(
+                                            //         onTap: () {
+                                            //           _showAddNewBottomSheet();
+                                            //         },
+                                            //         leading: Container(
+                                            //           width: 40,
+                                            //           height: 40,
+                                            //           decoration:
+                                            //               BoxDecoration(
+                                            //             color: Colors.white,
+                                            //             shape:
+                                            //                 BoxShape.circle,
+                                            //             border: Border.all(
+                                            //               color:
+                                            //                   Colors.black54,
+                                            //               width: 0.6,
+                                            //             ),
+                                            //           ),
+                                            //           child: const Icon(
+                                            //             Icons.add,
+                                            //             color: Colors.black54,
+                                            //             size: 28,
+                                            //           ),
+                                            //         ),
+                                            //         title: const Text(
+                                            //           'Add New List',
+                                            //           style: TextStyle(
+                                            //             fontWeight:
+                                            //                 FontWeight.bold,
+                                            //             fontSize: 18,
+                                            //             color: Colors.black54,
+                                            //           ),
+                                            //         ),
+                                            //       ),
+                                            //       Padding(
+                                            //         padding: const EdgeInsets
+                                            //             .symmetric(
+                                            //             horizontal: 16),
+                                            //         child: Divider(
+                                            //           color: Colors.grey[300],
+                                            //           height: 1.5,
+                                            //           thickness: 1,
+                                            //         ),
+                                            //       ),
+                                            //     ],
+                                            //   ),
+                                            // ),
+                                            // 리스트 항목 영역 (ListView.separated 사용)
+                                            ListView.separated(
+                                              padding: EdgeInsets.zero,
+                                              shrinkWrap: true,
+                                              physics: const NeverScrollableScrollPhysics(),
+                                              itemCount: _categorizedBookmarks.length,
+                                              itemBuilder: (context, index) {
+                                                final category = _categorizedBookmarks.keys.elementAt(index);
+                                                final items = _categorizedBookmarks[category]!;
+
+                                                final style = categoryStyles[category] ?? {
+                                                  'icon': Icons.place,
+                                                  'color': Colors.blue,
+                                                };
+
+                                                return _folderTile(
+                                                  title: category,
+                                                  color: style['color'],
+                                                  icon: style['icon'],
+                                                  locations: items.length,
+                                                );
+                                              },
+                                              separatorBuilder: (context, index) => Padding(
+                                                padding: const EdgeInsets.symmetric(horizontal: 16),
                                                 child: Divider(
                                                   color: Colors.grey[300],
                                                   height: 1.5,
                                                   thickness: 1,
                                                 ),
                                               ),
-                                              // const SizedBox(
-                                              //   height: 10,
-                                              // ),
-                                              ListView.separated(
-                                                padding: EdgeInsets.zero,
-                                                shrinkWrap: true,
-                                                physics: NeverScrollableScrollPhysics(),
-                                                itemCount: places.length,
-                                                separatorBuilder:
-                                                    (context, index) {
-                                                  return Padding(
-                                                    padding: const EdgeInsets
-                                                        .symmetric(
-                                                        horizontal: 16),
-                                                    child: Divider(
-                                                      color: Colors.grey[300],
-                                                      height: 1.5,
-                                                      thickness: 1,
-                                                    ),
-                                                  );
-                                                },
-                                                itemBuilder: (context, index) {
-                                                  final p = places[index];
-
-                                                  final placeId = p['place_id'];
-
-                                                  _photoFutures[placeId] ??= Provider.of<PhotoCacheProvider>(context, listen: false).getPhotoUrlForPlace(placeId);
-
-                                                  return FutureBuilder<String>(
-                                                    future: _photoFutures[placeId],
-                                                    builder: (context, photoSnapshot) {
-                                                      final imageUrl = photoSnapshot.data;
-
-                                                      return _locationTile(
-                                                        placeId,
-                                                        imageUrl,
-                                                        p['place_name'] ?? '',
-                                                        p['region'] ?? '',
-                                                        p['open_time'] ?? '00:00',
-                                                        p['close_time'] ?? '00:00',
-                                                        (p['latitude'] as num).toDouble(),
-                                                        (p['longitude'] as num).toDouble(),
-                                                      );
-                                                    },
-                                                  );
-
-                                                },
-                                              ),
-                                            ],
-                                          );
-                                        },
-                                      )
-                                          : Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.stretch,
-                                              children: [
-                                                // "Add New List" 영역
-                                                // Padding(
-                                                //   padding: const EdgeInsets.only(
-                                                //       top: 12),
-                                                //   child: Column(
-                                                //     children: [
-                                                //       ListTile(
-                                                //         onTap: () {
-                                                //           _showAddNewBottomSheet();
-                                                //         },
-                                                //         leading: Container(
-                                                //           width: 40,
-                                                //           height: 40,
-                                                //           decoration:
-                                                //               BoxDecoration(
-                                                //             color: Colors.white,
-                                                //             shape:
-                                                //                 BoxShape.circle,
-                                                //             border: Border.all(
-                                                //               color:
-                                                //                   Colors.black54,
-                                                //               width: 0.6,
-                                                //             ),
-                                                //           ),
-                                                //           child: const Icon(
-                                                //             Icons.add,
-                                                //             color: Colors.black54,
-                                                //             size: 28,
-                                                //           ),
-                                                //         ),
-                                                //         title: const Text(
-                                                //           'Add New List',
-                                                //           style: TextStyle(
-                                                //             fontWeight:
-                                                //                 FontWeight.bold,
-                                                //             fontSize: 18,
-                                                //             color: Colors.black54,
-                                                //           ),
-                                                //         ),
-                                                //       ),
-                                                //       Padding(
-                                                //         padding: const EdgeInsets
-                                                //             .symmetric(
-                                                //             horizontal: 16),
-                                                //         child: Divider(
-                                                //           color: Colors.grey[300],
-                                                //           height: 1.5,
-                                                //           thickness: 1,
-                                                //         ),
-                                                //       ),
-                                                //     ],
-                                                //   ),
-                                                // ),
-                                                // 리스트 항목 영역 (ListView.separated 사용)
-                                                ListView.separated(
-                                                  padding: EdgeInsets.zero,
-                                                  shrinkWrap: true,
-                                                  physics: const NeverScrollableScrollPhysics(),
-                                                  itemCount: _categorizedBookmarks.length,
-                                                  itemBuilder: (context, index) {
-                                                    final category = _categorizedBookmarks.keys.elementAt(index);
-                                                    final items = _categorizedBookmarks[category]!;
-
-                                                    final style = categoryStyles[category] ?? {
-                                                      'icon': Icons.place,
-                                                      'color': Colors.blue,
-                                                    };
-
-                                                    return _folderTile(
-                                                      title: category,
-                                                      color: style['color'],
-                                                      icon: style['icon'],
-                                                      locations: items.length,
-                                                    );
-                                                  },
-                                                  separatorBuilder: (context, index) => Padding(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                                                    child: Divider(
-                                                      color: Colors.grey[300],
-                                                      height: 1.5,
-                                                      thickness: 1,
-                                                    ),
-                                                  ),
-                                                ),
-                                                // ListView(
-                                                //   shrinkWrap: true,
-                                                //   padding: EdgeInsets.zero,
-                                                //     physics:
-                                                //           const NeverScrollableScrollPhysics(),
-                                                //   children: [
-                                                //     _folderTile(title: 'LA', color: Colors.purpleAccent, locations: 32, share: 3),
-                                                //     Padding(
-                                                //             padding: const EdgeInsets
-                                                //                 .symmetric(
-                                                //                 horizontal: 16),
-                                                //             child: Divider(
-                                                //               color: Colors.grey[300],
-                                                //               height: 1.5,
-                                                //               thickness: 1,
-                                                //             ),
-                                                //           ),
-                                                //     _folderTile(title: 'Burgers', color: Colors.orangeAccent, icon: Icons.lunch_dining, locations: 12, share: 1),
-                                                //     Padding(
-                                                //       padding: const EdgeInsets
-                                                //           .symmetric(
-                                                //           horizontal: 16),
-                                                //       child: Divider(
-                                                //         color: Colors.grey[300],
-                                                //         height: 1.5,
-                                                //         thickness: 1,
-                                                //       ),
-                                                //     ),
-                                                //     _folderTile(title: 'Pizza', color: Colors.redAccent, icon: Icons.local_pizza, locations: 9, share: 12),
-                                                //     Padding(
-                                                //       padding: const EdgeInsets
-                                                //           .symmetric(
-                                                //           horizontal: 16),
-                                                //       child: Divider(
-                                                //         color: Colors.grey[300],
-                                                //         height: 1.5,
-                                                //         thickness: 1,
-                                                //       ),
-                                                //     ),
-                                                //     _folderTile(title: 'Japanese', color: Colors.pinkAccent, icon: Icons.favorite, locations: 19, share: 3),
-                                                //   ],
-                                                // )
-                                              ],
-                                            ), //TODO 북마크한거 없을때 보여줄거 필요
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              /// dragHandle
-                              Positioned(
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                child: IgnorePointer(
-                                  child: Center(
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[400],
-                                        borderRadius: const BorderRadius.all(
-                                            Radius.circular(10)),
-                                      ),
-                                      height: 4,
-                                      width: 60,
-                                      margin: const EdgeInsets.symmetric(
-                                          vertical: 10),
+                                            ),
+                                            // ListView(
+                                            //   shrinkWrap: true,
+                                            //   padding: EdgeInsets.zero,
+                                            //     physics:
+                                            //           const NeverScrollableScrollPhysics(),
+                                            //   children: [
+                                            //     _folderTile(title: 'LA', color: Colors.purpleAccent, locations: 32, share: 3),
+                                            //     Padding(
+                                            //             padding: const EdgeInsets
+                                            //                 .symmetric(
+                                            //                 horizontal: 16),
+                                            //             child: Divider(
+                                            //               color: Colors.grey[300],
+                                            //               height: 1.5,
+                                            //               thickness: 1,
+                                            //             ),
+                                            //           ),
+                                            //     _folderTile(title: 'Burgers', color: Colors.orangeAccent, icon: Icons.lunch_dining, locations: 12, share: 1),
+                                            //     Padding(
+                                            //       padding: const EdgeInsets
+                                            //           .symmetric(
+                                            //           horizontal: 16),
+                                            //       child: Divider(
+                                            //         color: Colors.grey[300],
+                                            //         height: 1.5,
+                                            //         thickness: 1,
+                                            //       ),
+                                            //     ),
+                                            //     _folderTile(title: 'Pizza', color: Colors.redAccent, icon: Icons.local_pizza, locations: 9, share: 12),
+                                            //     Padding(
+                                            //       padding: const EdgeInsets
+                                            //           .symmetric(
+                                            //           horizontal: 16),
+                                            //       child: Divider(
+                                            //         color: Colors.grey[300],
+                                            //         height: 1.5,
+                                            //         thickness: 1,
+                                            //       ),
+                                            //     ),
+                                            //     _folderTile(title: 'Japanese', color: Colors.pinkAccent, icon: Icons.favorite, locations: 19, share: 3),
+                                            //   ],
+                                            // )
+                                          ],
+                                        ), //TODO 북마크한거 없을때 보여줄거 필요
+                                      ],
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                                /// dragHandle
+                                Positioned(
+                                  top: 0,
+                                  left: 0,
+                                  right: 0,
+                                  child: IgnorePointer(
+                                    child: Center(
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[400],
+                                          borderRadius: const BorderRadius.all(
+                                              Radius.circular(10)),
+                                        ),
+                                        height: 4,
+                                        width: 60,
+                                        margin: const EdgeInsets.symmetric(
+                                            vertical: 10),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                          );
+                        },
+                      ),
                     ),
                   ),
                   // AnimatedCrossFade(
@@ -1495,7 +1596,7 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
-  Widget _locationTile(String locationId, String? imageUrl, String storeName, String region, String openTime, String closeTime, double lat, double lon) {
+  Widget _locationTile(bool isLoading, String locationId, String? imageUrl, String storeName, String region, String openTime, String closeTime, double lat, double lon) {
     return GestureDetector(
       onTap: (){
         _isProgrammaticMove = true;
@@ -1526,7 +1627,7 @@ class _MapPageState extends State<MapPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // FutureBuilder를 사용하여 첫 번째 사진을 CircleAvatar 이미지로 설정
-            if (imageUrl != null)
+            if (imageUrl != null && isLoading != true)
               Container(
                 width: 80,
                 height: 80,
@@ -1546,7 +1647,7 @@ class _MapPageState extends State<MapPage> {
                   ),
                 ),
               ),
-            if (imageUrl == null)
+            if (imageUrl == null && isLoading != true)
               Container(
                 width: 80,
                 height: 80,
@@ -1568,6 +1669,26 @@ class _MapPageState extends State<MapPage> {
                       color: Colors.black,
                       size: 30,
                     ),
+                  ),
+                ),
+              ),
+            if (isLoading == true)
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.lightBlue,
+                    width: 2,
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(2.0),
+                  child: CircleAvatar(
+                    radius: 90,
+                    // backgroundImage: NetworkImage(imageUrl),
+                    backgroundColor: Colors.grey[300],
                   ),
                 ),
               ),
