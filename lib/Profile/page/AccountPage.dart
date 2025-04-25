@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:shortsmap/Profile/page/ProfilePage.dart';
 import 'package:shortsmap/Profile/page/WithdrawPage.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
+import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AccountPage extends StatelessWidget {
@@ -19,79 +21,153 @@ class AccountPage extends StatelessWidget {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  SizedBox(height: 15,),
+                  SizedBox(height: 15),
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                     color: Colors.transparent,
                     child: Row(
                       children: [
-                        Text('계정',style: const TextStyle(
-                          color: Color(0xff121212),
-                          fontSize: 20,
-                          fontWeight: FontWeight.w500,
-                        ),),
-                        Spacer(),
-                        Text(Provider.of<UserDataProvider>(context, listen: false).loginId!),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                    color: Colors.transparent,
-                    child: Row(
-                      children: [
-                        Text('로그인 방식',style: const TextStyle(
-                          color: Color(0xff121212),
-                          fontSize: 20,
-                          fontWeight: FontWeight.w500,
-                        ),),
-                        Spacer(),
-                        Padding(
-                          padding: const EdgeInsets.only(right: 15.0),
-                          child: FaIcon(
-                            FontAwesomeIcons.google,    // Google “G” 아이콘
-                            color: Colors.black87,        // 검정색으로 설정
-                            size: 24,                   // 크기 지정 (필요시)
+                        Text(
+                          '계정',
+                          style: const TextStyle(
+                            color: Color(0xff121212),
+                            fontSize: 20,
+                            fontWeight: FontWeight.w500,
                           ),
+                        ),
+                        Spacer(),
+                        Text(
+                          Provider.of<UserDataProvider>(
+                                context,
+                                listen: false,
+                              ).loginId ??
+                              '로그인하지 않음',
                         ),
                       ],
                     ),
                   ),
-                  GestureDetector(
-                    onTap: (){
-                      _showLogoutDialog(context);
-                    },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                      color: Colors.transparent,
-                      child: Row(
-                        children: [
-                          Text('로그아웃',style: const TextStyle(
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                    color: Colors.transparent,
+                    child: Row(
+                      children: [
+                        Text(
+                          '로그인 방식',
+                          style: const TextStyle(
                             color: Color(0xff121212),
                             fontSize: 20,
                             fontWeight: FontWeight.w500,
-                          ),),
+                          ),
+                        ),
+                        Spacer(),
+                        if (Provider.of<UserDataProvider>(context, listen: false,).isLoggedIn)
+                          Padding(
+                          padding: const EdgeInsets.only(right: 15.0),
+                          child: FaIcon(
+                            (Provider.of<UserDataProvider>(context, listen: false,).loginProvider == 'google')
+                              ? FontAwesomeIcons.google // 구글 아이콘
+                              : (Provider.of<UserDataProvider>(context, listen: false,).loginProvider == 'apple')
+                                ? FontAwesomeIcons.apple // 애플 아이콘
+                                : FontAwesomeIcons.envelope // 이메일 아이콘
+                            ,
+                            color: Colors.black87, // 검정색으로 설정
+                            size: 24, // 크기 지정 (필요시)
+                          ),
+                        ),
+                        if (!Provider.of<UserDataProvider>(context, listen: false,).isLoggedIn)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 5.0),
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const LoginPage()), // 로그인 페이지로 push
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.black87),
+                                  borderRadius: BorderRadius.circular(8),
+                                  color: Colors.white,
+                                ),
+                                child: Text(
+                                  'Sign in',
+                                  style: TextStyle(
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: Provider.of<UserDataProvider>(
+                      context,
+                      listen: false,
+                    ).isLoggedIn ? () {
+                      _showLogoutDialog(context);
+                    } : () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const LoginPage()), // 로그인 페이지로 push
+                      );
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 12,
+                      ),
+                      color: Colors.transparent,
+                      child: Row(
+                        children: [
+                          Text(
+                            '로그아웃',
+                            style: const TextStyle(
+                              color: Color(0xff121212),
+                              fontSize: 20,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
                   GestureDetector(
-                    onTap: (){
+                    onTap: Provider.of<UserDataProvider>(
+                      context,
+                      listen: false,
+                    ).isLoggedIn ? () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => WithdrawPage()),
                       );
+                    } : (){
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const LoginPage()), // 로그인 페이지로 push
+                      );
                     },
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 12,
+                      ),
                       color: Colors.transparent,
                       child: Row(
                         children: [
-                          Text('회원 탈퇴',style: const TextStyle(
-                            color: Color(0xff121212),
-                            fontSize: 20,
-                            fontWeight: FontWeight.w500,
-                          ),),
+                          Text(
+                            '회원 탈퇴',
+                            style: const TextStyle(
+                              color: Color(0xff121212),
+                              fontSize: 20,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -110,7 +186,8 @@ class AccountPage extends StatelessWidget {
       centerTitle: true,
       elevation: 0,
       backgroundColor: Colors.white,
-      automaticallyImplyLeading: false, // 자동으로 뒤로가기 버튼 생성 비활성화
+      automaticallyImplyLeading: false,
+      // 자동으로 뒤로가기 버튼 생성 비활성화
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: Colors.black),
         onPressed: () => Navigator.of(context).pop(),
@@ -165,7 +242,8 @@ class AccountPage extends StatelessWidget {
                         '아니요',
                         style: TextStyle(
                           color: Color(0xFF121212),
-                          fontSize: MediaQuery.of(context).size.height * (20 / 812),
+                          fontSize:
+                              MediaQuery.of(context).size.height * (20 / 812),
                         ),
                       ),
                       onPressed: () {
@@ -173,9 +251,7 @@ class AccountPage extends StatelessWidget {
                       },
                     ),
                   ),
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.05,
-                  ),
+                  SizedBox(width: MediaQuery.of(context).size.width * 0.05),
                   SizedBox(
                     width: MediaQuery.of(context).size.width * 0.4,
                     height: MediaQuery.of(context).size.height * (38 / 812),
@@ -191,12 +267,24 @@ class AccountPage extends StatelessWidget {
                         '예',
                         style: TextStyle(
                           color: Color(0xFF121212),
-                          fontSize: MediaQuery.of(context).size.height * (20 / 812),
+                          fontSize:
+                              MediaQuery.of(context).size.height * (20 / 812),
                         ),
                       ),
                       onPressed: () {
                         Supabase.instance.client.auth.signOut();
-                        Provider.of<UserDataProvider>(context, listen: false).logout();
+                        Provider.of<UserDataProvider>(
+                          context,
+                          listen: false,
+                        ).logout();
+                        Navigator.of(context).pop();
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ProfilePage(),
+                          ),
+                          (route) => false,
+                        );
                       },
                     ),
                   ),
