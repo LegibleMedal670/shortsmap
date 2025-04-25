@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
@@ -175,10 +176,28 @@ class _LoginPageState extends State<LoginPage> {
               },
               child: Container(
                 width: MediaQuery.of(context).size.width * 0.8,
-                child: Image.asset(
-                  'images/google.png',
-                  fit: BoxFit.cover,
+                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.black, width: 1.3),
                 ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    FaIcon(
+                      FontAwesomeIcons.google,
+                      color: Colors.black87,
+                      size: 24,
+                    ),
+                    Text(
+                      'Continue with Google',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 24
+                      ),
+                    )
+                  ],
+                )
               ),
             ),
             SizedBox(
@@ -189,11 +208,29 @@ class _LoginPageState extends State<LoginPage> {
                 _appleSignIn(context);
               },
               child: Container(
-                width: MediaQuery.of(context).size.width * 0.8,
-                child: Image.asset(
-                  'images/apple.png',
-                  fit: BoxFit.cover,
-                ),
+                  width: MediaQuery.of(context).size.width * 0.8,
+                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.black, width: 1.3),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      FaIcon(
+                        FontAwesomeIcons.apple,
+                        color: Colors.black87,
+                        size: 24,
+                      ),
+                      Text(
+                        'Continue with Apple',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 24
+                        ),
+                      )
+                    ],
+                  )
               ),
             ),
             SizedBox(
