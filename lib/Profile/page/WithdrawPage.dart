@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shortsmap/Provider/UserDataProvider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'ProfilePage.dart';
 
 class WithdrawPage extends StatefulWidget {
   const WithdrawPage({Key? key}) : super(key: key);
@@ -86,7 +91,9 @@ class _WithdrawPageState extends State<WithdrawPage> {
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton(
-                      onPressed: _agreed ? _onWithdraw : null,
+                      onPressed: !_agreed ? null : (){
+                          _onWithdraw(Provider.of<UserDataProvider>(context, listen: false).currentUserUID!);
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red, // 활성 시 빨간색
                         disabledBackgroundColor: Colors.grey.shade300,
@@ -130,14 +137,57 @@ class _WithdrawPageState extends State<WithdrawPage> {
     );
   }
 
-  void _onWithdraw() async {
+  void _onWithdraw(String uid) async {
     final reasons = await showReasonDialog(context);
-    if (reasons != null && reasons.isNotEmpty) {
-      // 서버에 탈퇴 요청 + reasons 전송
-      print('선택된 사유: $reasons');
-      // 성공 시 다이얼로그 닫기 등 처리
+    if (reasons == null || reasons.isEmpty) return;
+
+    final supabase = Supabase.instance.client;
+
+    try {
+      // 탈퇴 사유 저장
+      await supabase.from('withdraw_logs').insert({
+        'uid': uid,
+        'withdraw_reasons': reasons,
+      });
+    } catch (e) {
+      print('탈퇴 사유 저장 중 오류 발생: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('탈퇴 사유 저장 중 오류가 발생했습니다. 다시 시도해주세요.')),
+      );
+      return;
+    }
+
+    try {
+      // Edge Function 호출하여 계정 삭제
+      final response = await supabase.functions.invoke('delete_user', body: {'name': 'Functions'});
+
+      if (response.status == 200) {
+        // 계정 삭제 성공 처리
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('계정이 성공적으로 삭제되었습니다.')),
+        );
+        Provider.of<UserDataProvider>(context, listen: false).logout();
+        Navigator.of(context).pop();
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const ProfilePage()),
+              (route) => false,
+        );
+      } else {
+        final error = response.data['error'] ?? '알 수 없는 오류가 발생했습니다.';
+        print('계정 삭제 실패: $error');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('계정 삭제 중 오류가 발생했습니다: $error')),
+        );
+      }
+    } catch (e) {
+      print('Edge Function 호출 중 오류 발생: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('계정 삭제 중 오류가 발생했습니다. 다시 시도해주세요.')),
+      );
     }
   }
+
 
 
   Future<List<String>?> showReasonDialog(BuildContext context) {
