@@ -682,14 +682,7 @@ class _MapPageState extends State<MapPage> {
                               size: 32,
                             ),
                             onPressed: () {
-                              // setState(() {
-                              //   _isListDetailOpened = false;
-                              // });
-                              // _sheetController.animateTo(
-                              //   0.4,
-                              //   duration: Duration(milliseconds: 300),
-                              //   curve: Curves.easeInOut,
-                              // );
+                              showReportModal(context);
                             },
                           ),
                         ),
@@ -879,7 +872,7 @@ class _MapPageState extends State<MapPage> {
                                                                 children: [
                                                                   const Icon(CupertinoIcons.time, color: Colors.black26, size: 18),
                                                                   Text(
-                                                                    ' ${placeData['openTime'] ?? '09:00'} ~ ${placeData['closeTime'] ?? '22:00'}',
+                                                                    ' ${placeData['open_time'] ?? '09:00'} ~ ${placeData['close_time'] ?? '22:00'}',
                                                                     style: const TextStyle(fontSize: 14, color: Colors.black54),
                                                                   ),
                                                                 ],
@@ -917,8 +910,22 @@ class _MapPageState extends State<MapPage> {
                                                           // Call
                                                           GestureDetector(
                                                             onTap: () async {
-                                                              final Uri phoneUri = Uri(scheme: 'tel', path: '+82 10 5475 6096');
-                                                              if (await canLaunchUrl(phoneUri)) await launchUrl(phoneUri);
+                                                              final Uri phoneUri = Uri(scheme: 'tel', path: placeData['phone_number']);
+                                                              if (await canLaunchUrl(phoneUri)) {
+                                                                await launchUrl(phoneUri);
+                                                              } else {
+                                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                                  SnackBar(
+                                                                    content: Text('지정된 전화번호가 없습니다.'),
+                                                                    behavior: SnackBarBehavior.floating,
+                                                                    margin: EdgeInsets.only(
+                                                                      bottom: MediaQuery.of(context).size.height * 0.06,
+                                                                      left: 20.0,
+                                                                      right: 20.0,
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              }
                                                             },
                                                             child: Container(
                                                               width: MediaQuery.of(context).size.width * 0.3,
@@ -1046,26 +1053,30 @@ class _MapPageState extends State<MapPage> {
                                                                 );
                                                               },
                                                             ),
-                                                            const Divider(height: 2),
-                                                            _buildListTile(
-                                                              icon: Icons.phone,
-                                                              title: 'Call',
-                                                              subtitle: '전화번호~~ \n누르면 전화걸어줌',
-                                                              onTap: () async {
-                                                                final Uri phoneUri = Uri(scheme: 'tel', path: '+82 10 5475 6096');
-                                                                if (await canLaunchUrl(phoneUri)) await launchUrl(phoneUri);
-                                                              },
-                                                            ),
-                                                            const Divider(height: 2),
-                                                            _buildListTile(
-                                                              icon: Icons.language,
-                                                              title: 'Visit Website',
-                                                              subtitle: '웹사이트 있으면 \n누르면 웹사이트로 이동',
-                                                              onTap: () async {
-                                                                await launchUrl(Uri.parse('https://www.naver.com'),
-                                                                    mode: LaunchMode.inAppBrowserView);
-                                                              },
-                                                            ),
+                                                            if (placeData['phone_number'] != null)
+                                                              const Divider(height: 2),
+                                                            if (placeData['phone_number'] != null)
+                                                              _buildListTile(
+                                                                icon: Icons.phone,
+                                                                title: 'Call',
+                                                                subtitle: placeData['phone_number'],
+                                                                onTap: () async {
+                                                                  final Uri phoneUri = Uri(scheme: 'tel', path: placeData['phone_number']);
+                                                                  if (await canLaunchUrl(phoneUri)) await launchUrl(phoneUri);
+                                                                },
+                                                              ),
+                                                            if (placeData['website_link'] != null)
+                                                              const Divider(height: 2),
+                                                            if (placeData['website_link'] != null)
+                                                              _buildListTile(
+                                                                icon: Icons.language,
+                                                                title: 'Visit Website',
+                                                                subtitle: '웹사이트 방문하기',
+                                                                onTap: () async {
+                                                                  await launchUrl(Uri.parse(placeData['website_link']),
+                                                                      mode: LaunchMode.inAppBrowserView);
+                                                                },
+                                                              ),
                                                             const Divider(height: 2),
                                                             _buildListTile(
                                                               icon: Icons.flag,
@@ -1229,8 +1240,8 @@ class _MapPageState extends State<MapPage> {
                                                             imageUrl,
                                                             p['place_name'] ?? '',
                                                             p['region'] ?? '',
-                                                            p['open_time'] ?? '00:00',
-                                                            p['close_time'] ?? '00:00',
+                                                            p['open_time'] ?? '09:00',
+                                                            p['close_time'] ?? '22:00',
                                                             (p['latitude'] as num).toDouble(),
                                                             (p['longitude'] as num).toDouble(),
                                                           );
@@ -1246,8 +1257,8 @@ class _MapPageState extends State<MapPage> {
                                                           imageUrl,
                                                           p['place_name'] ?? '',
                                                           p['region'] ?? '',
-                                                          p['open_time'] ?? '00:00',
-                                                          p['close_time'] ?? '00:00',
+                                                          p['open_time'] ?? '09:00',
+                                                          p['close_time'] ?? '22:00',
                                                           (p['latitude'] as num).toDouble(),
                                                           (p['longitude'] as num).toDouble(),
                                                         );
@@ -1355,7 +1366,7 @@ class _MapPageState extends State<MapPage> {
                                             //   ],
                                             // )
                                           ],
-                                        ), //TODO 북마크한거 없을때 보여줄거 필요
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -1719,7 +1730,12 @@ class _MapPageState extends State<MapPage> {
               ),
             ),
             Spacer(),
-            Icon(Icons.more_horiz)
+            GestureDetector(
+              onTap: (){
+                // TODO: 북마크 삭제할까요? 뜨게해야한다
+              },
+              child: Icon(Icons.more_horiz)
+            ),
           ],
         ),
       ),
