@@ -81,53 +81,54 @@ class ProfilePage extends StatelessWidget {
                     ),
                   ),
                   /// 로그아웃
-                  ListTile(
-                    onTap: Provider.of<UserDataProvider>(
-                      context,
-                      listen: false,
-                    ).isLoggedIn ? () {
-                      _showLogoutDialog(context);
-                    } : () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const LoginPage()), // 로그인 페이지로 push
+                  Consumer<UserDataProvider>(
+                    builder: (context, userDataProvider, _) {
+                      return ListTile(
+                        onTap: userDataProvider.isLoggedIn
+                            ? () {
+                          _showLogoutDialog(context);
+                        }
+                            : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const LoginPage()),
+                          );
+                        },
+                        leading: Icon(userDataProvider.isLoggedIn ? Icons.logout : Icons.login, color: primaryTextColor),
+                        title: Text(
+                          userDataProvider.isLoggedIn ? '로그아웃' : '로그인',
+                          style: const TextStyle(
+                            color: primaryTextColor,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       );
                     },
-                    leading: Icon(Icons.logout, color: primaryTextColor),
-                    title: Text(
-                      '로그아웃',
-                      style: const TextStyle(
-                        color: primaryTextColor,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
                   ),
                   /// 회원 탈퇴
-                  ListTile(
-                    onTap: Provider.of<UserDataProvider>(
-                      context,
-                      listen: false,
-                    ).isLoggedIn ? () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => WithdrawPage()),
-                      );
-                    } : (){
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const LoginPage()), // 로그인 페이지로 push
+                  Consumer<UserDataProvider>(
+                    builder: (context, userDataProvider, _) {
+                      if (!userDataProvider.isLoggedIn) return const SizedBox.shrink();
+
+                      return ListTile(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => WithdrawPage()),
+                          );
+                        },
+                        leading: Icon(Icons.person_off_outlined, color: primaryTextColor),
+                        title: const Text(
+                          '회원 탈퇴',
+                          style: TextStyle(
+                            color: primaryTextColor,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       );
                     },
-                    leading: Icon(Icons.person_off_outlined, color: primaryTextColor),
-                    title: Text(
-                      '회원 탈퇴',
-                      style: const TextStyle(
-                        color: primaryTextColor,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
                   ),
                 ],
               ),
@@ -228,8 +229,9 @@ class ProfilePage extends StatelessWidget {
                           fontSize: MediaQuery.of(context).size.height * (20 / 812),
                         ),
                       ),
-                      onPressed: () {
-                        Supabase.instance.client.auth.signOut();
+                      onPressed: () async {
+                        await Supabase.instance.client.auth.signOut();
+                        Navigator.of(context).pop();
                         Provider.of<UserDataProvider>(context, listen: false).logout();
                       },
                     ),
