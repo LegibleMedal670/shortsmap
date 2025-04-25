@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 class UserDataProvider extends ChangeNotifier {
   bool _isLoggedIn = false;
   String? _loginId;
+  String? _loginProvider;
   String? _currentUserUID;
   double? _currentLat;
   double? _currentLon;
@@ -15,14 +16,17 @@ class UserDataProvider extends ChangeNotifier {
 
   String? get loginId => _loginId;
 
+  String? get loginProvider => _loginProvider;
+
   double? get currentLat => _currentLat;
 
   double? get currentLon => _currentLon;
 
-  void login(String uid, String loginId) {
+  void login(String uid, String loginId, String loginProvider) {
     _isLoggedIn = true;
     _currentUserUID = uid;
     _loginId = loginId;
+    _loginProvider = loginProvider;
     notifyListeners();
   }
 
@@ -30,6 +34,7 @@ class UserDataProvider extends ChangeNotifier {
     _isLoggedIn = false;
     _currentUserUID = null;
     _loginId = null;
+    _loginProvider = null;
     notifyListeners();
   }
 

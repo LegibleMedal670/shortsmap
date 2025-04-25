@@ -20,9 +20,8 @@ Future<void> main() async {
   final userDataProvider = UserDataProvider();
   await userDataProvider.setCurrentLocation(null, null);
   if (currentUser != null) {
-    // 로그인 상태이면 UID를 provider에 설정
-    // TODO 언젠가 카톡이나 다른 로그인 기능 생기면 이메일 말고 다른것도 컨트롤해줘야함
-    userDataProvider.login(currentUser.id, currentUser.email!);
+    // 로그인 상태이면 UID, email, provider를 provider에 설정
+    userDataProvider.login(currentUser.id, currentUser.email!, currentUser.appMetadata['provider']!);
   }
 
   runApp(MyApp(userDataProvider: userDataProvider));
