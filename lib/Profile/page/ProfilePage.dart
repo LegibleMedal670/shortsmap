@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shortsmap/Profile/page/AccountPage.dart';
 import 'package:shortsmap/Profile/page/WithdrawPage.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
+import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:shortsmap/Widgets/BottomNavBar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -25,6 +26,7 @@ class ProfilePage extends StatelessWidget {
             child: SingleChildScrollView(
               child: Column(
                 children: [
+                  /// 계정
                   ListTile(
                     onTap: () {
                       Navigator.push(
@@ -42,6 +44,7 @@ class ProfilePage extends StatelessWidget {
                       ),
                     ),
                   ),
+                  /// 개발자와 소통
                   ListTile(
                     onTap: () async {
                       await launchUrl(
@@ -59,6 +62,7 @@ class ProfilePage extends StatelessWidget {
                       ),
                     ),
                   ),
+                  /// 이용 약관
                   ListTile(
                     onTap: () async {
                       await launchUrl(
@@ -76,9 +80,18 @@ class ProfilePage extends StatelessWidget {
                       ),
                     ),
                   ),
+                  /// 로그아웃
                   ListTile(
-                    onTap: () {
+                    onTap: Provider.of<UserDataProvider>(
+                      context,
+                      listen: false,
+                    ).isLoggedIn ? () {
                       _showLogoutDialog(context);
+                    } : () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const LoginPage()), // 로그인 페이지로 push
+                      );
                     },
                     leading: Icon(Icons.logout, color: primaryTextColor),
                     title: Text(
@@ -90,11 +103,20 @@ class ProfilePage extends StatelessWidget {
                       ),
                     ),
                   ),
+                  /// 회원 탈퇴
                   ListTile(
-                    onTap: () {
+                    onTap: Provider.of<UserDataProvider>(
+                      context,
+                      listen: false,
+                    ).isLoggedIn ? () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => WithdrawPage()),
+                      );
+                    } : (){
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const LoginPage()), // 로그인 페이지로 push
                       );
                     },
                     leading: Icon(Icons.person_off_outlined, color: primaryTextColor),
