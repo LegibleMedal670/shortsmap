@@ -4,15 +4,15 @@ import 'package:shortsmap/Provider/ImageCacheProvider.dart';
 import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/SplashScreen.dart';
+import 'package:shortsmap/env.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Supabase.initialize(
-    url: 'https://kfyusrkgzupinsgdotaf.supabase.co',
-    anonKey:
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmeXVzcmtnenVwaW5zZ2RvdGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI4MDY4NDUsImV4cCI6MjA1ODM4Mjg0NX0.QD66jLAoC5bJpJwuPnIfKaxoY3pD56Hui3gSngdXZyA',
+    url: Env.supabaseURL,
+    anonKey: Env.supabaseAnonKey,
   );
 
   /// Supabase 초기화 후 현재 로그인 상태 확인
@@ -45,7 +45,7 @@ class _MyAppState extends State<MyApp> {
       providers: [
         ChangeNotifierProvider(create: (_) => FilterProvider()),
         ChangeNotifierProvider.value(value: widget.userDataProvider),
-        ChangeNotifierProvider(create: (_) => PhotoCacheProvider(apiKey: 'AIzaSyC0fC5Xjg33ZeaBChPXIK-ijjblzI4SnB4')), // TODO API KEY 숨기기
+        ChangeNotifierProvider(create: (_) => PhotoCacheProvider(apiKey: Env.googlePlaceAPIKey)), // TODO API KEY 숨기기
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
