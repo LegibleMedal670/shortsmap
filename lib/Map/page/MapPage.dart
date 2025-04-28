@@ -568,30 +568,31 @@ class _MapPageState extends State<MapPage> {
                           //   ),
                           // ),
                           // SizedBox(width: 15,),
-                          SizedBox(
-                            height: 45,
-                            width: 45,
-                            child: FittedBox(
-                              child: FloatingActionButton(
-                                heroTag: UniqueKey().toString(),
-                                backgroundColor: Colors.white,
-                                child: const Icon(
-                                  Icons.filter_alt,
-                                  color: Colors.black54,
-                                  size: 28,
-                                ),
-                                onPressed: () {
-                                  // _moveToCurrentLocation();
-                                  // _sheetController.animateTo(
-                                  //   0.05,
-                                  //   duration: Duration(milliseconds: 300),
-                                  //   curve: Curves.easeInOut,
-                                  // );
-                                },
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 15,),
+                          /// 나중에 필터기능 추가할예정
+                          // SizedBox(
+                          //   height: 45,
+                          //   width: 45,
+                          //   child: FittedBox(
+                          //     child: FloatingActionButton(
+                          //       heroTag: UniqueKey().toString(),
+                          //       backgroundColor: Colors.white,
+                          //       child: const Icon(
+                          //         Icons.filter_alt,
+                          //         color: Colors.black54,
+                          //         size: 28,
+                          //       ),
+                          //       onPressed: () {
+                          //         // _moveToCurrentLocation();
+                          //         // _sheetController.animateTo(
+                          //         //   0.05,
+                          //         //   duration: Duration(milliseconds: 300),
+                          //         //   curve: Curves.easeInOut,
+                          //         // );
+                          //       },
+                          //     ),
+                          //   ),
+                          // ),
+                          // SizedBox(width: 15,),
                           SizedBox(
                             height: 45,
                             width: 45,
@@ -1059,7 +1060,7 @@ class _MapPageState extends State<MapPage> {
                                                               _buildListTile(
                                                                 icon: Icons.phone,
                                                                 title: 'Call',
-                                                                subtitle: placeData['phone_number'],
+                                                                subtitle: '눌러서 전화걸기',
                                                                 onTap: () async {
                                                                   final Uri phoneUri = Uri(scheme: 'tel', path: placeData['phone_number']);
                                                                   if (await canLaunchUrl(phoneUri)) await launchUrl(phoneUri);
@@ -1244,6 +1245,7 @@ class _MapPageState extends State<MapPage> {
                                                             p['close_time'] ?? '22:00',
                                                             (p['latitude'] as num).toDouble(),
                                                             (p['longitude'] as num).toDouble(),
+                                                            p['video_id'] ?? '',
                                                           );
                                                         }
 
@@ -1261,6 +1263,7 @@ class _MapPageState extends State<MapPage> {
                                                           p['close_time'] ?? '22:00',
                                                           (p['latitude'] as num).toDouble(),
                                                           (p['longitude'] as num).toDouble(),
+                                                          p['video_id'] ?? '',
                                                         );
                                                       },
                                                     );
@@ -1577,7 +1580,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   /// 장소 목록 타일
-  Widget _locationTile(bool isLoading, String locationId, String? imageUrl, String storeName, String region, String openTime, String closeTime, double lat, double lon) {
+  Widget _locationTile(bool isLoading, String locationId, String? imageUrl, String storeName, String region, String openTime, String closeTime, double lat, double lon, String videoId) {
     return GestureDetector(
       onTap: (){
         _isProgrammaticMove = true;
@@ -1733,6 +1736,7 @@ class _MapPageState extends State<MapPage> {
             GestureDetector(
               onTap: (){
                 // TODO: 북마크 삭제할까요? 뜨게해야한다
+                showCancelBookmarkModal(context, videoId);
               },
               child: Icon(Icons.more_horiz)
             ),
@@ -1784,128 +1788,6 @@ class _MapPageState extends State<MapPage> {
       throw Exception("Error fetching posts: ${e.code}, ${e.message}");
     }
 
-  }
-
-  /// 북마크 저장
-  Future<void> saveBookmarkInfo(String? currentUserUid, String videoId, String placeId, String category) async {
-    // 로그인 되어있는 경우
-    if (currentUserUid != null) {
-      // 눌렀을 때 진동
-      HapticFeedback.lightImpact();
-
-      // 먼저 캐시에 저장
-      SharedPreferences preferences = await SharedPreferences.getInstance();
-      List<String> bookMarkList =
-          preferences.getStringList('bookMarkList') ?? [];
-
-      // 북마크되지 않은 영상의 경우
-      if (!bookMarkList.contains(videoId)) {
-
-        try {
-          // 서버에 저장
-          await Supabase.instance.client.from('bookmarks').insert({
-            'user_id': currentUserUid,
-            'video_id': videoId,
-            'category': category,
-            'bookmarked_at': DateTime.now().toIso8601String(),
-            'place_id': placeId
-          });
-
-          bookMarkList.add(videoId);
-
-          // 캐시 업데이트
-          await preferences.setStringList('bookMarkList', bookMarkList);
-
-
-          // 저장 되었음을 표시해주는 스낵바 TODO ( UI 조정 필요 )
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: Colors.lightBlueAccent,
-              content: Text('Successfully added bookmark'),
-              action: SnackBarAction(
-                label: 'Plan',
-                textColor: Color(0xff121212),
-                onPressed: () {
-                  print('plan');
-                },
-              ),
-              behavior: SnackBarBehavior.floating,
-              margin: EdgeInsets.only(
-                bottom: MediaQuery.of(context).size.height * 0.06,
-                left: 20.0,
-                right: 20.0,
-              ),
-            ),
-          );
-        } catch (e) {
-          // 예외가 발생하면 에러 메시지를 출력합니다. TODO 에러 처리 어떻게할지 고민
-          print('Insert 에러: $e');
-        }
-      } else {
-
-        try {
-          // 서버에서 삭제
-          await Supabase.instance.client.from('bookmarks').delete().match({
-            'user_id': currentUserUid,
-            'video_id': videoId,
-          });
-
-          // 북마크된 영상의 경우 캐시에서 삭제
-          bookMarkList.remove(videoId);
-
-          // 캐시 업데이트
-          await preferences.setStringList('bookMarkList', bookMarkList);
-
-          // 삭제 되었음을 알려주는 스낵바 TODO ( UI 조정 필요 )
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: Colors.lightBlueAccent,
-              content: Text('Successfully deleted bookmark'),
-              action: SnackBarAction(
-                label: 'Plan',
-                textColor: Color(0xff121212),
-                onPressed: () {
-                  print('plan');
-                },
-              ),
-              behavior: SnackBarBehavior.floating,
-              margin: EdgeInsets.only(
-                bottom: MediaQuery.of(context).size.height * 0.06,
-                left: 20.0,
-                right: 20.0,
-              ),
-            ),
-          );
-        } catch (e) {
-          // 에러 메세지 출력 TODO 에러 처리 어떻게할지 고민
-          print('Delete 에러: $e');
-        }
-      }
-    } else {
-      // 로그인 되어있지 않은 경우엔 로그인하라는 스낵바 띄워줌 TODO ( UI 조정 필요 )
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.lightBlueAccent,
-          content: Text('Login To Bookmark Location'),
-          action: SnackBarAction(
-            label: 'Login',
-            textColor: Color(0xff121212),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => LoginPage()),
-              );
-            },
-          ),
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.only(
-            bottom: MediaQuery.of(context).size.height * 0.06,
-            left: 20.0,
-            right: 20.0,
-          ),
-        ),
-      );
-    }
   }
 
   /// 신고, 위치, 웹사이트 등 옵션 타일
@@ -2009,6 +1891,119 @@ class _MapPageState extends State<MapPage> {
                               fontSize: 16,
                               fontWeight: FontWeight.w400,
                               color: Colors.red
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  ///북마크 삭제 모달 TODO 실제신고기능추가필요
+  void showCancelBookmarkModal(BuildContext context, String videoId) {
+    showModalBottomSheet(
+      backgroundColor: Colors.white,
+      context: context,
+      isScrollControlled: true,
+      enableDrag: true,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20.0),
+          topRight: Radius.circular(20.0),
+        ),
+      ),
+      builder: (BuildContext context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.1,
+          minChildSize: 0.1,
+          expand: false,
+          builder:
+              (context, cancelBookmarkScrollController) => SizedBox(
+            width: MediaQuery.of(context).size.width,
+            child: SingleChildScrollView(
+              // physics: const ClampingScrollPhysics(),
+              controller: cancelBookmarkScrollController,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    GestureDetector(
+                      onTap: () async {
+                        Navigator.pop(context);
+                        final currentUserUID = Provider.of<UserDataProvider>(context, listen: false).currentUserUID!;
+
+                        try {
+                          // Supabase DB에서 북마크 삭제
+                          await Supabase.instance.client.from('bookmarks').delete().match({
+                            'user_id': currentUserUID,
+                            'video_id': videoId,
+                          });
+
+                          // 데이터 새로고침
+                          await _loadBookmarkMarkers();
+
+                          // 🔥 여기를 추가하면 됩니다!
+                          if (_selectedCategory != null && _categorizedBookmarks.containsKey(_selectedCategory!)) {
+                            final items = _categorizedBookmarks[_selectedCategory!]!;
+                            final sortedItems = List<BookmarkLocation>.from(items)
+                              ..sort((a, b) => b.bookmarkedAt.compareTo(a.bookmarkedAt));
+                            final sortedIds = sortedItems.map((e) => e.placeId).toList();
+
+                            setState(() {
+                              _categoryLocationFuture = Supabase.instance.client.rpc(
+                                'get_locations_by_ids',
+                                params: {'_ids': sortedIds},
+                              ).then((value) {
+                                final locations = List<Map<String, dynamic>>.from(value);
+                                locations.sort((a, b) =>
+                                sortedIds.indexOf(a['place_id']) - sortedIds.indexOf(b['place_id']));
+                                return locations;
+                              });
+                            });
+                          }
+
+                          // 성공 메시지 표시
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: Colors.lightBlueAccent,
+                              content: Text('Successfully deleted bookmark'),
+                              action: SnackBarAction(
+                                label: 'Plan',
+                                textColor: Color(0xff121212),
+                                onPressed: () {
+                                  print('plan');
+                                },
+                              ),
+                              behavior: SnackBarBehavior.floating,
+                              margin: EdgeInsets.only(
+                                bottom: MediaQuery.of(context).size.height * 0.06,
+                                left: 20.0,
+                                right: 20.0,
+                              ),
+                            ),
+                          );
+                        } catch (e) {
+                          print('Delete 에러: $e');
+                        }
+                      },
+                      child: Container(
+                        width: MediaQuery.of(context).size.width,
+                        color: Colors.transparent,
+                        padding: EdgeInsets.only(top: 10, bottom: 20),
+                        child: Text(
+                          '북마크 취소하기',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.red,
                           ),
                         ),
                       ),
