@@ -45,7 +45,7 @@ class _MyAppState extends State<MyApp> {
       providers: [
         ChangeNotifierProvider(create: (_) => FilterProvider()),
         ChangeNotifierProvider.value(value: widget.userDataProvider),
-        ChangeNotifierProvider(create: (_) => PhotoCacheProvider(apiKey: Env.googlePlaceAPIKey)), // TODO API KEY 숨기기
+        ChangeNotifierProvider(create: (_) => PhotoCacheProvider(apiKey: Env.googlePlaceAPIKey)),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

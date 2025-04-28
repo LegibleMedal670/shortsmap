@@ -1507,7 +1507,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               onTap: () async {
                                 final Uri phoneUri = Uri(
                                   scheme: 'tel',
-                                  path: widget.phoneNumber, //TODO : 전화번호 적용
+                                  path: widget.phoneNumber,
                                 );
 
                                 if (await canLaunchUrl(phoneUri)) {

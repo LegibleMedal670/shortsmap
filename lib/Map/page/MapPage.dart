@@ -1735,7 +1735,6 @@ class _MapPageState extends State<MapPage> {
             Spacer(),
             GestureDetector(
               onTap: (){
-                // TODO: 북마크 삭제할까요? 뜨게해야한다
                 showCancelBookmarkModal(context, videoId);
               },
               child: Icon(Icons.more_horiz)

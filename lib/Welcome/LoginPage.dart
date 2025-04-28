@@ -64,7 +64,7 @@ class _LoginPageState extends State<LoginPage> {
           final uid = _supabase.auth.currentUser!.id;
           final String loginId = _supabase.auth.currentUser!.email!;
           final String loginProvider = _supabase.auth.currentUser!.appMetadata['provider']!;
-          Provider.of<UserDataProvider>(context, listen: false).login(uid, loginId, loginProvider); //TODO 언젠가 카톡이나 다른 로그인 기능 생기면 이메일 말고 다른것도 컨트롤해줘야함
+          Provider.of<UserDataProvider>(context, listen: false).login(uid, loginId, loginProvider);
 
           Navigator.of(context, rootNavigator: true).pop(); // 로딩 다이얼로그 제거
           Navigator.pop(context); // 이전 화면으로 이동
