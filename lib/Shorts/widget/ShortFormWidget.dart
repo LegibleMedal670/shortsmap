@@ -500,7 +500,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ),
                         color: Colors.transparent,
                         child: Text(
-                          '${filterProvider.orderNear == true ? 'Near Me' : filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory ?? 'All'} ',
+                          '${filterProvider.orderNear == true ? '내 근처' : filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory ?? 'All'} ',
                           // '${filterProvider.filterRegion ?? '대전'} · ${filterProvider.filterCategory ?? '전시'} ',
                           style: TextStyle(
                             fontSize: 21,
@@ -1906,7 +1906,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ) {
                           return GestureDetector(
                             onTap: () async {
-                              if (selectedRegion == 'Near Me') {
+                              if (selectedRegion == '내 근처') {
                                 await filterProvider.setAroundVideoCategory(
                                   context,
                                   (selectedCategory == 'All')
