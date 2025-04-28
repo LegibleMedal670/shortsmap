@@ -1974,14 +1974,7 @@ class _MapPageState extends State<MapPage> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               backgroundColor: Colors.lightBlueAccent,
-                              content: Text('Successfully deleted bookmark'),
-                              action: SnackBarAction(
-                                label: 'Plan',
-                                textColor: Color(0xff121212),
-                                onPressed: () {
-                                  print('plan');
-                                },
-                              ),
+                              content: Text('북마크가 삭제되었습니다'),
                               behavior: SnackBarBehavior.floating,
                               margin: EdgeInsets.only(
                                 bottom: MediaQuery.of(context).size.height * 0.06,
