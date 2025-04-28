@@ -160,6 +160,9 @@ class _ShortsPageState extends State<ShortsPage> {
                         coordinates: {},
                         pageController: _pageController,
                         placeId: '',
+                        phoneNumber: '',
+                        address: '',
+                        website: '',
                       );
                     }
 
@@ -184,6 +187,9 @@ class _ShortsPageState extends State<ShortsPage> {
                           coordinates: shortFormData.coordinates,
                           pageController: _pageController,
                           placeId: shortFormData.placeId,
+                          phoneNumber: shortFormData.phoneNumber,
+                          address: shortFormData.address,
+                          website: shortFormData.websiteLink,
                         );
                       },
                     );

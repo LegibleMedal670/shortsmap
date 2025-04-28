@@ -8,7 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:shortsmap/Map/pages/MapPage.dart';
+import 'package:shortsmap/Map/page/MapPage.dart';
 import 'package:shortsmap/Provider/ImageCacheProvider.dart';
 import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
@@ -32,6 +32,9 @@ class ShortFormWidget extends StatefulWidget {
   final Map<String, double> coordinates;
   final PageController pageController;
   final String placeId;
+  final String? phoneNumber;
+  final String address;
+  final String? website;
 
   const ShortFormWidget({
     required this.placeName,
@@ -48,6 +51,9 @@ class ShortFormWidget extends StatefulWidget {
     required this.coordinates,
     required this.pageController,
     required this.placeId,
+    required this.phoneNumber,
+    required this.address,
+    required this.website,
     super.key,
   });
 
@@ -70,21 +76,22 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
   final List<String> regionOptions = [
     'All',
-    'Near Me',
+    '내 근처',
     '서울',
     '부산',
-    '세글자',
     '대구',
     '광주',
     '제주',
-    '네글자임',
     '명동',
     '성수',
     '성남',
     '대전',
-    '다섯글자임',
+    '강릉',
+    '속초',
+    '일산',
+    '잠실',
   ];
-  final List<String> categoryOptions = ['All', '한식', '양식', '일식', '중식', '카페'];
+  final List<String> categoryOptions = ['All', '페스티벌', '한식', '양식', '일식', '중식', '카페·디저트', '자연', '술·안주'];
   final List<String> priceOptions = [
     'All',
     '\$10',
@@ -340,7 +347,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                       child: Stack(
                         alignment: Alignment.topCenter,
                         children: [
-                          YoutubeValueBuilder(
+                          YoutubeValueBuilder( //TODO 동영상 로딩이 좀 느리게 되는데 skeleton을 적용하거나 로딩 시간을 줄여야함
                             controller: _controller,
                             builder: (context, value) {
                               if (value.playerState == PlayerState.playing &&
@@ -731,7 +738,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                   color: Colors.transparent,
                                   child: Text(
                                     widget.description ?? 'descriptionNull',
-                                    // '과학은 ‘노잼’이라고 생각하는 아이들과 대전으로 떠나보자. 자타가 공인하는 ‘과학의 도시’ 대전에는 과학을 흥미롭게 풀어낸 공간이 많다. 그중 단연 1순위는 우리나라 과학관을 대표하는 국립중앙과학관이고, 지난해 문을 연 넥스페리움도 색다른 재미를 선사한다.',
+                                    // '혜화역 근처에 위치한 고봉당은 돌판 등갈비찜과 인절미 떡구이로 유명한 맛집이에요. 돌판 등갈비찜은 부드럽고 양념이 적당해 입맛을 돋우며, 직화 쭈꾸미 볶음은 매콤하면서도 감칠맛이 일품이에요. 특히 인절미 떡구이는 고소하고 쫀득해 디저트로 완벽해요. 매장 분위기도 깔끔하고 직원분들이 친절해요. 주소는 서울 종로구 대명1길 8 1층이에요.',
                                     style: TextStyle(
                                       fontSize:
                                           MediaQuery.of(context).size.width *
@@ -1267,13 +1274,23 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           onTap: () async {
                             final Uri phoneUri = Uri(
                               scheme: 'tel',
-                              path: '+82 10 5475 6096', //TODO : 전화번호 적용
+                              path: widget.phoneNumber,
                             );
 
                             if (await canLaunchUrl(phoneUri)) {
                               await launchUrl(phoneUri);
                             } else {
-                              debugPrint('전화 걸기 실패');
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('지정된 전화번호가 없습니다.'),
+                                  behavior: SnackBarBehavior.floating,
+                                  margin: EdgeInsets.only(
+                                    bottom: MediaQuery.of(context).size.height * 0.06,
+                                    left: 20.0,
+                                    right: 20.0,
+                                  ),
+                                ),
+                              );
                             }
                           },
                           child: Container(
@@ -1470,7 +1487,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           _buildListTile(
                             icon: Icons.location_on_outlined,
                             title: 'Address',
-                            subtitle: '주소어쩌구저쩌구~~ \n누르면 구글맵 or 애플맵 or 자체화면',
+                            subtitle: widget.address,
                             onTap: () async {
                               await launchUrl(
                                 Uri.parse(
@@ -1480,36 +1497,50 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               );
                             },
                           ),
-                          const Divider(height: 2),
-                          _buildListTile(
-                            icon: Icons.phone,
-                            title: 'Call',
-                            subtitle: '전화번호~~ \n누르면 전화걸어줌',
-                            onTap: () async {
-                              final Uri phoneUri = Uri(
-                                scheme: 'tel',
-                                path: '+82 10 5475 6096', //TODO : 전화번호 적용
-                              );
+                          if (widget.phoneNumber != null)
+                            const Divider(height: 2),
+                          if (widget.phoneNumber != null)
+                            _buildListTile(
+                              icon: Icons.phone,
+                              title: 'Call',
+                              subtitle: '눌러서 전화걸기',
+                              onTap: () async {
+                                final Uri phoneUri = Uri(
+                                  scheme: 'tel',
+                                  path: widget.phoneNumber, //TODO : 전화번호 적용
+                                );
 
-                              if (await canLaunchUrl(phoneUri)) {
-                                await launchUrl(phoneUri);
-                              } else {
-                                debugPrint('전화 걸기 실패');
-                              }
-                            },
-                          ),
-                          const Divider(height: 2),
-                          _buildListTile(
-                            icon: Icons.language,
-                            title: 'Visit Website',
-                            subtitle: '웹사이트 있으면 \n누르면 웹사이트로 이동',
-                            onTap: () async {
-                              await launchUrl(
-                                Uri.parse('https://www.naver.com'),
-                                mode: LaunchMode.inAppBrowserView,
-                              );
-                            },
-                          ),
+                                if (await canLaunchUrl(phoneUri)) {
+                                  await launchUrl(phoneUri);
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('지정된 전화번호가 없습니다.'),
+                                      behavior: SnackBarBehavior.floating,
+                                      margin: EdgeInsets.only(
+                                        bottom: MediaQuery.of(context).size.height * 0.06,
+                                        left: 20.0,
+                                        right: 20.0,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          if (widget.website != null)
+                            const Divider(height: 2),
+                          if (widget.website != null)
+                            _buildListTile(
+                              icon: Icons.language,
+                              title: 'Visit Website',
+                              subtitle: '웹사이트 방문하기',
+                              onTap: () async {
+                                await launchUrl(
+                                  Uri.parse(widget.website!),
+                                  mode: LaunchMode.inAppBrowserView,
+                                );
+                              },
+                            ),
                           const Divider(height: 2),
                           _buildListTile(
                             icon: Icons.flag,
@@ -1817,49 +1848,49 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 height:
                                     MediaQuery.of(context).size.height * 0.02,
                               ),
-                              Text(
-                                'Average Price',
-                                style: TextStyle(
-                                  color: shortPageWhite,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 20,
-                                ),
-                              ),
-                              SizedBox(
-                                height:
-                                    MediaQuery.of(context).size.height * 0.02,
-                              ),
-                              Wrap(
-                                spacing: 8.0,
-                                runSpacing: 1.0,
-                                children:
-                                    priceOptions.map((price) {
-                                      return ChoiceChip(
-                                        selected: selectedPrice == price,
-                                        label: Text(
-                                          price,
-                                          style: TextStyle(
-                                            color:
-                                                (selectedPrice == price)
-                                                    ? Colors.black
-                                                    : shortPageWhite,
-                                          ),
-                                        ),
-                                        selectedColor: shortPageWhite,
-                                        backgroundColor: Color(0xff222222),
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 6,
-                                        ),
-                                        onSelected: (bool selected) {
-                                          filterState(() {
-                                            selectedPrice =
-                                                selected ? price : null;
-                                          });
-                                        },
-                                      );
-                                    }).toList(),
-                              ),
+                              // Text(
+                              //   'Average Price',
+                              //   style: TextStyle(
+                              //     color: shortPageWhite,
+                              //     fontWeight: FontWeight.w600,
+                              //     fontSize: 20,
+                              //   ),
+                              // ),
+                              // SizedBox(
+                              //   height:
+                              //       MediaQuery.of(context).size.height * 0.02,
+                              // ),
+                              // Wrap(
+                              //   spacing: 8.0,
+                              //   runSpacing: 1.0,
+                              //   children:
+                              //       priceOptions.map((price) {
+                              //         return ChoiceChip(
+                              //           selected: selectedPrice == price,
+                              //           label: Text(
+                              //             price,
+                              //             style: TextStyle(
+                              //               color:
+                              //                   (selectedPrice == price)
+                              //                       ? Colors.black
+                              //                       : shortPageWhite,
+                              //             ),
+                              //           ),
+                              //           selectedColor: shortPageWhite,
+                              //           backgroundColor: Color(0xff222222),
+                              //           padding: EdgeInsets.symmetric(
+                              //             horizontal: 10,
+                              //             vertical: 6,
+                              //           ),
+                              //           onSelected: (bool selected) {
+                              //             filterState(() {
+                              //               selectedPrice =
+                              //                   selected ? price : null;
+                              //             });
+                              //           },
+                              //         );
+                              //       }).toList(),
+                              // ),
                               // Spacer(),
                             ],
                           ),
