@@ -986,9 +986,9 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.lightBlueAccent,
-          content: Text('Login To Bookmark Location'),
+          content: Text('북마크하기 위해 로그인 해주세요'),
           action: SnackBarAction(
-            label: 'Login',
+            label: '로그인',
             textColor: Color(0xff121212),
             onPressed: () {
               Navigator.push(
