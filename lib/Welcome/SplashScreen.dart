@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -18,9 +20,11 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsFlutterBinding.ensureInitialized().addPostFrameCallback((_) async {
-      final status = await AppTrackingTransparency.requestTrackingAuthorization();
-    });
+    if(Platform.isIOS){
+      WidgetsFlutterBinding.ensureInitialized().addPostFrameCallback((_) async {
+        final status = await AppTrackingTransparency.requestTrackingAuthorization();
+      });
+    }
     _navigateToNextScreen();
   }
 
