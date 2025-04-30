@@ -21,6 +21,9 @@ class MapShortsPage extends StatefulWidget {
   final double averagePrice;
   final String? imageUrl;
   final Map<String, double> coordinates;
+  final String? phoneNumber;
+  final String? website;
+  final String address;
 
   const MapShortsPage({
     super.key,
@@ -36,6 +39,9 @@ class MapShortsPage extends StatefulWidget {
     required this.averagePrice,
     required this.imageUrl,
     required this.coordinates,
+    required this.phoneNumber,
+    required this.website,
+    required this.address,
   });
 
   @override
@@ -940,10 +946,9 @@ class _MapShortsPageState extends State<MapShortsPage> {
                           _buildListTile(
                             icon: Icons.location_on_outlined,
                             title: 'Address',
-                            subtitle: '주소어쩌구저쩌구~~ \n누르면 구글맵 or 애플맵 or 자체화면',
+                            subtitle: widget.address,
                             onTap: () async {
                               await launchUrl(
-                                ///TODO PlaceId 받아와서 넣어줘야함
                                 Uri.parse(
                                   'https://www.google.com/maps/search/?api=1&query=${widget.storeName}&query_place_id=$placeId',
                                 ),
@@ -951,51 +956,63 @@ class _MapShortsPageState extends State<MapShortsPage> {
                               );
                             },
                           ),
-                          const Divider(height: 2),
-                          _buildListTile(
-                            icon: Icons.phone,
-                            title: 'Call',
-                            subtitle: '전화번호~~ \n누르면 전화걸어줌',
-                            onTap: () async {
-                              final Uri phoneUri = Uri(
-                                scheme: 'tel',
-                                path: '+82 10 5475 6096', //TODO : 전화번호 적용
-                              );
+                          if (widget.phoneNumber != null)
+                            const Divider(height: 2),
+                          if (widget.phoneNumber != null)
+                            _buildListTile(
+                              icon: Icons.phone,
+                              title: 'Call',
+                              subtitle: '눌러서 전화걸기',
+                              onTap: () async {
+                                final Uri phoneUri = Uri(
+                                  scheme: 'tel',
+                                  path: widget.phoneNumber,
+                                );
 
-                              if (await canLaunchUrl(phoneUri)) {
-                                await launchUrl(phoneUri);
-                              } else {
-                                debugPrint('전화 걸기 실패');
-                              }
-                            },
-                          ),
-                          const Divider(height: 2),
-                          _buildListTile(
-                            icon: Icons.language,
-                            title: 'Visit Website',
-                            subtitle: '웹사이트 있으면 \n누르면 웹사이트로 이동',
-                            onTap: () async {
-                              await launchUrl(
-                                Uri.parse('https://www.naver.com'),
-                                mode: LaunchMode.inAppBrowserView,
-                              );
-                            },
-                          ),
+                                if (await canLaunchUrl(phoneUri)) {
+                                  await launchUrl(phoneUri);
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('지정된 전화번호가 없습니다.'),
+                                      behavior: SnackBarBehavior.floating,
+                                      margin: EdgeInsets.only(
+                                        bottom: MediaQuery.of(context).size.height * 0.06,
+                                        left: 20.0,
+                                        right: 20.0,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          if (widget.website != null)
+                            const Divider(height: 2),
+                          if (widget.website != null)
+                            _buildListTile(
+                              icon: Icons.language,
+                              title: 'Visit Website',
+                              subtitle: '웹사이트 방문하기',
+                              onTap: () async {
+                                await launchUrl(
+                                  Uri.parse(widget.website!),
+                                  mode: LaunchMode.inAppBrowserView,
+                                );
+                              },
+                            ),
                           const Divider(height: 2),
                           _buildListTile(
                             icon: Icons.flag,
-                            title: 'Report',
+                            title: '신고하기',
                             onTap: () {
-                              // TODO: 신고 기능 추가
                               showReportModal(context);
                             },
                           ),
                           const Divider(height: 2),
                           _buildListTile(
                             icon: Icons.verified_outlined,
-                            title: 'I am owner of this place',
+                            title: '장소 소유자 인증하기',
                             onTap: () async {
-                              // TODO: 소유자 인증 기능 추가
                               await launchUrl(
                                 Uri.parse(
                                   'https://forms.gle/Ji5br34NseKr8m1Q6',
@@ -1144,7 +1161,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                             color: Colors.transparent,
                             padding: EdgeInsets.only(top: 10, bottom: 20),
                             child: Text(
-                              'Out of service',
+                              '현재 운영하지 않는 장소에요',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w400,
@@ -1163,7 +1180,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                             color: Colors.transparent,
                             padding: EdgeInsets.only(top: 10, bottom: 20),
                             child: Text(
-                              'Inappropriate content',
+                              '정보가 부정확해요',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w400,
@@ -1182,7 +1199,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                             color: Colors.transparent,
                             padding: EdgeInsets.only(top: 10, bottom: 20),
                             child: Text(
-                              'Incorrect information',
+                              '컨텐츠가 부적절해요',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w400,
