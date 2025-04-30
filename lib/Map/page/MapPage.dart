@@ -62,6 +62,8 @@ class _MapPageState extends State<MapPage> {
 
   bool _isProgrammaticMove = false;
 
+  bool _isMarkerTapped = false;
+
   Future<List<Map<String, dynamic>>>? _categoryLocationFuture;
 
   Future<Map<String, dynamic>>? _locationDetailFuture;
@@ -74,14 +76,14 @@ class _MapPageState extends State<MapPage> {
 
   // 카테고리별 아이콘 및 컬러
   Map<String, dynamic> categoryStyles = {
-    'restaurant': {'icon': Icons.restaurant, 'color': Color(0xFFFF7043)},
+    'Restaurant': {'icon': Icons.restaurant, 'color': Color(0xFFFF7043)},
     'Nature': {'icon': Icons.forest, 'color': Color(0xFF4CAF50)},
     'Exhibitions': {'icon': Icons.palette_outlined, 'color': Color(0xFF9C27B0)},
     'Historical Site': {'icon': Icons.account_balance, 'color': Color(0xFF795548)},
     'Sports': {'icon': Icons.sports_tennis, 'color': Color(0xFF2196F3)},
     'Shopping': {'icon': Icons.shopping_bag_outlined, 'color': Color(0xFFFFC107)},
     'Cafe': {'icon': Icons.local_cafe_outlined, 'color': Color(0xFF8D6E63)},
-    'Bar & Pub': {'icon': Icons.sports_bar, 'color': Color(0xFFB71C1C)},
+    'Bar': {'icon': Icons.sports_bar, 'color': Color(0xFFB71C1C)},
   };
 
 
@@ -297,6 +299,22 @@ class _MapPageState extends State<MapPage> {
           icon: icon,
           onTap: () {
             print('마커 tapped: ${bookmark.placeName}, lat: ${bookmark.latitude}, lon: ${bookmark.longitude}');
+
+            _isProgrammaticMove = true;
+            _isMarkerTapped = true;
+
+            setState(() {
+              _isListDetailOpened    = true;
+              _selectedLocation      = bookmark.placeId;
+              _locationDetailFuture  = _fetchLocationDetail(bookmark.placeId);
+            });
+
+            _sheetController.animateTo(
+              0.55,
+              duration: Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+
           },
         ));
       }
@@ -638,8 +656,9 @@ class _MapPageState extends State<MapPage> {
                               size: 32,
                             ),
                             onPressed: () {
-                              if (widget.placeId != null){
+                              if (widget.placeId != null || _isMarkerTapped){
                                 setState(() {
+                                  _isMarkerTapped = false;
                                   _selectedLocation = null;
                                   _isListDetailOpened = false;
                                   _bookmarkMarkers = _allBookmarkMarkers;
@@ -812,6 +831,9 @@ class _MapPageState extends State<MapPage> {
                                                                           'lat': placeData['latitude'],
                                                                           'lon': placeData['longitude'],
                                                                         },
+                                                                        phoneNumber: placeData['phone_number'],
+                                                                        website: placeData['website_link'],
+                                                                        address: placeData['address'],
                                                                       )));
                                                             },
                                                             child: Container(
@@ -1000,6 +1022,9 @@ class _MapPageState extends State<MapPage> {
                                                                       'lat': placeData['latitude'],
                                                                       'lon': placeData['longitude'],
                                                                     },
+                                                                    phoneNumber: placeData['phone_number'],
+                                                                    website: placeData['website_link'],
+                                                                    address: placeData['address'],
                                                                   ),
                                                                 ),
                                                               );
@@ -1570,12 +1595,12 @@ class _MapPageState extends State<MapPage> {
           Text(locations.toString()),
         ],
       ),
-      trailing: InkWell(
-        onTap: () {
-          print(title);
-        },
-        child: const Icon(Icons.more_vert),
-      ),
+      // trailing: InkWell(
+      //   onTap: () {
+      //     print(title);
+      //   },
+      //   child: const Icon(Icons.more_vert),
+      // ),
     );
   }
 
@@ -1847,7 +1872,7 @@ class _MapPageState extends State<MapPage> {
                         color: Colors.transparent,
                         padding: EdgeInsets.only(top: 10, bottom: 20),
                         child: Text(
-                          'Out of service',
+                          '현재 운영하지 않는 장소에요',
                           style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w400,
@@ -1866,7 +1891,7 @@ class _MapPageState extends State<MapPage> {
                         color: Colors.transparent,
                         padding: EdgeInsets.only(top: 10, bottom: 20),
                         child: Text(
-                          'Inappropriate content',
+                          '정보가 부정확해요',
                           style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w400,
@@ -1885,7 +1910,7 @@ class _MapPageState extends State<MapPage> {
                         color: Colors.transparent,
                         padding: EdgeInsets.only(top: 10, bottom: 20),
                         child: Text(
-                          'Incorrect information',
+                          '컨텐츠가 부적절해요',
                           style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w400,
@@ -1973,7 +1998,7 @@ class _MapPageState extends State<MapPage> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               backgroundColor: Colors.lightBlueAccent,
-                              content: Text('북마크가 삭제되었습니다'),
+                              content: Text('북마크가 삭제되었어요'),
                               behavior: SnackBarBehavior.floating,
                               margin: EdgeInsets.only(
                                 bottom: MediaQuery.of(context).size.height * 0.06,
