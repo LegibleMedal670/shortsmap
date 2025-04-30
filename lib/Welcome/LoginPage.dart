@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -42,7 +43,14 @@ class _LoginPageState extends State<LoginPage> {
     );
 
     try {
-      GoogleSignIn _googleSignIn = GoogleSignIn();
+
+      const iosClientId = '916848326581-8ksg7a187hji9v2ak727f3mm6n0c39jr.apps.googleusercontent.com';
+      const serverClientId = '916848326581-tgrq4r69qhcgb9vfr7ojmj5tbudcvl96.apps.googleusercontent.com';
+
+      GoogleSignIn _googleSignIn = GoogleSignIn(
+        clientId: iosClientId,
+        serverClientId: serverClientId,
+      );
       GoogleSignInAccount? _account = await _googleSignIn.signIn();
       if (_account != null) {
         GoogleSignInAuthentication _authentication =
@@ -203,7 +211,8 @@ class _LoginPageState extends State<LoginPage> {
             SizedBox(
               height: MediaQuery.of(context).size.height * 0.02,
             ),
-            GestureDetector(
+            if(Platform.isIOS)
+              GestureDetector(
               onTap: () {
                 _appleSignIn(context);
               },
@@ -233,9 +242,10 @@ class _LoginPageState extends State<LoginPage> {
                   )
               ),
             ),
-            SizedBox(
-              height: MediaQuery.of(context).size.height * 0.1,
-            ),
+            if(Platform.isIOS)
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.1,
+              ),
           ],
         ),
       ),
