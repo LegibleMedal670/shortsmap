@@ -64,6 +64,8 @@ dependencies:
   sign_in_with_apple: ^7.0.1
   # API KEY 숨기기를 위한 패키지
   envied: ^1.1.1
+  # 앱 추적 허용 모달읠 위한 패키지
+  app_tracking_transparency: ^2.0.6+1
 
 dev_dependencies:
   flutter_test:

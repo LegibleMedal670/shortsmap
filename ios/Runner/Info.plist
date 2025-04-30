@@ -29,9 +29,9 @@
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-    <string>This app needs access to location when open.</string>
+    <string>내 근처 장소들을 탐색하기 위해 위치 권한이 필요합니다</string>
     <key>NSLocationAlwaysUsageDescription</key>
-    <string>This app needs access to location when in the background.</string>
+    <string>내 근처 장소들을 탐색하기 위해 위치 권한이 필요합니다</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
@@ -65,5 +65,7 @@
     </array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSUserTrackingUsageDescription</key>
+    <string>더 나은 개인화 맞춤 서비스를 제공하기 위해 사용됩니다.</string>
 </dict>
 </plist>
