@@ -77,21 +77,11 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
   final List<String> regionOptions = [
     'All',
     '내 근처',
-    '서울',
-    '부산',
-    '대구',
-    '광주',
-    '제주',
-    '명동',
-    '성수',
-    '성남',
-    '대전',
-    '강릉',
-    '속초',
-    '일산',
-    '잠실',
+    '강남',
+    '홍대',
+    '잠실'
   ];
-  final List<String> categoryOptions = ['All', '페스티벌', '한식', '양식', '일식', '중식', '카페·디저트', '자연', '술·안주'];
+  final List<String> categoryOptions = ['All', '음식점', '카페', '술·안주',];
   final List<String> priceOptions = [
     'All',
     '\$10',
@@ -261,7 +251,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ),
                         color: Colors.transparent,
                         child: Text(
-                          '${filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory ?? 'All'} ',
+                          '${filterProvider.orderNear == true ? '내 근처' : filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory == null ? 'All' : switchCategoryToKor(filterProvider.filterCategory)} ',
                           style: TextStyle(
                             fontSize: 21,
                             fontWeight: FontWeight.w600,
@@ -500,7 +490,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ),
                         color: Colors.transparent,
                         child: Text(
-                          '${filterProvider.orderNear == true ? '내 근처' : filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory ?? 'All'} ',
+                          '${filterProvider.orderNear == true ? '내 근처' : filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory == null ? 'All' : switchCategoryToKor(filterProvider.filterCategory)} ',
                           // '${filterProvider.filterRegion ?? '대전'} · ${filterProvider.filterCategory ?? '전시'} ',
                           style: TextStyle(
                             fontSize: 21,
@@ -914,9 +904,9 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               backgroundColor: Colors.lightBlueAccent,
-              content: Text('Successfully added bookmark'),
+              content: Text('북마크에 저장되었어요'),
               action: SnackBarAction(
-                label: 'Plan',
+                label: '보러 가기',
                 textColor: Color(0xff121212),
                 onPressed: () {
                   Navigator.pushAndRemoveUntil(
@@ -964,12 +954,18 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               backgroundColor: Colors.lightBlueAccent,
-              content: Text('Successfully deleted bookmark'),
+              content: Text('북마크에서 삭제되었어요'),
               action: SnackBarAction(
-                label: 'Plan',
+                label: '보러 가기',
                 textColor: Color(0xff121212),
                 onPressed: () {
-                  print('plan');
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MapPage(placeId: widget.placeId),
+                    ),
+                        (route) => false,
+                  );
                 },
               ),
               behavior: SnackBarBehavior.floating,
@@ -1544,18 +1540,16 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           const Divider(height: 2),
                           _buildListTile(
                             icon: Icons.flag,
-                            title: 'Report',
+                            title: '신고하기',
                             onTap: () {
-                              // TODO: 신고 기능 추가
                               showReportModal(context);
                             },
                           ),
                           const Divider(height: 2),
                           _buildListTile(
                             icon: Icons.verified_outlined,
-                            title: 'I am owner of this place',
+                            title: '장소 소유자 인증하기',
                             onTap: () async {
-                              // TODO: 소유자 인증 기능 추가
                               await launchUrl(
                                 Uri.parse(
                                   'https://forms.gle/Ji5br34NseKr8m1Q6',
@@ -1576,6 +1570,43 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
         );
       },
     );
+  }
+
+  String? switchCategoryToEng(String? category) {
+
+    String? switchedCategory;
+
+    switch(category) {
+      case '음식점' :
+        switchedCategory = 'Restaurant';
+        break;
+      case '카페' :
+        switchedCategory = 'Cafe';
+        break;
+      case '술·안주' :
+        switchedCategory = 'Bar';
+        break;
+    }
+
+    return switchedCategory;
+  }
+
+  String? switchCategoryToKor(String? category) {
+    String? switchedCategory;
+
+    switch(category) {
+      case 'Restaurant' :
+        switchedCategory = '음식점';
+        break;
+      case 'Cafe' :
+        switchedCategory = '카페';
+        break;
+      case 'Bar' :
+        switchedCategory = '술·안주';
+        break;
+    }
+
+    return switchedCategory;
   }
 
   ///동영상을 꾹 눌렀을 때 나오는 옵션들이 있는 ModalBottomSheet
@@ -1625,7 +1656,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 Icon(CupertinoIcons.bookmark, size: 24),
                                 SizedBox(width: 20),
                                 Text(
-                                  'Bookmark',
+                                  '북마크에 추가',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w500,
@@ -1651,7 +1682,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 Icon(Icons.block, size: 24),
                                 SizedBox(width: 20),
                                 Text(
-                                  'Not Interested',
+                                  '관심 없음',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w500,
@@ -1673,7 +1704,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 Icon(Icons.flag_outlined, size: 24),
                                 SizedBox(width: 20),
                                 Text(
-                                  'Report',
+                                  '신고',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w500,
@@ -1699,7 +1730,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 Icon(CupertinoIcons.paperplane, size: 24),
                                 SizedBox(width: 20),
                                 Text(
-                                  'Share',
+                                  '공유하기',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w500,
@@ -1911,7 +1942,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                   context,
                                   (selectedCategory == 'All')
                                       ? null
-                                      : selectedCategory,
+                                      : switchCategoryToEng(selectedCategory),
                                 );
                                 await Provider.of<UserDataProvider>(
                                   context,
@@ -1927,7 +1958,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                       : selectedRegion,
                                   (selectedCategory == 'All')
                                       ? null
-                                      : selectedCategory,
+                                      : switchCategoryToEng(selectedCategory),
                                 );
                               }
 
@@ -2004,7 +2035,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             color: Colors.transparent,
                             padding: EdgeInsets.only(top: 10, bottom: 20),
                             child: Text(
-                              'Out of service',
+                              '현재 운영하지 않는 장소에요',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w400,
@@ -2023,7 +2054,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             color: Colors.transparent,
                             padding: EdgeInsets.only(top: 10, bottom: 20),
                             child: Text(
-                              'Inappropriate content',
+                              '정보가 부정확해요',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w400,
@@ -2042,7 +2073,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             color: Colors.transparent,
                             padding: EdgeInsets.only(top: 10, bottom: 20),
                             child: Text(
-                              'Incorrect information',
+                              '컨텐츠가 부적절해요',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w400,
