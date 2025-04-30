@@ -1106,7 +1106,7 @@ class _MapPageState extends State<MapPage> {
                                                             const Divider(height: 2),
                                                             _buildListTile(
                                                               icon: Icons.flag,
-                                                              title: 'Report',
+                                                              title: '신고하기',
                                                               onTap: () {
                                                                 showReportModal(context);
                                                               },
@@ -1114,10 +1114,10 @@ class _MapPageState extends State<MapPage> {
                                                             const Divider(height: 2),
                                                             _buildListTile(
                                                               icon: Icons.verified_outlined,
-                                                              title: 'I am owner of this place',
+                                                              title: '장소 소유자 인증하기',
                                                               onTap: () async {
                                                                 await launchUrl(
-                                                                  Uri.parse('https://forms.gle/Ji5br34NseKr8m1Q6'),
+                                                                  Uri.parse('https://forms.gle/yXcva654ddrWfWwYA'),
                                                                   mode: LaunchMode.inAppBrowserView,
                                                                 );
                                                               },

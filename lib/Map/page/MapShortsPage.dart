@@ -1015,7 +1015,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                             onTap: () async {
                               await launchUrl(
                                 Uri.parse(
-                                  'https://forms.gle/Ji5br34NseKr8m1Q6',
+                                  'https://forms.gle/yXcva654ddrWfWwYA',
                                 ),
                                 mode: LaunchMode.inAppBrowserView,
                               );
