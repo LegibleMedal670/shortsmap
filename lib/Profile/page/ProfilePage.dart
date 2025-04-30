@@ -66,7 +66,7 @@ class ProfilePage extends StatelessWidget {
                   ListTile(
                     onTap: () async {
                       await launchUrl(
-                        Uri.parse('https://hwsoft.notion.site/1427ab93f29a80c89a77de807a75c160'),
+                        Uri.parse('https://hwsoft.notion.site/1e57ab93f29a80c88d37fb10f41f8bcf'),
                         mode: LaunchMode.inAppBrowserView,
                       );
                     },
