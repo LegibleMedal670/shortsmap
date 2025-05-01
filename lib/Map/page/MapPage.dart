@@ -300,10 +300,10 @@ class _MapPageState extends State<MapPage> {
           onTap: () {
             print('마커 tapped: ${bookmark.placeName}, lat: ${bookmark.latitude}, lon: ${bookmark.longitude}');
 
-            _isProgrammaticMove = true;
-            _isMarkerTapped = true;
-
             setState(() {
+              _isProgrammaticMove = true;
+              _isMarkerTapped = true;
+              _selectedCategory = null;
               _isListDetailOpened    = true;
               _selectedLocation      = bookmark.placeId;
               _locationDetailFuture  = _fetchLocationDetail(bookmark.placeId);
@@ -656,28 +656,30 @@ class _MapPageState extends State<MapPage> {
                               size: 32,
                             ),
                             onPressed: () {
-                              if (widget.placeId != null || _isMarkerTapped){
+                              if (_selectedLocation != null) {
+                                // 상세 열려 있을 때
                                 setState(() {
-                                  _isMarkerTapped = false;
-                                  _selectedLocation = null;
-                                  _isListDetailOpened = false;
-                                  _bookmarkMarkers = _allBookmarkMarkers;
+                                  _selectedLocation = null;               // 상세만 닫음
+                                  if (_selectedCategory == null) {
+                                    // 맵→상세 경로였으면 → 전체 카테고리 리스트로
+                                    _isListDetailOpened = false;
+                                    _bookmarkMarkers    = _allBookmarkMarkers;
+                                  }
+                                  // (_selectedCategory != null 이면 → 카테고리→상세 경로)
+                                  //    _isListDetailOpened(true)와 필터된 _bookmarkMarkers 유지
                                 });
-                              } else if ( _selectedLocation != null){
-                                setState(() {
-                                  _selectedLocation = null;
-                                });
-                              } else {
+
+                              } else if (_isListDetailOpened) {
+                                // 카테고리 리스트 화면에서 뒤로 → 전체 카테고리 뷰로
                                 setState(() {
                                   _isListDetailOpened = false;
-                                  _bookmarkMarkers = _allBookmarkMarkers; // 마커 복원
+                                  _bookmarkMarkers    = _allBookmarkMarkers;
+                                  _selectedCategory   = null;
                                 });
                               }
-                              _sheetController.animateTo(
-                                0.4,
-                                duration: Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                              );
+
+                              _sheetController.animateTo(0.4,
+                                  duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
                             },
                           ),
                         ),
