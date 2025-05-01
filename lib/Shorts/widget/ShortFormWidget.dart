@@ -1854,7 +1854,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Text(
-                                'Region',
+                                '지역',
                                 style: TextStyle(
                                   color: shortPageWhite,
                                   fontWeight: FontWeight.w600,
@@ -1902,7 +1902,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               ),
 
                               Text(
-                                'Category',
+                                '카테고리',
                                 style: TextStyle(
                                   color: shortPageWhite,
                                   fontWeight: FontWeight.w600,
@@ -2042,11 +2042,11 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               ),
                               child: Center(
                                 child: Text(
-                                  'Update Filter',
+                                  '필터 적용하기',
                                   style: TextStyle(
                                     color: shortPageWhite,
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 20,
                                   ),
                                 ),
                               ),
