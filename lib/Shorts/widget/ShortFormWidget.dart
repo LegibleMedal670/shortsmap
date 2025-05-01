@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -821,38 +822,88 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ),
 
                         ///가격
+                        // Container(
+                        //   padding: EdgeInsets.symmetric(
+                        //     vertical: 2,
+                        //     horizontal: 8,
+                        //   ),
+                        //   decoration: BoxDecoration(
+                        //     color: Colors.black.withValues(alpha: 0.2),
+                        //     borderRadius: BorderRadius.circular(12),
+                        //     border: Border.all(
+                        //       color: Colors.white.withValues(alpha: 0.3),
+                        //       width: 0.5,
+                        //     ),
+                        //   ),
+                        //   child: Row(
+                        //     children: [
+                        //       Icon(
+                        //         Icons.payments,
+                        //         size: 18,
+                        //         color: shortPageWhite,
+                        //       ),
+                        //       SizedBox(width: 5),
+                        //       Text(
+                        //         '\$${widget.averagePrice == null ? '3' : widget.averagePrice!.round()}~',
+                        //         style: TextStyle(
+                        //           color: shortPageWhite,
+                        //           fontSize:
+                        //               MediaQuery.of(context).size.width * 0.032,
+                        //         ),
+                        //       ),
+                        //     ],
+                        //   ),
+                        // ),
+                        ///거리
                         Container(
                           padding: EdgeInsets.symmetric(
                             vertical: 2,
                             horizontal: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.2),
+                            color: Colors.black.withAlpha(50), // withValues → withAlpha
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.3),
+                              color: Colors.white.withAlpha(80),
                               width: 0.5,
                             ),
                           ),
                           child: Row(
                             children: [
                               Icon(
-                                Icons.payments,
+                                CupertinoIcons.location_solid,
                                 size: 18,
                                 color: shortPageWhite,
                               ),
                               SizedBox(width: 5),
                               Text(
-                                '\$${widget.averagePrice == null ? '3' : widget.averagePrice!.round()}~',
+                                (() {
+                                  final userLat =
+                                      Provider.of<UserDataProvider>(context, listen: false).currentLat;
+                                  final userLon =
+                                      Provider.of<UserDataProvider>(context, listen: false).currentLon;
+                                  final targetLat = widget.coordinates['lat'];
+                                  final targetLon = widget.coordinates['lon'];
+
+                                  if (userLat == null ||
+                                      userLon == null ||
+                                      targetLat == null ||
+                                      targetLon == null) {
+                                    return "???km";
+                                  }
+
+                                  return calculateDistanceTextInKm(
+                                      userLat, userLon, targetLat, targetLon);
+                                })(),
                                 style: TextStyle(
                                   color: shortPageWhite,
-                                  fontSize:
-                                      MediaQuery.of(context).size.width * 0.032,
+                                  fontSize: MediaQuery.of(context).size.width * 0.032,
                                 ),
                               ),
                             ],
                           ),
                         ),
+
                       ],
                     ),
                   ],
@@ -1028,6 +1079,25 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     return travelTimeMinutes.toString();
   }
 
+  /// 현재 위치와 장소 위치 간의 거리를 km 단위 문자열로 반환 ("2.34 km" 형식)
+  String calculateDistanceTextInKm(
+      double lat1,
+      double lon1,
+      double lat2,
+      double lon2,
+      ) {
+    double distanceInMeters = Geolocator.distanceBetween(
+      lat1,
+      lon1,
+      lat2,
+      lon2,
+    );
+
+    double distanceInKm = distanceInMeters / 1000;
+    return "${distanceInKm.toStringAsFixed(2)} km";
+  }
+
+
   ///More 버튼을 누르면 나오는 ModalBottomSheet
   void showInfoModal(BuildContext context, String placeId) {
     final double? userLat =
@@ -1159,8 +1229,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           children: [
                             Text(
                               widget.placeName,
-                              style: const TextStyle(
-                                fontSize: 18,
+                              style: TextStyle(
+                                fontSize: MediaQuery.of(context).size.width * 0.045,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
                               ),
@@ -1168,8 +1238,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             const SizedBox(height: 3),
                             Text(
                               '${widget.category} · \$${widget.averagePrice == null ? '3' : widget.averagePrice!.round()}~',
-                              style: const TextStyle(
-                                fontSize: 14,
+                              style: TextStyle(
+                                fontSize: MediaQuery.of(context).size.width * 0.035,
                                 color: Colors.black54,
                               ),
                             ),
@@ -1177,10 +1247,10 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                const Icon(
+                                Icon(
                                   CupertinoIcons.bus,
                                   color: Colors.black26,
-                                  size: 18,
+                                  size: MediaQuery.of(context).size.width * 0.045,
                                 ),
                                 Text(
                                   (locationLat != null &&
@@ -1189,8 +1259,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                           userLon != null)
                                       ? ' ${calculateTimeRequired(userLat, userLon, locationLat, locationLon)}분 · ${widget.placeRegion}'
                                       : ' 30분 · ${widget.placeRegion}',
-                                  style: const TextStyle(
-                                    fontSize: 14,
+                                  style: TextStyle(
+                                    fontSize: MediaQuery.of(context).size.width * 0.035,
                                     color: Colors.black54,
                                   ),
                                 ),
@@ -1200,15 +1270,15 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                const Icon(
+                                Icon(
                                   CupertinoIcons.time,
                                   color: Colors.black26,
-                                  size: 18,
+                                  size: MediaQuery.of(context).size.width * 0.045,
                                 ),
                                 Text(
                                   ' ${widget.openTime ?? '09:00'} ~ ${widget.closeTime ?? '22:00'}',
-                                  style: const TextStyle(
-                                    fontSize: 14,
+                                  style: TextStyle(
+                                    fontSize: MediaQuery.of(context).size.width * 0.035,
                                     color: Colors.black54,
                                   ),
                                 ),
@@ -1561,7 +1631,6 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ],
                       ),
                     ),
-                    // 추가 위젯들...
                   ],
                 ),
               ),
@@ -2104,7 +2173,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
       subtitle:
           subtitle != null
-              ? Text(subtitle, style: TextStyle(fontSize: 15))
+              ? Text(subtitle, style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.035,))
               : null,
       trailing: const Icon(Icons.chevron_right, size: 26),
       onTap: onTap,

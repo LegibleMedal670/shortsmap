@@ -166,86 +166,77 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Center(
-        child: Column(
-          children: [
-            SizedBox(
-              height: MediaQuery.of(context).size.height * 0.3,
-            ),
-            Container(
-              // height: 210,
-              width: MediaQuery.of(context).size.width * 0.5,
-              child: Image.asset('images/logo.png'),
-            ),
-            Spacer(),
-            GestureDetector(
-              onTap: () {
-                _googleSignIn();
-              },
-              child: Container(
-                width: MediaQuery.of(context).size.width * 0.8,
-                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.black, width: 1.3),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxWidth = constraints.maxWidth;
+          final maxHeight = constraints.maxHeight;
+
+          return Center(
+            child: Column(
+              children: [
+                SizedBox(height: maxHeight * 0.25), // 상단 여백
+
+                // 로고
+                Container(
+                  width: maxWidth * 0.45,
+                  child: Image.asset('images/logo.png'),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    FaIcon(
-                      FontAwesomeIcons.google,
-                      color: Colors.black87,
-                      size: 24,
-                    ),
-                    Text(
-                      'Continue with Google',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 24
-                      ),
-                    )
-                  ],
-                )
-              ),
-            ),
-            SizedBox(
-              height: MediaQuery.of(context).size.height * 0.02,
-            ),
-            if(Platform.isIOS)
-              GestureDetector(
-              onTap: () {
-                _appleSignIn(context);
-              },
-              child: Container(
-                  width: MediaQuery.of(context).size.width * 0.8,
-                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.black, width: 1.3),
+
+                const Spacer(),
+
+                // 구글 로그인 버튼
+                _loginButton(
+                  icon: FontAwesomeIcons.google,
+                  text: 'Continue with Google',
+                  onTap: _googleSignIn,
+                ),
+
+                const SizedBox(height: 16),
+
+                // 애플 로그인 버튼 (iOS만)
+                if (Platform.isIOS)
+                  _loginButton(
+                    icon: FontAwesomeIcons.apple,
+                    text: 'Continue with Apple',
+                    onTap: () => _appleSignIn(context),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      FaIcon(
-                        FontAwesomeIcons.apple,
-                        color: Colors.black87,
-                        size: 24,
-                      ),
-                      Text(
-                        'Continue with Apple',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 24
-                        ),
-                      )
-                    ],
-                  )
-              ),
+
+                if (Platform.isIOS)
+                  SizedBox(height: maxHeight * 0.08), // iOS 하단 여백
+                if (!Platform.isIOS)
+                  SizedBox(height: maxHeight * 0.04), // Android 여백
+              ],
             ),
-            if(Platform.isIOS)
-              SizedBox(
-                height: MediaQuery.of(context).size.height * 0.1,
-              ),
+          );
+        },
+      ),
+    );
+  }
+
+// 커스텀 로그인 버튼 위젯
+  Widget _loginButton({
+    required IconData icon,
+    required String text,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.black, width: 1.3),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FaIcon(icon, color: Colors.black87, size: 22),
+            const SizedBox(width: 12),
+            Text(
+              text,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+            ),
           ],
         ),
       ),
