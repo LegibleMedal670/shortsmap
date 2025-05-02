@@ -748,13 +748,23 @@ class _MapShortsPageState extends State<MapShortsPage> {
                           onTap: () async {
                             final Uri phoneUri = Uri(
                               scheme: 'tel',
-                              path: '+82 10 5475 6096', //TODO : 전화번호 적용
+                              path: widget.phoneNumber, //TODO : 전화번호 적용
                             );
 
                             if (await canLaunchUrl(phoneUri)) {
                               await launchUrl(phoneUri);
                             } else {
-                              debugPrint('전화 걸기 실패');
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('지정된 전화번호가 없습니다.'),
+                                  behavior: SnackBarBehavior.floating,
+                                  margin: EdgeInsets.only(
+                                    bottom: MediaQuery.of(context).size.height * 0.06,
+                                    left: 20.0,
+                                    right: 20.0,
+                                  ),
+                                ),
+                              );
                             }
                           },
                           child: Container(
@@ -774,7 +784,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                 ),
                                 SizedBox(width: 8),
                                 Text(
-                                  'Call',
+                                  '전화걸기',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w500,
@@ -810,7 +820,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                 ),
                                 SizedBox(width: 8),
                                 Text(
-                                  'Route',
+                                  '길찾기',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w500,
