@@ -964,7 +964,7 @@ class _MapPageState extends State<MapPage> {
                                                                 children: const [
                                                                   Icon(CupertinoIcons.phone, color: Colors.black, size: 22),
                                                                   SizedBox(width: 8),
-                                                                  Text('Call', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                                                                  Text('전화걸기', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
                                                                 ],
                                                               ),
                                                             ),
@@ -995,7 +995,7 @@ class _MapPageState extends State<MapPage> {
                                                                 children: const [
                                                                   Icon(Icons.directions_car, color: Colors.black, size: 22),
                                                                   SizedBox(width: 8),
-                                                                  Text('Route', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                                                                  Text('길찾기', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
                                                                 ],
                                                               ),
                                                             ),
@@ -1044,7 +1044,7 @@ class _MapPageState extends State<MapPage> {
                                                                   Icon(CupertinoIcons.play_arrow_solid, color: Colors.white, size: 22),
                                                                   SizedBox(width: 8),
                                                                   Text(
-                                                                    'Explore',
+                                                                    '영상보기',
                                                                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
                                                                   ),
                                                                 ],
