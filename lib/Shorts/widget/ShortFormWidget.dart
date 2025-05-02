@@ -1132,7 +1132,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
       context: context,
       isScrollControlled: true,
       enableDrag: true,
-      showDragHandle: true,
+      // showDragHandle: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(20.0),
@@ -1146,7 +1146,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
           minChildSize: 0.3699,
           expand: false,
           snap: true,
-          snapSizes: const [0.38, 0.9],
+          snapSizes: const [0.37, 0.9],
           builder: (context, infoScrollController) {
             return SingleChildScrollView(
               controller: infoScrollController,
@@ -1154,6 +1154,16 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: Column(
                   children: [
+                    Center(
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 12),
+                        width: 40, height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[400],
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
                     // 상단의 프로필 및 기본정보 Row (사진, 매장명, 카테고리, 시간 등)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1711,6 +1721,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
         return DraggableScrollableSheet(
           initialChildSize: 0.35,
           minChildSize: 0.35,
+          maxChildSize: 0.35,
           expand: false,
           builder:
               (context, optionScrollController) => SizedBox(
@@ -2104,6 +2115,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
         return DraggableScrollableSheet(
           initialChildSize: 0.3,
           minChildSize: 0.3,
+          maxChildSize: 0.3,
           expand: false,
           builder:
               (context, reportScrollController) => SizedBox(
