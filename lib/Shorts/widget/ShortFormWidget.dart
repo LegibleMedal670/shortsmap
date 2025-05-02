@@ -77,7 +77,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
   final List<String> regionOptions = [
     'All',
-    '내 근처',
+    '가까운 순',
     '강남',
     '홍대',
     '잠실'
@@ -252,7 +252,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ),
                         color: Colors.transparent,
                         child: Text(
-                          '${filterProvider.orderNear == true ? '내 근처' : filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory == null ? 'All' : switchCategoryToKor(filterProvider.filterCategory)} ',
+                          '${filterProvider.orderNear == true ? '가까운 순' : filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory == null ? 'All' : switchCategoryToKor(filterProvider.filterCategory)} ',
                           style: TextStyle(
                             fontSize: 21,
                             fontWeight: FontWeight.w600,
@@ -478,7 +478,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.travel_explore_outlined,
+                    Icons.filter_alt,
                     color: shortPageWhite,
                     size: 26,
                   ),
@@ -490,8 +490,18 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           horizontal: 8,
                         ),
                         color: Colors.transparent,
-                        child: Text(
-                          '${filterProvider.orderNear == true ? '내 근처' : filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory == null ? 'All' : switchCategoryToKor(filterProvider.filterCategory)} ',
+                        child:
+                        (filterProvider.orderNear == false && filterProvider.filterCategory == null && filterProvider.filterRegion == null)
+                          ? Text(
+                            '필터 적용하기',
+                            style: TextStyle(
+                            fontSize: 21,
+                            fontWeight: FontWeight.w600,
+                            color: shortPageWhite,
+                            ),
+                          )
+                            : Text(
+                          '${filterProvider.orderNear == true ? '가까운 순' : filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory == null ? 'All' : switchCategoryToKor(filterProvider.filterCategory)} ',
                           // '${filterProvider.filterRegion ?? '대전'} · ${filterProvider.filterCategory ?? '전시'} ',
                           style: TextStyle(
                             fontSize: 21,
@@ -509,7 +519,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
           ///뒤로가기 버튼
           Positioned(
-            left: MediaQuery.of(context).size.width * 0.05,
+            left: MediaQuery.of(context).size.width * 0.01,
             child: SafeArea(
               child: GestureDetector(
                 onTap: () {
@@ -530,7 +540,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
           ///Options 버튼
           Positioned(
-            right: MediaQuery.of(context).size.width * 0.05,
+            right: MediaQuery.of(context).size.width * 0.01,
             child: SafeArea(
               child: GestureDetector(
                 onTap: () {
@@ -547,7 +557,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
           ///우측 버튼 위젯
           Positioned(
-            right: MediaQuery.of(context).size.width * 0.05,
+            right: MediaQuery.of(context).size.width * 0.03,
             bottom: MediaQuery.of(context).size.height * 0.001,
             child: SafeArea(
               child: Column(
@@ -577,7 +587,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
           ///하단 정보 위젯
           Positioned(
-            left: MediaQuery.of(context).size.width * 0.05,
+            left: MediaQuery.of(context).size.width * 0.01,
             bottom: MediaQuery.of(context).size.height * 0.001,
             child: SafeArea(
               child: Container(
@@ -636,17 +646,22 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ),
                         SizedBox(width: 10),
                         ///이름
-                        Flexible(
-                          child: Text(
-                            widget.placeName,
-                            // '국립중앙과학관',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                              color: shortPageWhite,
+                        GestureDetector(
+                          onTap: () {
+                            showInfoModal(context, widget.placeId);
+                          },
+                          child: Flexible(
+                            child: Text(
+                              widget.placeName,
+                              // '국립중앙과학관',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: shortPageWhite,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         SizedBox(width: 10),
@@ -657,15 +672,15 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             showInfoModal(context, widget.placeId);
                           },
                           child: Container(
-                            width: 70,
+                            width: 60,
                             height: 30,
-                            padding: EdgeInsets.only(bottom: 3),
+                            // padding: EdgeInsets.only(bottom: 3),
                             child: Center(
                               child: Text(
-                                'More',
+                                '더보기',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                                  fontSize: 14,
                                   color: shortPageWhite,
                                 ),
                               ),
@@ -717,7 +732,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                       style: TextStyle(
                                         fontSize:
                                             MediaQuery.of(context).size.width *
-                                            0.04,
+                                            0.035,
                                         color: shortPageWhite,
                                       ),
                                     ),
@@ -733,7 +748,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                     style: TextStyle(
                                       fontSize:
                                           MediaQuery.of(context).size.width *
-                                          0.04,
+                                          0.035,
                                       color: shortPageWhite,
                                     ),
                                     maxLines: 1,
@@ -971,7 +986,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
               ),
               behavior: SnackBarBehavior.floating,
               margin: EdgeInsets.only(
-                bottom: MediaQuery.of(context).size.height * 0.06,
+                bottom: MediaQuery.of(context).size.height * 0.02,
                 left: 20.0,
                 right: 20.0,
               ),
@@ -1021,7 +1036,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
               ),
               behavior: SnackBarBehavior.floating,
               margin: EdgeInsets.only(
-                bottom: MediaQuery.of(context).size.height * 0.06,
+                bottom: MediaQuery.of(context).size.height * 0.02,
                 left: 20.0,
                 right: 20.0,
               ),
@@ -1050,7 +1065,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
           ),
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.only(
-            bottom: MediaQuery.of(context).size.height * 0.06,
+            bottom: MediaQuery.of(context).size.height * 0.02,
             left: 20.0,
             right: 20.0,
           ),
@@ -1858,12 +1873,12 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 style: TextStyle(
                                   color: shortPageWhite,
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 20,
+                                  fontSize: 18,
                                 ),
                               ),
                               SizedBox(
                                 height:
-                                    MediaQuery.of(context).size.height * 0.02,
+                                    MediaQuery.of(context).size.height * 0.015,
                               ),
                               Wrap(
                                 spacing: 8.0,
@@ -1871,12 +1886,18 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 children:
                                     regionOptions.map((region) {
                                       return ChoiceChip(
+                                        avatar: (region == '가까운 순')
+                                         ? Icon(Icons.star, color: (selectedRegion == region)
+                                            ? Colors.black
+                                            : Colors.yellow,
+                                        )
+                                            : null,
                                         selected: selectedRegion == region,
                                         label: Text(
                                           region,
                                           style: TextStyle(
                                             color:
-                                                (selectedRegion == region)
+                                            (selectedRegion == region)
                                                     ? Colors.black
                                                     : shortPageWhite,
                                           ),
@@ -1898,7 +1919,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               ),
                               SizedBox(
                                 height:
-                                    MediaQuery.of(context).size.height * 0.02,
+                                    MediaQuery.of(context).size.height * 0.015,
                               ),
 
                               Text(
@@ -1906,7 +1927,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 style: TextStyle(
                                   color: shortPageWhite,
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 20,
+                                  fontSize: 18,
                                 ),
                               ),
                               SizedBox(
@@ -2006,7 +2027,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ) {
                           return GestureDetector(
                             onTap: () async {
-                              if (selectedRegion == '내 근처') {
+                              if (selectedRegion == '가까운 순') {
                                 await filterProvider.setAroundVideoCategory(
                                   context,
                                   (selectedCategory == 'All')
@@ -2037,14 +2058,14 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               padding: EdgeInsets.symmetric(vertical: 12),
                               width: MediaQuery.of(context).size.width * 0.8,
                               decoration: BoxDecoration(
-                                color: Color(0xff309053),
+                                color: Colors.lightBlueAccent,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Center(
                                 child: Text(
                                   '필터 적용하기',
                                   style: TextStyle(
-                                    color: shortPageWhite,
+                                    color: Color(0xff121212),
                                     fontWeight: FontWeight.bold,
                                     fontSize: 20,
                                   ),
@@ -2081,8 +2102,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
       ),
       builder: (BuildContext context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.25,
-          minChildSize: 0.25,
+          initialChildSize: 0.3,
+          minChildSize: 0.3,
           expand: false,
           builder:
               (context, reportScrollController) => SizedBox(
@@ -2151,6 +2172,25 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             ),
                           ),
                         ),
+                        Divider(),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pop(context);
+                          },
+                          child: Container(
+                            width: MediaQuery.of(context).size.width,
+                            color: Colors.transparent,
+                            padding: EdgeInsets.only(top: 10, bottom: 20),
+                            child: Text(
+                              '동영상 재생이 안돼요',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.red,
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -2210,7 +2250,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                   radius: 0.6, // 0 ~ 1 사이에서 조절 (값을 높이면 더 넓게 퍼짐)
                 ),
               ),
-              child: Icon(icon, size: 40, color: shortPageWhite),
+              child: Icon(icon, size: 45, color: shortPageWhite),
             ),
             const SizedBox(height: 5),
             if (value != null)
