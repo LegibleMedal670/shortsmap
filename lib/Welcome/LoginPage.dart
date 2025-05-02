@@ -174,11 +174,11 @@ class _LoginPageState extends State<LoginPage> {
           return Center(
             child: Column(
               children: [
-                SizedBox(height: maxHeight * 0.25), // 상단 여백
+                SizedBox(height: maxHeight * 0.38), // 상단 여백
 
                 // 로고
                 Container(
-                  width: maxWidth * 0.45,
+                  width: maxWidth * 0.8,
                   child: Image.asset('images/logo.png'),
                 ),
 
@@ -191,7 +191,7 @@ class _LoginPageState extends State<LoginPage> {
                   onTap: _googleSignIn,
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
                 // 애플 로그인 버튼 (iOS만)
                 if (Platform.isIOS)
