@@ -203,15 +203,14 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
       // Set을 이용해 중복 제거
       seenVideoIds = seenVideoIds.toSet().toList();
 
-      // 캐시에 200개 이상 쌓이면 초기화
-      if (seenVideoIds.length > 200) {
+      // 캐시에 250개 이상 쌓이면 초기화
+      if (seenVideoIds.length > 250) {
         seenVideoIds = [];
       }
 
       // 업데이트된 리스트 저장
       await preferences.setStringList('seenVideoIds', seenVideoIds);
 
-      print(preferences.getStringList('seenVideoIds') ?? []);
     }
   }
 
