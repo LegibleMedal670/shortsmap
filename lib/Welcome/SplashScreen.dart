@@ -1,6 +1,3 @@
-import 'dart:io';
-
-import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shortsmap/Map/page/MapPage.dart';
@@ -20,18 +17,17 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    if(Platform.isIOS){
-      WidgetsFlutterBinding.ensureInitialized().addPostFrameCallback((_) async {
-        final status = await AppTrackingTransparency.requestTrackingAuthorization();
-      });
-    }
-    _navigateToNextScreen();
+    _getPermissionAndNavigate();
   }
 
   /// 스플래시 화면 이후 MainNavigator로 전환하여
   /// 초기 라우트 스택(ShortsPage & PlanPage)을 구성합니다.
-  void _navigateToNextScreen() async {
-    await Future.delayed(const Duration(milliseconds: 1500));
+  void _getPermissionAndNavigate() async {
+    await Provider.of<UserDataProvider>(context, listen: false)
+        .setCurrentLocation(null, null);
+
+    // 권한 요청 다 끝나면 스플래시 유지 시간 기다렸다 이동
+    await Future.delayed(Duration(milliseconds: 1500));
     Navigator.pushReplacement(context, _buildPageRoute(MainNavigator()));
   }
 

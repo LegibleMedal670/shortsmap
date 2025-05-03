@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shortsmap/Provider/ImageCacheProvider.dart';
@@ -10,6 +13,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  if (Platform.isIOS) {
+    final status = await AppTrackingTransparency
+        .requestTrackingAuthorization();
+    debugPrint('ATT status: $status');
+  }
+
   await Supabase.initialize(
     url: Env.supabaseURL,
     anonKey: Env.supabaseAnonKey,
@@ -18,7 +27,7 @@ Future<void> main() async {
   /// Supabase 초기화 후 현재 로그인 상태 확인
   final currentUser = Supabase.instance.client.auth.currentUser;
   final userDataProvider = UserDataProvider();
-  await userDataProvider.setCurrentLocation(null, null);
+
   if (currentUser != null) {
     // 로그인 상태이면 UID, email, provider를 provider에 설정
     userDataProvider.login(currentUser.id, currentUser.email!, currentUser.appMetadata['provider']!);
