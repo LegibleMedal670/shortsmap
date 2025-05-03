@@ -215,7 +215,7 @@ class _MapPageState extends State<MapPage> {
       setState(() {
         _currentMarkerIcon = icon;
       });
-      _loadBookmarkMarkers();
+
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -428,7 +428,9 @@ class _MapPageState extends State<MapPage> {
                       onMapCreated: (controller) {
                         _mapController = controller;
                         // 컨트롤러가 생성된 후에도 현재 위치로 카메라 이동
-                        // _getInitialLocation();
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _loadBookmarkMarkers();
+                        });
                       },
                       onCameraMoveStarted: () {
                         if (_isProgrammaticMove) {
