@@ -587,7 +587,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
           ///하단 정보 위젯
           Positioned(
-            left: MediaQuery.of(context).size.width * 0.01,
+            left: MediaQuery.of(context).size.width * 0.02,
             bottom: MediaQuery.of(context).size.height * 0.001,
             child: SafeArea(
               child: Container(
@@ -646,11 +646,11 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ),
                         SizedBox(width: 10),
                         ///이름
-                        GestureDetector(
-                          onTap: () {
-                            showInfoModal(context, widget.placeId);
-                          },
-                          child: Flexible(
+                        Flexible(
+                          child: GestureDetector(
+                            onTap: () {
+                              showInfoModal(context, widget.placeId);
+                            },
                             child: Text(
                               widget.placeName,
                               // '국립중앙과학관',
@@ -1146,7 +1146,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
           minChildSize: 0.3699,
           expand: false,
           snap: true,
-          snapSizes: const [0.37, 0.9],
+          snapSizes: const [0.38, 0.9],
           builder: (context, infoScrollController) {
             return SingleChildScrollView(
               controller: infoScrollController,
@@ -1164,7 +1164,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ),
                       ),
                     ),
-                    // 상단의 프로필 및 기본정보 Row (사진, 매장명, 카테고리, 시간 등)
+                    /// 상단의 프로필 및 기본정보 Row (사진, 매장명, 카테고리, 시간 등)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1279,9 +1279,9 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 ),
                                 Text(
                                   (locationLat != null &&
-                                          userLat != null &&
-                                          locationLon != null &&
-                                          userLon != null)
+                                      userLat != null &&
+                                      locationLon != null &&
+                                      userLon != null)
                                       ? ' ${calculateTimeRequired(userLat, userLon, locationLat, locationLon)}분 · ${widget.placeRegion}'
                                       : ' 30분 · ${widget.placeRegion}',
                                   style: TextStyle(
