@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/cupertino.dart';
@@ -1314,6 +1315,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         // 공유, 닫기 버튼
                         GestureDetector(
                           onTap: () {
+                            FirebaseAnalytics.instance.logShare(
+                                contentType: "video", itemId: widget.videoId, method: 'modalShare');
                             Share.share(
                               'https://www.youtube.com/shorts/${widget.videoId}',
                               subject: widget.placeName,
@@ -1811,6 +1814,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         GestureDetector(
                           onTap: () {
                             Navigator.pop(context);
+                            FirebaseAnalytics.instance.logShare(
+                                contentType: "video", itemId: widget.videoId, method: 'optionShare');
                             Share.share(
                               'https://www.youtube.com/shorts/${widget.videoId}',
                               subject: widget.placeName,

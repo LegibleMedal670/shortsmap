@@ -1,3 +1,4 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -1099,6 +1100,8 @@ class _MapShortsPageState extends State<MapShortsPage> {
                         GestureDetector(
                           onTap: () {
                             Navigator.pop(context);
+                            FirebaseAnalytics.instance.logShare(
+                                contentType: "video", itemId: widget.videoId, method: 'mapShortsShare');
                             Share.share(
                               'https://www.youtube.com/shorts/${widget.videoId}',
                               subject: widget.storeName,

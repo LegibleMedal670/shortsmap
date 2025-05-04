@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:ui' as ui;
 import 'dart:ui';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -909,6 +910,8 @@ class _MapPageState extends State<MapPage> {
                                                           const Spacer(),
                                                           GestureDetector(
                                                             onTap: () {
+                                                              FirebaseAnalytics.instance.logShare(
+                                                                  contentType: "video", itemId: placeData['video_id'], method: 'mapShare');
                                                               Share.share(
                                                                 'https://www.youtube.com/shorts/${placeData['video_id']}',
                                                                 subject: placeData['place_name']!,
