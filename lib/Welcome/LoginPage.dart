@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -74,6 +75,8 @@ class _LoginPageState extends State<LoginPage> {
           final String loginProvider = _supabase.auth.currentUser!.appMetadata['provider']!;
           Provider.of<UserDataProvider>(context, listen: false).login(uid, loginId, loginProvider);
 
+          FirebaseAnalytics.instance.logLogin(loginMethod: 'Google');
+
           Navigator.of(context, rootNavigator: true).pop(); // 로딩 다이얼로그 제거
           Navigator.pop(context); // 이전 화면으로 이동
         } else {
@@ -143,6 +146,8 @@ class _LoginPageState extends State<LoginPage> {
 
         Provider.of<UserDataProvider>(context, listen: false)
             .login(uid, loginId, loginProvider);
+
+        FirebaseAnalytics.instance.logLogin(loginMethod: 'Apple');
 
         Navigator.of(context, rootNavigator: true).pop(); // 로딩 다이얼로그 제거
         Navigator.pop(context); // 이전 화면으로 이동
