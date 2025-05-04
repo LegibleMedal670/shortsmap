@@ -1,1 +1,30 @@
-{"installed":{"client_id":"916848326581-74mge3tokpkpkt2rprbqvvke513bteo0.apps.googleusercontent.com","project_id":"shortsmap-app","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs"}}
+{
+  "installed":{"client_id":"916848326581-74mge3tokpkpkt2rprbqvvke513bteo0.apps.googleusercontent.com","project_id":"shortsmap-app","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs"},
+  "project_info": {
+    "project_number": "405916286413",
+    "project_id": "shortsmap-official",
+    "storage_bucket": "shortsmap-official.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:405916286413:android:ea73326757d8edf744d884",
+        "android_client_info": {
+          "package_name": "com.hwsoft.shortsmap"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBDIJE1KXt3E9PbEgrOGDuznb-fVCq0VaA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

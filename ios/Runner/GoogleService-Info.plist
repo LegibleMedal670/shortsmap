@@ -6,9 +6,29 @@
 	<string>916848326581-8ksg7a187hji9v2ak727f3mm6n0c39jr.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
 	<string>com.googleusercontent.apps.916848326581-8ksg7a187hji9v2ak727f3mm6n0c39jr</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDV2UrQBJZ1hsoi5JjzgBvteFxVFB0gr2g</string>
+	<key>GCM_SENDER_ID</key>
+	<string>405916286413</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>com.hwsoft.shortsmap</string>
+	<key>PROJECT_ID</key>
+	<string>shortsmap-official</string>
+	<key>STORAGE_BUCKET</key>
+	<string>shortsmap-official.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:405916286413:ios:1033b8270abe30b844d884</string>
 </dict>
 </plist>
