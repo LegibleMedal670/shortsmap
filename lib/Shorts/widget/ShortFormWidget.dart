@@ -138,8 +138,23 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
   void dispose() {
     if (!widget.isEmpty) {
       _controller.close();
+      _logSeenVideo();
     }
     super.dispose();
+  }
+
+  Future<void> _logSeenVideo() async {
+
+    final played = await _controller.currentTime;
+
+    FirebaseAnalytics.instance.logEvent(
+      name: "watch_video",
+      parameters: {
+        "video_id": widget.videoId,
+        "watch_duration": played.round(),
+      },
+    );
+
   }
 
   ///stop + resume
@@ -472,6 +487,11 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
           SafeArea(
             child: GestureDetector(
               onTap: () {
+
+                FirebaseAnalytics.instance.logEvent(
+                  name: "filter_button_click",
+                );
+
                 showFilterModal(context);
               },
               child: Row(
@@ -966,6 +986,16 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
           // 캐시 업데이트
           await preferences.setStringList('bookMarkList', bookMarkList);
 
+          final played = await _controller.currentTime;
+
+          FirebaseAnalytics.instance.logEvent(
+            name: "bookmark_save",
+            parameters: {
+              "video_id": widget.videoId,
+              "watch_duration": played.round(),
+            },
+          );
+
           // 저장 되었음을 표시해주는 스낵바 TODO ( UI 조정 필요 )
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -1016,6 +1046,16 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
           // 캐시 업데이트
           await preferences.setStringList('bookMarkList', bookMarkList);
 
+          final played = await _controller.currentTime;
+
+          FirebaseAnalytics.instance.logEvent(
+            name: "bookmark_delete",
+            parameters: {
+              "video_id": widget.videoId,
+              "watch_duration": played.round(),
+            },
+          );
+
           // 삭제 되었음을 알려주는 스낵바 TODO ( UI 조정 필요 )
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -1056,7 +1096,18 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
           action: SnackBarAction(
             label: '로그인',
             textColor: Color(0xff121212),
-            onPressed: () {
+            onPressed: () async {
+
+              final played = await _controller.currentTime;
+
+              FirebaseAnalytics.instance.logEvent(
+                name: "login_to_bookmark",
+                parameters: {
+                  "video_id": widget.videoId,
+                  "watch_duration": played.round(),
+                },
+              );
+
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => LoginPage()),
@@ -1126,6 +1177,13 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
       context,
       listen: false,
     ).getPhotoUrlForPlace(widget.placeId);
+
+    FirebaseAnalytics.instance.logEvent(
+      name: "show_info_modal",
+      parameters: {
+        "video_id": widget.videoId,
+      },
+    );
 
     showModalBottomSheet(
       backgroundColor: shortPageWhite,
@@ -1370,6 +1428,13 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               path: widget.phoneNumber,
                             );
 
+                            FirebaseAnalytics.instance.logEvent(
+                              name: "Call",
+                              parameters: {
+                                "video_id": widget.videoId,
+                              },
+                            );
+
                             if (await canLaunchUrl(phoneUri)) {
                               await launchUrl(phoneUri);
                             } else {
@@ -1415,6 +1480,14 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ),
                         GestureDetector(
                           onTap: () async {
+
+                            FirebaseAnalytics.instance.logEvent(
+                              name: "Route",
+                              parameters: {
+                                "video_id": widget.videoId,
+                              },
+                            );
+
                             await launchUrl(
                               Uri.parse(
                                 'https://www.google.com/maps/dir/?api=1&origin=$userLat,$userLon&destination=${widget.placeName}&destination_place_id=${widget.placeId}&travelmode=transit',
@@ -1582,6 +1655,14 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             title: 'Address',
                             subtitle: widget.address,
                             onTap: () async {
+
+                              FirebaseAnalytics.instance.logEvent(
+                                name: "Address",
+                                parameters: {
+                                  "video_id": widget.videoId,
+                                },
+                              );
+
                               await launchUrl(
                                 Uri.parse(
                                   'https://www.google.com/maps/search/?api=1&query=${widget.placeName}&query_place_id=${widget.placeId}',
@@ -1598,6 +1679,14 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               title: 'Call',
                               subtitle: '눌러서 전화걸기',
                               onTap: () async {
+
+                                FirebaseAnalytics.instance.logEvent(
+                                  name: "Call",
+                                  parameters: {
+                                    "video_id": widget.videoId,
+                                  },
+                                );
+
                                 final Uri phoneUri = Uri(
                                   scheme: 'tel',
                                   path: widget.phoneNumber,
@@ -1628,6 +1717,14 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               title: 'Visit Website',
                               subtitle: '웹사이트 방문하기',
                               onTap: () async {
+
+                                FirebaseAnalytics.instance.logEvent(
+                                  name: "visit_website",
+                                  parameters: {
+                                    "video_id": widget.videoId,
+                                  },
+                                );
+
                                 await launchUrl(
                                   Uri.parse(widget.website!),
                                   mode: LaunchMode.inAppBrowserView,
@@ -1647,6 +1744,14 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             icon: Icons.verified_outlined,
                             title: '장소 소유자 인증하기',
                             onTap: () async {
+
+                              FirebaseAnalytics.instance.logEvent(
+                                name: "place_owner",
+                                parameters: {
+                                  "video_id": widget.videoId,
+                                },
+                              );
+
                               await launchUrl(
                                 Uri.parse(
                                   'https://forms.gle/yXcva654ddrWfWwYA',
@@ -1764,13 +1869,24 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: () {
+                          onTap: () async {
                             Navigator.pop(context);
                             widget.pageController.nextPage(
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeOut,
                             );
+
+                            final played = await _controller.currentTime;
+
+                            FirebaseAnalytics.instance.logEvent(
+                              name: "not_interested",
+                              parameters: {
+                                "video_id": widget.videoId,
+                                "watch_duration": played.round(),
+                              },
+                            );
                           },
+
                           child: Container(
                             color: Colors.transparent,
                             padding: EdgeInsets.symmetric(vertical: 20),
@@ -2049,6 +2165,17 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                       ? null
                                       : switchCategoryToEng(selectedCategory),
                                 );
+
+                                FirebaseAnalytics.instance.logEvent(
+                                  name: "apply_filter",
+                                  parameters: {
+                                    "order_near": "true",
+                                    "selected_region": 'null',
+                                    "selected_category": selectedCategory == null ? 'All' : selectedCategory == 'All' ? 'All' : selectedCategory!,
+                                  },
+                                );
+
+
                                 await Provider.of<UserDataProvider>(
                                   context,
                                   listen: false,
@@ -2064,6 +2191,15 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                   (selectedCategory == 'All')
                                       ? null
                                       : switchCategoryToEng(selectedCategory),
+                                );
+
+                                FirebaseAnalytics.instance.logEvent(
+                                  name: "apply_filter",
+                                  parameters: {
+                                    "order_near": "true",
+                                    "selected_region": selectedRegion == null ? 'All' : selectedRegion == 'All' ? 'All' : selectedRegion!,
+                                    "selected_category": selectedCategory == null ? 'All' : selectedCategory == 'All' ? 'All' : selectedCategory!,
+                                  },
                                 );
                               }
 
@@ -2135,6 +2271,13 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         GestureDetector(
                           onTap: () {
                             Navigator.pop(context);
+                            FirebaseAnalytics.instance.logEvent(
+                              name: "Report",
+                              parameters: {
+                                "video_id": widget.videoId,
+                                "report_reason": 'out_of_service',
+                              },
+                            );
                           },
                           child: Container(
                             width: MediaQuery.of(context).size.width,
@@ -2154,6 +2297,13 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         GestureDetector(
                           onTap: () {
                             Navigator.pop(context);
+                            FirebaseAnalytics.instance.logEvent(
+                              name: "Report",
+                              parameters: {
+                                "video_id": widget.videoId,
+                                "report_reason": 'incorrect_information',
+                              },
+                            );
                           },
                           child: Container(
                             width: MediaQuery.of(context).size.width,
@@ -2173,6 +2323,13 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         GestureDetector(
                           onTap: () {
                             Navigator.pop(context);
+                            FirebaseAnalytics.instance.logEvent(
+                              name: "Report",
+                              parameters: {
+                                "video_id": widget.videoId,
+                                "report_reason": 'inappropriate_content',
+                              },
+                            );
                           },
                           child: Container(
                             width: MediaQuery.of(context).size.width,
@@ -2192,6 +2349,13 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         GestureDetector(
                           onTap: () {
                             Navigator.pop(context);
+                            FirebaseAnalytics.instance.logEvent(
+                              name: "Report",
+                              parameters: {
+                                "video_id": widget.videoId,
+                                "report_reason": 'video_not_working',
+                              },
+                            );
                           },
                           child: Container(
                             width: MediaQuery.of(context).size.width,
