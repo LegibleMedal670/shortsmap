@@ -119,6 +119,11 @@ class _MapPageState extends State<MapPage> {
 //   }
 
   Future<void> _moveToCurrentLocation() async {
+
+    FirebaseAnalytics.instance.logEvent(
+      name: "my_location_button_clicked",
+    );
+
     final position = await Geolocator.getCurrentPosition();
     final cameraPosition = CameraPosition(
       target: LatLng(position.latitude, position.longitude),
@@ -299,7 +304,14 @@ class _MapPageState extends State<MapPage> {
           position: LatLng(bookmark.latitude, bookmark.longitude),
           icon: icon,
           onTap: () {
-            print('마커 tapped: ${bookmark.placeName}, lat: ${bookmark.latitude}, lon: ${bookmark.longitude}');
+
+            FirebaseAnalytics.instance.logEvent(
+              name: "tap_marker",
+              parameters: {
+                "video_id": bookmark.videoId,
+                "category": bookmark.category,
+              },
+            );
 
             setState(() {
               _isProgrammaticMove = true;
@@ -689,31 +701,31 @@ class _MapPageState extends State<MapPage> {
                       ),
                     ),
                   ),
-                  //더보기버튼
-                  Visibility(
-                    visible: _isListDetailOpened,
-                    child: Positioned(
-                      top: 70,
-                      right: 10,
-                      child: SizedBox(
-                        height: 50,
-                        width: 50,
-                        child: FittedBox(
-                          child: FloatingActionButton(
-                            backgroundColor: Colors.white,
-                            child: const Icon(
-                              Icons.more_horiz,
-                              color: Colors.black54,
-                              size: 32,
-                            ),
-                            onPressed: () {
-                              showReportModal(context);
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                  ///더보기버튼 TODO 현재는 역할이 없어서 일단 삭제
+                  // Visibility(
+                  //   visible: _isListDetailOpened,
+                  //   child: Positioned(
+                  //     top: 70,
+                  //     right: 10,
+                  //     child: SizedBox(
+                  //       height: 50,
+                  //       width: 50,
+                  //       child: FittedBox(
+                  //         child: FloatingActionButton(
+                  //           backgroundColor: Colors.white,
+                  //           child: const Icon(
+                  //             Icons.more_horiz,
+                  //             color: Colors.black54,
+                  //             size: 32,
+                  //           ),
+                  //           onPressed: () {
+                  //             showReportModal(context);
+                  //           },
+                  //         ),
+                  //       ),
+                  //     ),
+                  //   ),
+                  // ),
                   // 바텀시트
                   Positioned(
                     bottom: 0,
@@ -816,7 +828,14 @@ class _MapPageState extends State<MapPage> {
                                                         children: [
                                                           GestureDetector(
                                                             onTap: (){
-                                                              print('123');
+
+                                                              FirebaseAnalytics.instance.logEvent(
+                                                                name: "tap_location_image",
+                                                                parameters: {
+                                                                  "video_id": placeData['video_id'],
+                                                                },
+                                                              );
+
                                                               Navigator.push(
                                                                   context,
                                                                   MaterialPageRoute(
@@ -941,6 +960,14 @@ class _MapPageState extends State<MapPage> {
                                                           GestureDetector(
                                                             onTap: () async {
                                                               final Uri phoneUri = Uri(scheme: 'tel', path: placeData['phone_number']);
+
+                                                              FirebaseAnalytics.instance.logEvent(
+                                                                name: "tap_call",
+                                                                parameters: {
+                                                                  "video_id": placeData['video_id'],
+                                                                },
+                                                              );
+
                                                               if (await canLaunchUrl(phoneUri)) {
                                                                 await launchUrl(phoneUri);
                                                               } else {
@@ -977,6 +1004,14 @@ class _MapPageState extends State<MapPage> {
                                                           // Route
                                                           GestureDetector(
                                                             onTap: () async {
+
+                                                              FirebaseAnalytics.instance.logEvent(
+                                                                name: "tap_route",
+                                                                parameters: {
+                                                                  "video_id": placeData['video_id'],
+                                                                },
+                                                              );
+
                                                               await launchUrl(
                                                                 Uri.parse(
                                                                   'https://www.google.com/maps/dir/?api=1'
@@ -1008,6 +1043,14 @@ class _MapPageState extends State<MapPage> {
                                                           // Explore
                                                           GestureDetector(
                                                             onTap: () {
+
+                                                              FirebaseAnalytics.instance.logEvent(
+                                                                name: "tap_explore",
+                                                                parameters: {
+                                                                  "video_id": placeData['video_id'],
+                                                                },
+                                                              );
+
                                                               Navigator.push(
                                                                 context,
                                                                 MaterialPageRoute(
@@ -1076,6 +1119,14 @@ class _MapPageState extends State<MapPage> {
                                                               title: 'Address',
                                                               subtitle: placeData['address'],
                                                               onTap: () async {
+
+                                                                FirebaseAnalytics.instance.logEvent(
+                                                                  name: "tap_address",
+                                                                  parameters: {
+                                                                    "video_id": placeData['video_id'],
+                                                                  },
+                                                                );
+
                                                                 await launchUrl(
                                                                   Uri.parse(
                                                                     'https://www.google.com/maps/search/?api=1'
@@ -1094,6 +1145,14 @@ class _MapPageState extends State<MapPage> {
                                                                 title: 'Call',
                                                                 subtitle: '눌러서 전화걸기',
                                                                 onTap: () async {
+
+                                                                  FirebaseAnalytics.instance.logEvent(
+                                                                    name: "tap_call",
+                                                                    parameters: {
+                                                                      "video_id": placeData['video_id'],
+                                                                    },
+                                                                  );
+
                                                                   final Uri phoneUri = Uri(scheme: 'tel', path: placeData['phone_number']);
                                                                   if (await canLaunchUrl(phoneUri)) await launchUrl(phoneUri);
                                                                 },
@@ -1106,6 +1165,14 @@ class _MapPageState extends State<MapPage> {
                                                                 title: 'Visit Website',
                                                                 subtitle: '웹사이트 방문하기',
                                                                 onTap: () async {
+
+                                                                  FirebaseAnalytics.instance.logEvent(
+                                                                    name: "tap_visit_website",
+                                                                    parameters: {
+                                                                      "video_id": placeData['video_id'],
+                                                                    },
+                                                                  );
+
                                                                   await launchUrl(Uri.parse(placeData['website_link']),
                                                                       mode: LaunchMode.inAppBrowserView);
                                                                 },
@@ -1115,7 +1182,7 @@ class _MapPageState extends State<MapPage> {
                                                               icon: Icons.flag,
                                                               title: '신고하기',
                                                               onTap: () {
-                                                                showReportModal(context);
+                                                                showReportModal(context, placeData['video_id']);
                                                               },
                                                             ),
                                                             const Divider(height: 2),
@@ -1123,6 +1190,14 @@ class _MapPageState extends State<MapPage> {
                                                               icon: Icons.verified_outlined,
                                                               title: '장소 소유자 인증하기',
                                                               onTap: () async {
+
+                                                                FirebaseAnalytics.instance.logEvent(
+                                                                  name: "tap_place_owner",
+                                                                  parameters: {
+                                                                    "video_id": placeData['video_id'],
+                                                                  },
+                                                                );
+
                                                                 await launchUrl(
                                                                   Uri.parse('https://forms.gle/yXcva654ddrWfWwYA'),
                                                                   mode: LaunchMode.inAppBrowserView,
@@ -1209,19 +1284,20 @@ class _MapPageState extends State<MapPage> {
                                                         ),
                                                       ),
                                                       Spacer(),
-                                                      Container(
-                                                        width: 40,
-                                                        height: 40,
-                                                        decoration: BoxDecoration(
-                                                          shape: BoxShape.circle,
-                                                          color: Colors.black12,
-                                                        ),
-                                                        child: const Icon(
-                                                          CupertinoIcons.share,
-                                                          size: 20,
-                                                          color: Colors.black,
-                                                        ),
-                                                      ),
+                                                      /// 추후에 폴더 공유 기능 생기면 다시 살리기
+                                                      // Container(
+                                                      //   width: 40,
+                                                      //   height: 40,
+                                                      //   decoration: BoxDecoration(
+                                                      //     shape: BoxShape.circle,
+                                                      //     color: Colors.black12,
+                                                      //   ),
+                                                      //   child: const Icon(
+                                                      //     CupertinoIcons.share,
+                                                      //     size: 20,
+                                                      //     color: Colors.black,
+                                                      //   ),
+                                                      // ),
                                                     ],
                                                   ),
                                                 ),
@@ -1565,6 +1641,13 @@ class _MapPageState extends State<MapPage> {
 
         });
 
+        FirebaseAnalytics.instance.logEvent(
+          name: "tap_folder_tile",
+          parameters: {
+            "category": title,
+          },
+        );
+
         _sheetController.animateTo(
           0.5,
           duration: Duration(milliseconds: 300),
@@ -1611,7 +1694,7 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
-  /// 장소 목록 타일
+  /// 장소 간략한 정보 있는 타일
   Widget _locationTile(bool isLoading, String locationId, String? imageUrl, String storeName, String region, String openTime, String closeTime, double lat, double lon, String videoId) {
     return GestureDetector(
       onTap: (){
@@ -1628,6 +1711,14 @@ class _MapPageState extends State<MapPage> {
           _selectedLocation = locationId;
           _locationDetailFuture = _fetchLocationDetail(locationId);
         });
+
+        FirebaseAnalytics.instance.logEvent(
+          name: "tap_location_tile",
+          parameters: {
+            "video_id": videoId,
+            "region": region,
+          },
+        );
 
         _sheetController.animateTo(
           0.55,
@@ -1800,7 +1891,6 @@ class _MapPageState extends State<MapPage> {
   /// 특정 장소의 정보를 가져오는 함수
   Future<Map<String, dynamic>> _fetchLocationDetail(String placeId) async {
 
-    print(placeId);
 
     try{
       final response = await Supabase.instance.client
@@ -1841,7 +1931,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   ///신고 모달 TODO 실제신고기능추가필요
-  void showReportModal(BuildContext context) {
+  void showReportModal(BuildContext context, String videoId) {
     showModalBottomSheet(
       backgroundColor: Colors.white,
       context: context,
@@ -1873,6 +1963,13 @@ class _MapPageState extends State<MapPage> {
                     GestureDetector(
                       onTap: () {
                         Navigator.pop(context);
+                        FirebaseAnalytics.instance.logEvent(
+                          name: "report",
+                          parameters: {
+                            "video_id": videoId,
+                            "report_reason": 'out_of_service',
+                          },
+                        );
                       },
                       child: Container(
                         width: MediaQuery.of(context).size.width,
@@ -1892,6 +1989,13 @@ class _MapPageState extends State<MapPage> {
                     GestureDetector(
                       onTap: () {
                         Navigator.pop(context);
+                        FirebaseAnalytics.instance.logEvent(
+                          name: "report",
+                          parameters: {
+                            "video_id": videoId,
+                            "report_reason": 'incorrect_information',
+                          },
+                        );
                       },
                       child: Container(
                         width: MediaQuery.of(context).size.width,
@@ -1911,6 +2015,13 @@ class _MapPageState extends State<MapPage> {
                     GestureDetector(
                       onTap: () {
                         Navigator.pop(context);
+                        FirebaseAnalytics.instance.logEvent(
+                          name: "report",
+                          parameters: {
+                            "video_id": videoId,
+                            "report_reason": 'inappropriate_content',
+                          },
+                        );
                       },
                       child: Container(
                         width: MediaQuery.of(context).size.width,
@@ -1936,7 +2047,7 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
-  ///북마크 삭제 모달 TODO 실제신고기능추가필요
+  ///북마크 삭제 모달
   void showCancelBookmarkModal(BuildContext context, String videoId) {
     showModalBottomSheet(
       backgroundColor: Colors.white,
@@ -2000,6 +2111,13 @@ class _MapPageState extends State<MapPage> {
                               });
                             });
                           }
+
+                          FirebaseAnalytics.instance.logEvent(
+                            name: "delete_bookmark_map_page",
+                            parameters: {
+                              "video_id": videoId,
+                            },
+                          );
 
                           // 성공 메시지 표시
                           ScaffoldMessenger.of(context).showSnackBar(
