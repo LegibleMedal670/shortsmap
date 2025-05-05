@@ -1,3 +1,4 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -47,6 +48,11 @@ class ProfilePage extends StatelessWidget {
                   /// 개발자와 소통
                   ListTile(
                     onTap: () async {
+
+                      FirebaseAnalytics.instance.logEvent(
+                        name: "tap_communicate_with_dev",
+                      );
+
                       await launchUrl(
                         Uri.parse('https://slashpage.com/shortsmap'),
                         mode: LaunchMode.inAppBrowserView,
@@ -65,6 +71,11 @@ class ProfilePage extends StatelessWidget {
                   /// 이용 약관
                   ListTile(
                     onTap: () async {
+
+                      FirebaseAnalytics.instance.logEvent(
+                        name: "tap_term",
+                      );
+
                       await launchUrl(
                         Uri.parse('https://hwsoft.notion.site/1e57ab93f29a80c88d37fb10f41f8bcf'),
                         mode: LaunchMode.inAppBrowserView,
@@ -230,6 +241,14 @@ class ProfilePage extends StatelessWidget {
                         ),
                       ),
                       onPressed: () async {
+
+                        await FirebaseAnalytics.instance.logEvent(
+                          name: "logout",
+                          parameters: {
+                            'uid': Provider.of<UserDataProvider>(context, listen: false,).loginProvider!
+                          }
+                        );
+
                         await Supabase.instance.client.auth.signOut();
                         Navigator.of(context).pop();
                         Provider.of<UserDataProvider>(context, listen: false).logout();
