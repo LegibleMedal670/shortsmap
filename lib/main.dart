@@ -23,7 +23,6 @@ Future<void> main() async {
   if (Platform.isIOS) {
     final status = await AppTrackingTransparency
         .requestTrackingAuthorization();
-    debugPrint('ATT status: $status');
   }
 
   await Supabase.initialize(

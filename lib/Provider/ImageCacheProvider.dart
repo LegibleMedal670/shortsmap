@@ -45,13 +45,11 @@ class PhotoCacheProvider extends ChangeNotifier {
   // 3) 캐시 로직 포함: placeId → photoUri
   Future<String> getPhotoUrlForPlace(String placeId) async {
     if (_cache.containsKey(placeId)) {
-      print('캐시임');
       return _cache[placeId]!;                // 캐시된 URL 즉시 반환
     }
     final name = await _getFirstPhotoName(placeId);
     final url = await _getPhotoUrlByName(name);
     _cache[placeId] = url;                    // 캐시에 저장
-    print('불러옴');
     return url;
   }
 }
