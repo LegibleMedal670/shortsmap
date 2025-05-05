@@ -242,7 +242,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
 
                 ///뒤로가기 버튼
                 Positioned(
-                  left: MediaQuery.of(context).size.width * 0.05,
+                  left: MediaQuery.of(context).size.width * 0.01,
                   child: SafeArea(
                     child: GestureDetector(
                       onTap: () {
@@ -263,7 +263,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
 
                 ///Options 버튼
                 Positioned(
-                  right: MediaQuery.of(context).size.width * 0.05,
+                  right: MediaQuery.of(context).size.width * 0.01,
                   child: SafeArea(
                     child: GestureDetector(
                       onTap: () {
@@ -284,7 +284,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
 
                 ///하단 정보 위젯
                 Positioned(
-                  left: MediaQuery.of(context).size.width * 0.05,
+                  left: MediaQuery.of(context).size.width * 0.02,
                   bottom: MediaQuery.of(context).size.height * 0.001,
                   child: SafeArea(
                     child: Container(
@@ -322,28 +322,35 @@ class _MapShortsPageState extends State<MapShortsPage> {
 
                               ///이름
                               Flexible(
-                                child: Text(
-                                  widget.storeName,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                    color: shortPageWhite,
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    final played = await _controller.currentTime;
+                                    showInfoModal(context, widget.placeId, played.round());
+                                  },
+                                  child: Text(
+                                    widget.storeName,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: shortPageWhite,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               SizedBox(width: 10),
 
                               ///More 버튼
                               GestureDetector(
-                                onTap: () {
-                                  showInfoModal(context, widget.placeId);
+                                onTap: () async {
+                                  final played = await _controller.currentTime;
+                                  showInfoModal(context, widget.placeId, played.round());
                                 },
                                 child: Container(
-                                  width: 70,
+                                  width: 60,
                                   height: 30,
-                                  padding: EdgeInsets.only(bottom: 3),
+                                  // padding: EdgeInsets.only(bottom: 3),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(3),
                                     border: Border.all(
@@ -353,10 +360,10 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                   ),
                                   child: Center(
                                     child: Text(
-                                      'More',
+                                      '더보기',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 16,
+                                        fontSize: 14,
                                         color: shortPageWhite,
                                       ),
                                     ),
@@ -519,34 +526,84 @@ class _MapShortsPageState extends State<MapShortsPage> {
                               ),
 
                               ///가격
+                              // Container(
+                              //   padding: EdgeInsets.symmetric(
+                              //     vertical: 2,
+                              //     horizontal: 8,
+                              //   ),
+                              //   decoration: BoxDecoration(
+                              //     color: Colors.black.withValues(alpha: 0.2),
+                              //     borderRadius: BorderRadius.circular(12),
+                              //     border: Border.all(
+                              //       color: Colors.white.withValues(alpha: 0.3),
+                              //       width: 0.5,
+                              //     ),
+                              //   ),
+                              //   child: Row(
+                              //     children: [
+                              //       Icon(
+                              //         Icons.payments,
+                              //         size: 18,
+                              //         color: shortPageWhite,
+                              //       ),
+                              //       SizedBox(width: 5),
+                              //       Text(
+                              //         '\$${widget.averagePrice}~',
+                              //         style: TextStyle(
+                              //           color: shortPageWhite,
+                              //           fontSize:
+                              //               MediaQuery.of(context).size.width *
+                              //               0.032,
+                              //         ),
+                              //       ),
+                              //     ],
+                              //   ),
+                              // ),
+
+                              ///거리
                               Container(
                                 padding: EdgeInsets.symmetric(
                                   vertical: 2,
                                   horizontal: 8,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.2),
+                                  color: Colors.black.withAlpha(50), // withValues → withAlpha
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.3),
+                                    color: Colors.white.withAlpha(80),
                                     width: 0.5,
                                   ),
                                 ),
                                 child: Row(
                                   children: [
                                     Icon(
-                                      Icons.payments,
+                                      CupertinoIcons.location_solid,
                                       size: 18,
                                       color: shortPageWhite,
                                     ),
                                     SizedBox(width: 5),
                                     Text(
-                                      '\$${widget.averagePrice}~',
+                                      (() {
+                                        final userLat =
+                                            Provider.of<UserDataProvider>(context, listen: false).currentLat;
+                                        final userLon =
+                                            Provider.of<UserDataProvider>(context, listen: false).currentLon;
+                                        final targetLat = widget.coordinates['lat'];
+                                        final targetLon = widget.coordinates['lon'];
+
+                                        if (userLat == null ||
+                                            userLon == null ||
+                                            targetLat == null ||
+                                            targetLon == null) {
+                                          return "???km";
+                                        }
+
+                                        return calculateDistanceTextInKm(
+                                            userLat, userLon, targetLat, targetLon);
+                                      })(),
                                       style: TextStyle(
                                         color: shortPageWhite,
-                                        fontSize:
-                                            MediaQuery.of(context).size.width *
-                                            0.032,
+                                        fontSize: MediaQuery.of(context).size.width * 0.032,
                                       ),
                                     ),
                                   ],
@@ -568,7 +625,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
   }
 
   ///More 버튼을 누르면 나오는 ModalBottomSheet
-  void showInfoModal(BuildContext context, String placeId) {
+  void showInfoModal(BuildContext context, String placeId, int duration) {
     final double? userLat =
         Provider.of<UserDataProvider>(context, listen: false).currentLat;
     final double? userLon =
@@ -576,12 +633,21 @@ class _MapShortsPageState extends State<MapShortsPage> {
     final double? locationLat = widget.coordinates['lat'];
     final double? locationLon = widget.coordinates['lon'];
 
+
+    FirebaseAnalytics.instance.logEvent(
+      name: "show_info_modal",
+      parameters: {
+        "video_id": widget.videoId,
+        "watch_duration": _controller.currentTime
+      },
+    );
+
     showModalBottomSheet(
       backgroundColor: shortPageWhite,
       context: context,
       isScrollControlled: true,
       enableDrag: true,
-      showDragHandle: true,
+      // showDragHandle: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(20.0),
@@ -603,6 +669,16 @@ class _MapShortsPageState extends State<MapShortsPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: Column(
                   children: [
+                    Center(
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 12),
+                        width: 40, height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[400],
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
                     // 상단의 프로필 및 기본정보 Row (사진, 매장명, 카테고리, 시간 등)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -699,6 +775,8 @@ class _MapShortsPageState extends State<MapShortsPage> {
                         // 공유, 닫기 버튼
                         GestureDetector(
                           onTap: () {
+                            FirebaseAnalytics.instance.logShare(
+                                contentType: "video", itemId: widget.videoId, method: 'mapShortsShare');
                             Share.share(
                               'https://www.youtube.com/shorts/${widget.videoId}',
                               subject: widget.storeName,
@@ -752,6 +830,13 @@ class _MapShortsPageState extends State<MapShortsPage> {
                               path: widget.phoneNumber, //TODO : 전화번호 적용
                             );
 
+                            FirebaseAnalytics.instance.logEvent(
+                              name: "tap_call",
+                              parameters: {
+                                "video_id": widget.videoId,
+                              },
+                            );
+
                             if (await canLaunchUrl(phoneUri)) {
                               await launchUrl(phoneUri);
                             } else {
@@ -797,6 +882,14 @@ class _MapShortsPageState extends State<MapShortsPage> {
                         ),
                         GestureDetector(
                           onTap: () async {
+
+                            FirebaseAnalytics.instance.logEvent(
+                              name: "tap_route",
+                              parameters: {
+                                "video_id": widget.videoId,
+                              },
+                            );
+
                             await launchUrl(
                               Uri.parse(
                                 'https://www.google.com/maps/dir/?api=1&origin=$userLat,$userLon&destination=${widget.storeName}&destination_place_id=$placeId&travelmode=transit',
@@ -831,6 +924,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                             ),
                           ),
                         ),
+                        /// 북마크 삭제 버튼 넣기?
                         // GestureDetector(
                         //   onTap: (){
                         //     Navigator.pop(context);
@@ -959,6 +1053,14 @@ class _MapShortsPageState extends State<MapShortsPage> {
                             title: 'Address',
                             subtitle: widget.address,
                             onTap: () async {
+
+                              FirebaseAnalytics.instance.logEvent(
+                                name: "tap_address",
+                                parameters: {
+                                  "video_id": widget.videoId,
+                                },
+                              );
+
                               await launchUrl(
                                 Uri.parse(
                                   'https://www.google.com/maps/search/?api=1&query=${widget.storeName}&query_place_id=$placeId',
@@ -975,6 +1077,14 @@ class _MapShortsPageState extends State<MapShortsPage> {
                               title: 'Call',
                               subtitle: '눌러서 전화걸기',
                               onTap: () async {
+
+                                FirebaseAnalytics.instance.logEvent(
+                                  name: "tap_call",
+                                  parameters: {
+                                    "video_id": widget.videoId,
+                                  },
+                                );
+
                                 final Uri phoneUri = Uri(
                                   scheme: 'tel',
                                   path: widget.phoneNumber,
@@ -1005,6 +1115,14 @@ class _MapShortsPageState extends State<MapShortsPage> {
                               title: 'Visit Website',
                               subtitle: '웹사이트 방문하기',
                               onTap: () async {
+
+                                FirebaseAnalytics.instance.logEvent(
+                                  name: "tap_visit_website",
+                                  parameters: {
+                                    "video_id": widget.videoId,
+                                  },
+                                );
+
                                 await launchUrl(
                                   Uri.parse(widget.website!),
                                   mode: LaunchMode.inAppBrowserView,
@@ -1024,6 +1142,14 @@ class _MapShortsPageState extends State<MapShortsPage> {
                             icon: Icons.verified_outlined,
                             title: '장소 소유자 인증하기',
                             onTap: () async {
+
+                              FirebaseAnalytics.instance.logEvent(
+                                name: "tap_place_owner",
+                                parameters: {
+                                  "video_id": widget.videoId,
+                                },
+                              );
+
                               await launchUrl(
                                 Uri.parse(
                                   'https://forms.gle/yXcva654ddrWfWwYA',
@@ -1062,8 +1188,9 @@ class _MapShortsPageState extends State<MapShortsPage> {
       ),
       builder: (BuildContext context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.35,
-          minChildSize: 0.35,
+          initialChildSize: 0.2,
+          minChildSize: 0.2,
+          maxChildSize: 0.2,
           expand: false,
           builder:
               (context, optionScrollController) => SizedBox(
@@ -1151,8 +1278,9 @@ class _MapShortsPageState extends State<MapShortsPage> {
       ),
       builder: (BuildContext context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.25,
-          minChildSize: 0.25,
+          initialChildSize: 0.3,
+          minChildSize: 0.3,
+          maxChildSize: 0.3,
           expand: false,
           builder:
               (context, reportScrollController) => SizedBox(
@@ -1168,6 +1296,13 @@ class _MapShortsPageState extends State<MapShortsPage> {
                         GestureDetector(
                           onTap: () {
                             Navigator.pop(context);
+                            FirebaseAnalytics.instance.logEvent(
+                              name: "report",
+                              parameters: {
+                                "video_id": widget.videoId,
+                                "report_reason": 'out_of_service',
+                              },
+                            );
                           },
                           child: Container(
                             width: MediaQuery.of(context).size.width,
@@ -1187,6 +1322,13 @@ class _MapShortsPageState extends State<MapShortsPage> {
                         GestureDetector(
                           onTap: () {
                             Navigator.pop(context);
+                            FirebaseAnalytics.instance.logEvent(
+                              name: "report",
+                              parameters: {
+                                "video_id": widget.videoId,
+                                "report_reason": 'incorrect_information',
+                              },
+                            );
                           },
                           child: Container(
                             width: MediaQuery.of(context).size.width,
@@ -1206,6 +1348,13 @@ class _MapShortsPageState extends State<MapShortsPage> {
                         GestureDetector(
                           onTap: () {
                             Navigator.pop(context);
+                            FirebaseAnalytics.instance.logEvent(
+                              name: "report",
+                              parameters: {
+                                "video_id": widget.videoId,
+                                "report_reason": 'inappropriate_content',
+                              },
+                            );
                           },
                           child: Container(
                             width: MediaQuery.of(context).size.width,
@@ -1213,6 +1362,32 @@ class _MapShortsPageState extends State<MapShortsPage> {
                             padding: EdgeInsets.only(top: 10, bottom: 20),
                             child: Text(
                               '컨텐츠가 부적절해요',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.red,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Divider(),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pop(context);
+                            FirebaseAnalytics.instance.logEvent(
+                              name: "report",
+                              parameters: {
+                                "video_id": widget.videoId,
+                                "report_reason": 'video_not_working',
+                              },
+                            );
+                          },
+                          child: Container(
+                            width: MediaQuery.of(context).size.width,
+                            color: Colors.transparent,
+                            padding: EdgeInsets.only(top: 10, bottom: 20),
+                            child: Text(
+                              '동영상 재생이 안돼요',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w400,
@@ -1269,4 +1444,23 @@ class _MapShortsPageState extends State<MapShortsPage> {
 
     return travelTimeMinutes.toString();
   }
+
+  /// 현재 위치와 장소 위치 간의 거리를 km 단위 문자열로 반환 ("2.34 km" 형식)
+  String calculateDistanceTextInKm(
+      double lat1,
+      double lon1,
+      double lat2,
+      double lon2,
+      ) {
+    double distanceInMeters = Geolocator.distanceBetween(
+      lat1,
+      lon1,
+      lat2,
+      lon2,
+    );
+
+    double distanceInKm = distanceInMeters / 1000;
+    return "${distanceInKm.toStringAsFixed(2)} km";
+  }
+
 }
