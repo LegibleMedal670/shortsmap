@@ -668,8 +668,9 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ///이름
                         Flexible(
                           child: GestureDetector(
-                            onTap: () {
-                              showInfoModal(context, widget.placeId);
+                            onTap: () async {
+                              final played = await _controller.currentTime;
+                              showInfoModal(context, widget.placeId, played.round());
                             },
                             child: Text(
                               widget.placeName,
@@ -688,8 +689,9 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
                         ///More 버튼
                         GestureDetector(
-                          onTap: () {
-                            showInfoModal(context, widget.placeId);
+                          onTap: () async {
+                            final played = await _controller.currentTime;
+                            showInfoModal(context, widget.placeId, played.round());
                           },
                           child: Container(
                             width: 60,
@@ -1165,7 +1167,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
 
   ///More 버튼을 누르면 나오는 ModalBottomSheet
-  void showInfoModal(BuildContext context, String placeId) {
+  void showInfoModal(BuildContext context, String placeId, int duration) {
     final double? userLat =
         Provider.of<UserDataProvider>(context, listen: false).currentLat;
     final double? userLon =
@@ -1182,6 +1184,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
       name: "show_info_modal",
       parameters: {
         "video_id": widget.videoId,
+        "watch_duration": duration,
       },
     );
 
@@ -1429,7 +1432,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             );
 
                             FirebaseAnalytics.instance.logEvent(
-                              name: "Call",
+                              name: "tap_call",
                               parameters: {
                                 "video_id": widget.videoId,
                               },
@@ -1482,7 +1485,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           onTap: () async {
 
                             FirebaseAnalytics.instance.logEvent(
-                              name: "Route",
+                              name: "tap_route",
                               parameters: {
                                 "video_id": widget.videoId,
                               },
@@ -1657,7 +1660,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             onTap: () async {
 
                               FirebaseAnalytics.instance.logEvent(
-                                name: "Address",
+                                name: "tap_address",
                                 parameters: {
                                   "video_id": widget.videoId,
                                 },
@@ -1681,7 +1684,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               onTap: () async {
 
                                 FirebaseAnalytics.instance.logEvent(
-                                  name: "Call",
+                                  name: "tap_call",
                                   parameters: {
                                     "video_id": widget.videoId,
                                   },
@@ -1719,7 +1722,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               onTap: () async {
 
                                 FirebaseAnalytics.instance.logEvent(
-                                  name: "visit_website",
+                                  name: "tap_visit_website",
                                   parameters: {
                                     "video_id": widget.videoId,
                                   },
@@ -1746,7 +1749,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             onTap: () async {
 
                               FirebaseAnalytics.instance.logEvent(
-                                name: "place_owner",
+                                name: "tap_place_owner",
                                 parameters: {
                                   "video_id": widget.videoId,
                                 },
@@ -2272,7 +2275,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           onTap: () {
                             Navigator.pop(context);
                             FirebaseAnalytics.instance.logEvent(
-                              name: "Report",
+                              name: "report",
                               parameters: {
                                 "video_id": widget.videoId,
                                 "report_reason": 'out_of_service',
@@ -2298,7 +2301,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           onTap: () {
                             Navigator.pop(context);
                             FirebaseAnalytics.instance.logEvent(
-                              name: "Report",
+                              name: "report",
                               parameters: {
                                 "video_id": widget.videoId,
                                 "report_reason": 'incorrect_information',
@@ -2324,7 +2327,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           onTap: () {
                             Navigator.pop(context);
                             FirebaseAnalytics.instance.logEvent(
-                              name: "Report",
+                              name: "report",
                               parameters: {
                                 "video_id": widget.videoId,
                                 "report_reason": 'inappropriate_content',
@@ -2350,7 +2353,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           onTap: () {
                             Navigator.pop(context);
                             FirebaseAnalytics.instance.logEvent(
-                              name: "Report",
+                              name: "report",
                               parameters: {
                                 "video_id": widget.videoId,
                                 "report_reason": 'video_not_working',
