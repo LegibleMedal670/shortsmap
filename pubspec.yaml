@@ -72,6 +72,7 @@ dependencies:
   firebase_analytics: ^11.4.5
   # 파이어베이스 크래시리틱스
   firebase_crashlytics: ^4.3.5
+  in_app_review: ^2.0.10
 
 dev_dependencies:
   flutter_test:
