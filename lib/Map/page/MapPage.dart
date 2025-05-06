@@ -17,6 +17,7 @@ import 'package:shortsmap/Provider/ImageCacheProvider.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:shortsmap/Widgets/BottomNavBar.dart';
+import 'package:shortsmap/Widgets/Modal/ShareModal.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -929,12 +930,7 @@ class _MapPageState extends State<MapPage> {
                                                           const Spacer(),
                                                           GestureDetector(
                                                             onTap: () {
-                                                              FirebaseAnalytics.instance.logShare(
-                                                                  contentType: "video", itemId: placeData['video_id'], method: 'mapShare');
-                                                              Share.share(
-                                                                'https://www.youtube.com/shorts/${placeData['video_id']}',
-                                                                subject: placeData['place_name']!,
-                                                              );
+                                                              showShareModal(context, placeData['place_name'], placeId, placeData['video_id']);
                                                             },
                                                             child: Container(
                                                               width: 40,
@@ -2155,6 +2151,30 @@ class _MapPageState extends State<MapPage> {
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  void showShareModal(BuildContext context, String placeName, String placeId, String videoId) {
+    showModalBottomSheet(
+      backgroundColor: Colors.white,
+      context: context,
+      isScrollControlled: true,
+      enableDrag: true,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20.0),
+          topRight: Radius.circular(20.0),
+        ),
+      ),
+      builder: (BuildContext context) {
+        return ShareModal(
+          placeName: placeName,
+          placeId: placeId,
+          videoId: videoId,
+          source: 'Map',
         );
       },
     );

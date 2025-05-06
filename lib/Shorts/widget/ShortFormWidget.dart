@@ -15,6 +15,7 @@ import 'package:shortsmap/Provider/ImageCacheProvider.dart';
 import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
+import 'package:shortsmap/Widgets/Modal/ShareModal.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
@@ -1376,12 +1377,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         // 공유, 닫기 버튼
                         GestureDetector(
                           onTap: () {
-                            FirebaseAnalytics.instance.logShare(
-                                contentType: "video", itemId: widget.videoId, method: 'modalShare');
-                            Share.share(
-                              'https://www.youtube.com/shorts/${widget.videoId}',
-                              subject: widget.placeName,
-                            );
+                            showShareModal(context, widget.placeName, placeId, widget.videoId);
                           },
                           child: Container(
                             width: 40,
@@ -1491,6 +1487,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               },
                             );
 
+                            /// TODO: 네이버 지도로 변경하기
                             await launchUrl(
                               Uri.parse(
                                 'https://www.google.com/maps/dir/?api=1&origin=$userLat,$userLon&destination=${widget.placeName}&destination_place_id=${widget.placeId}&travelmode=transit',
@@ -1666,6 +1663,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 },
                               );
 
+
+                              /// TODO: 네이버 지도로 변경하기
                               await launchUrl(
                                 Uri.parse(
                                   'https://www.google.com/maps/search/?api=1&query=${widget.placeName}&query_place_id=${widget.placeId}',
@@ -1771,6 +1770,30 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  void showShareModal(BuildContext context, String placeName, String placeId, String videoId) {
+    showModalBottomSheet(
+      backgroundColor: Colors.white,
+      context: context,
+      isScrollControlled: true,
+      enableDrag: true,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20.0),
+          topRight: Radius.circular(20.0),
+        ),
+      ),
+      builder: (BuildContext context) {
+        return ShareModal(
+          placeName: placeName,
+          placeId: placeId,
+          videoId: videoId,
+          source: 'Explore',
         );
       },
     );
@@ -1933,12 +1956,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         GestureDetector(
                           onTap: () {
                             Navigator.pop(context);
-                            FirebaseAnalytics.instance.logShare(
-                                contentType: "video", itemId: widget.videoId, method: 'optionShare');
-                            Share.share(
-                              'https://www.youtube.com/shorts/${widget.videoId}',
-                              subject: widget.placeName,
-                            );
+                            showShareModal(context, widget.placeName, widget.placeId, widget.videoId);
                           },
                           child: Container(
                             color: Colors.transparent,
