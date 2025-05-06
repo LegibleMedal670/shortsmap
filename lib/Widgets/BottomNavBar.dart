@@ -11,7 +11,7 @@ import 'package:shortsmap/Welcome/LoginPage.dart';
 
 Widget BottomNavBar(BuildContext context, String page) {
   return Container(
-    margin: EdgeInsets.only(bottom: 10),
+    // margin: EdgeInsets.only(bottom: 10),
     height: (Platform.isIOS)
         ? MediaQuery.of(context).size.height * (75 / 812)
         : MediaQuery.of(context).size.height * (60 / 812),
