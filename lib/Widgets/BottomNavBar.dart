@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -8,10 +9,25 @@ import 'package:shortsmap/Shorts/page/ShortsPage.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
 
+class NoPushCupertinoPageRoute<T> extends CupertinoPageRoute<T> {
+  NoPushCupertinoPageRoute({
+    required WidgetBuilder builder,
+    RouteSettings? settings,
+  }) : super(builder: builder, settings: settings);
+
+  // 푸시 애니메이션 즉시 완료
+  @override
+  Duration get transitionDuration => Duration.zero;
+
+  // 팝(뒤로가기) 애니메이션은 기본(≈400ms) 유지
+  @override
+  Duration get reverseTransitionDuration =>
+      const Duration(milliseconds: 400);
+}
+
 
 Widget BottomNavBar(BuildContext context, String page) {
   return Container(
-    // margin: EdgeInsets.only(bottom: 10),
     height: (Platform.isIOS)
         ? MediaQuery.of(context).size.height * (75 / 812)
         : MediaQuery.of(context).size.height * (60 / 812),
@@ -28,7 +44,7 @@ Widget BottomNavBar(BuildContext context, String page) {
             if (page != 'shorts') {
               Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  NoPushCupertinoPageRoute(
                       builder: (context) => ShortsPage()));
             }
           },
@@ -36,7 +52,7 @@ Widget BottomNavBar(BuildContext context, String page) {
             children: [
               Container(
                 padding: EdgeInsets.only(
-                    top: MediaQuery.of(context).size.height * (16 / 812)),
+                    top: MediaQuery.of(context).size.height * (10 / 812)),
                 color: Colors.transparent,
                 width: MediaQuery.of(context).size.width * 0.33,
                 child: Icon(
@@ -163,7 +179,7 @@ Widget BottomNavBar(BuildContext context, String page) {
             children: [
               Container(
                 padding: EdgeInsets.only(
-                    top: MediaQuery.of(context).size.height * (16 / 812)),
+                    top: MediaQuery.of(context).size.height * (10 / 812)),
                 color: Colors.transparent,
                 width: MediaQuery.of(context).size.width * 0.33,
                 child: Icon(
@@ -203,7 +219,7 @@ Widget BottomNavBar(BuildContext context, String page) {
             children: [
               Container(
                 padding: EdgeInsets.only(
-                    top: MediaQuery.of(context).size.height * (16 / 812)),
+                    top: MediaQuery.of(context).size.height * (10 / 812)),
                 color: Colors.transparent,
                 width: MediaQuery.of(context).size.width * 0.33,
                 child: Icon(
