@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shortsmap/Profile/page/AccountPage.dart';
 import 'package:shortsmap/Profile/page/WithdrawPage.dart';
+import 'package:shortsmap/Provider/BookmarkProvider.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:shortsmap/Widgets/BottomNavBar.dart';
@@ -24,7 +25,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
 
   int _step = 0;
-  bool _hasRated = false;
+  bool _hasRated = true;
 
   final _inAppReview = InAppReview.instance;
 
@@ -429,6 +430,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         await Supabase.instance.client.auth.signOut();
                         Navigator.of(context).pop();
                         Provider.of<UserDataProvider>(context, listen: false).logout();
+                        Provider.of<BookmarkProvider>(context, listen: false).updateLoginStatus(false, null);
                       },
                     ),
                   ),
