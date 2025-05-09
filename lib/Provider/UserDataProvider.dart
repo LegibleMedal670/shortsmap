@@ -1,3 +1,4 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -27,6 +28,7 @@ class UserDataProvider extends ChangeNotifier {
     _currentUserUID = uid;
     _loginId = loginId;
     _loginProvider = loginProvider;
+    FirebaseAnalytics.instance.setUserId(id: uid);
     notifyListeners();
   }
 
@@ -35,6 +37,7 @@ class UserDataProvider extends ChangeNotifier {
     _currentUserUID = null;
     _loginId = null;
     _loginProvider = null;
+    FirebaseAnalytics.instance.setUserId(id: null);
     notifyListeners();
   }
 
