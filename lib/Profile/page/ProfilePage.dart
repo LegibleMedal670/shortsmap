@@ -5,7 +5,6 @@ import 'package:in_app_review/in_app_review.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shortsmap/Profile/page/AccountPage.dart';
-import 'package:shortsmap/Profile/page/WithdrawPage.dart';
 import 'package:shortsmap/Provider/BookmarkProvider.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
@@ -31,22 +30,23 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // 1) 가장 불만족 부분
   String? _selectedIssue;
+
   final List<String> _issues = [
-    '콘텐츠 탐색 불편',
-    '일정 추천 정확도',
-    'UI/UX 디자인',
-    '앱 성능 혹은 버그',
-    '고객 지원/소통',
+    '가고 싶은 장소가 거의 없어요',
+    '영상의 퀄리티가 낮아요',
+    '영상의 양이 적어요',
+    '저장한 장소 관리가 불편했어요',
+    '장소의 정보가 부족해요',
   ];
 
-  // 2) 가장 만족 부분
+  // 2) 가장 만족했던 점
   String? _selectedSatisfaction;
+
   final List<String> _satisfactions = [
-    '콘텐츠 탐색 편리',
-    '일정 추천 유용',
-    'UI/UX 직관적',
-    '앱 속도 및 안정성',
-    '개발자 소통 경험',
+    '가고 싶은 장소가 많았어요',
+    '가까운 순으로 장소를 찾는 경험이 유용했어요',
+    '저장한 장소를 지도에서 바로 볼 수 있어 편했어요',
+    '만족했던 점이 없어요',
   ];
 
   // 3) 별점
@@ -87,7 +87,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             backgroundColor: Colors.lightBlueAccent,
-            content: Text('소중한 피드백 감사합니다!'),
+            content: Text('소중한 피드백이 저장되었습니다. 감사합니다!'),
         ),
       );
 
@@ -97,9 +97,13 @@ class _ProfilePageState extends State<ProfilePage> {
 
       print(err);
 
-      // 네트워크 오류나 Supabase 에러 핸들링
+      await prefs.setBool('hasRated', true);
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('피드백 전송 중 오류가 발생했습니다: $err')),
+        const SnackBar(
+          backgroundColor: Colors.lightBlueAccent,
+          content: Text('소중한 피드백이 저장되었습니다. 감사합니다!'),
+        ),
       );
     }
   }
@@ -200,28 +204,28 @@ class _ProfilePageState extends State<ProfilePage> {
                     },
                   ),
                   /// 회원 탈퇴
-                  Consumer<UserDataProvider>(
-                    builder: (context, userDataProvider, _) {
-                      if (!userDataProvider.isLoggedIn) return const SizedBox.shrink();
-                      return ListTile(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => WithdrawPage()),
-                          );
-                        },
-                        leading: Icon(Icons.person_off_outlined, color: primaryTextColor),
-                        title: const Text(
-                          '회원 탈퇴',
-                          style: TextStyle(
-                            color: primaryTextColor,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                  // Consumer<UserDataProvider>(
+                  //   builder: (context, userDataProvider, _) {
+                  //     if (!userDataProvider.isLoggedIn) return const SizedBox.shrink();
+                  //     return ListTile(
+                  //       onTap: () {
+                  //         Navigator.push(
+                  //           context,
+                  //           MaterialPageRoute(builder: (context) => WithdrawPage()),
+                  //         );
+                  //       },
+                  //       leading: Icon(Icons.person_off_outlined, color: primaryTextColor),
+                  //       title: const Text(
+                  //         '회원 탈퇴',
+                  //         style: TextStyle(
+                  //           color: primaryTextColor,
+                  //           fontSize: 20,
+                  //           fontWeight: FontWeight.w500,
+                  //         ),
+                  //       ),
+                  //     );
+                  //   },
+                  // ),
                 ],
               ),
             ),
@@ -235,7 +239,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 8,
                     offset: const Offset(0, -2),
                   )
@@ -247,7 +251,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   // 단계별 제목
                   if (_step == 0)
                     const Text(
-                      '앱 사용 중 가장 불만족스러운 부분을 선택해주세요',
+                      '앱 사용 중 가장 개선되었으면 하는 부분을 선택해주세요',
                       style:
                       TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
@@ -259,7 +263,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   if (_step == 2)
                     const Text(
-                      '앱 전반적인 만족도를 별점으로 평가해주세요',
+                      '앱의 전반적인 만족도를 별점으로 평가해주세요',
                       style:
                       TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
