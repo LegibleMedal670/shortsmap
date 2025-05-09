@@ -38,15 +38,18 @@ class _MapPageState extends State<MapPage> {
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
 
+  final ValueNotifier<double> _sheetExtent = ValueNotifier(0.4);
+
+
   late GoogleMapController _mapController;
 
   CameraPosition _initialCameraPosition =
       CameraPosition(target: LatLng(600.793503213905154, -600.39945983265487), zoom: 20.0);
 
   double _widgetHeight = 0;
-  double _fabPosition = 0;
+  // double _fabPosition = 0;
 
-  double _mapBottomPadding = 0.0;
+  // double _mapBottomPadding = 0.0;
 
   // double _sheetSize = 0;
 
@@ -221,18 +224,6 @@ class _MapPageState extends State<MapPage> {
       iconSize: 60,
     );
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _widgetHeight = MediaQuery.of(context).size.height;
-
-      // 1-2) initialChildSize(0.4) 기준으로 FAB 위치와 맵 패딩 설정
-      _fabPosition     = 0.4 * _widgetHeight;
-      _mapBottomPadding = 0.4 <= 0.5
-          ? 0.4 * _widgetHeight
-          : 0.5 * _widgetHeight;
-
-      setState(() {});
-    });
-
     // 4) placeId가 전달된 경우 바로 상세 뷰 열기
     if (widget.placeId != null) {
       setState(() {
@@ -244,9 +235,19 @@ class _MapPageState extends State<MapPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _widgetHeight = MediaQuery.of(context).size.height;
+
+    });
+  }
+
+  @override
   void dispose() {
     _focusNode.dispose();
     _sheetController.dispose();
+    _sheetExtent.dispose();
     super.dispose();
   }
 
@@ -360,14 +361,10 @@ class _MapPageState extends State<MapPage> {
     // 가장 최신 위치를 초기 카메라 위치로 설정 (이미 SQL에서 정렬됨)
     final latestBookmark = bookmarks.first;
 
-    print(latestBookmark.placeName);
-
     CameraPosition newPosition = CameraPosition(
       target: LatLng(latestBookmark.latitude, latestBookmark.longitude),
       zoom: 18,
     );
-
-    print(newPosition);
 
     // if (_mapController != null) {
     //   _mapController.animateCamera(CameraUpdate.newCameraPosition(newPosition));
@@ -535,43 +532,55 @@ class _MapPageState extends State<MapPage> {
                             width: MediaQuery.of(context).size.width,
                             height: MediaQuery.of(context).size.height,
                             color: Colors.white,
-                            child: GoogleMap(
-                              padding: EdgeInsets.only(
-                                  bottom: (_fabPosition < 300)
-                                      ? _mapBottomPadding
-                                      : _mapBottomPadding - 20),
-                              onMapCreated: (controller) {
-                                _mapController = controller;
-                                // 컨트롤러가 생성된 후에도 현재 위치로 카메라 이동
-                                // WidgetsBinding.instance.addPostFrameCallback((_) {
-                                //   _loadBookmarkMarkers();
-                                // });
-                              },
-                              onCameraMoveStarted: () {
-                                if (_isProgrammaticMove) {
-                                  _isProgrammaticMove = false;
-                                  return; // 바텀시트 안 내림
-                                }
+                            child: ValueListenableBuilder<double>(
+                                valueListenable: _sheetExtent,
+                              builder: (valueContext, extent, _) {
 
-                                _focusNode.unfocus();
-                                _sheetController.animateTo(
-                                  0.05,
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.easeInOut,
+                                final fabPos   = extent * _widgetHeight;
+
+                                final mapPadding = extent <= 0.5
+                                    ? extent * _widgetHeight
+                                    : 0.5 * _widgetHeight;
+                                final bottomPad = (fabPos < 300)
+                                    ? mapPadding
+                                    : mapPadding - 20;
+
+                                return GoogleMap(
+                                  padding: EdgeInsets.only(bottom: bottomPad),
+                                  onMapCreated: (controller) {
+                                    _mapController = controller;
+                                    // 컨트롤러가 생성된 후에도 현재 위치로 카메라 이동
+                                    // WidgetsBinding.instance.addPostFrameCallback((_) {
+                                    //   _loadBookmarkMarkers();
+                                    // });
+                                  },
+                                  onCameraMoveStarted: () {
+                                    if (_isProgrammaticMove) {
+                                      _isProgrammaticMove = false;
+                                      return; // 바텀시트 안 내림
+                                    }
+
+                                    _focusNode.unfocus();
+                                    _sheetController.animateTo(
+                                      0.05,
+                                      duration: const Duration(milliseconds: 300),
+                                      curve: Curves.easeInOut,
+                                    );
+                                  },
+                                  onTap: (LatLng) {
+                                    _focusNode.unfocus();
+                                    _sheetController.animateTo(
+                                      0.05,
+                                      duration: const Duration(milliseconds: 300),
+                                      curve: Curves.easeInOut,
+                                    );
+                                  },
+                                  myLocationEnabled: true,
+                                  myLocationButtonEnabled: false,
+                                  initialCameraPosition: _initialCameraPosition,
+                                  markers: snapshot.hasData ? markers! : {},
                                 );
-                              },
-                              onTap: (LatLng) {
-                                _focusNode.unfocus();
-                                _sheetController.animateTo(
-                                  0.05,
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.easeInOut,
-                                );
-                              },
-                              myLocationEnabled: true,
-                              myLocationButtonEnabled: false,
-                              initialCameraPosition: _initialCameraPosition,
-                              markers: snapshot.hasData ? markers! : {},
+                              }
                             ),
                           ),
                           /// 검색창
@@ -635,125 +644,134 @@ class _MapPageState extends State<MapPage> {
                           //   ),
                           // ),
                           /// 내위치버튼
-                          Visibility(
-                            visible: _fabPosition < 700,
-                            child: Positioned(
-                              bottom: (_fabPosition < 300)
-                                  ? _fabPosition + 5
-                                  : (_fabPosition < 500)
-                                  ? _fabPosition - 20
-                                  : _fabPosition - 40,
-                              right: 10,
-                              child: Row(
-                                children: [
-                                  // SizedBox(
-                                  //   height: 45,
-                                  //   width: 95,
-                                  //   child: FittedBox(
-                                  //     child: FloatingActionButton.extended(
-                                  //       label: const Text(
-                                  //         '화장실',
-                                  //         style: TextStyle(
-                                  //           color: Colors.black,
-                                  //           fontSize: 16,
-                                  //           fontWeight: FontWeight.bold,
-                                  //         ),
-                                  //       ),
-                                  //       backgroundColor: Colors.white,
-                                  //       // child: const Text(
-                                  //       //   '화장실',
-                                  //       //   style: TextStyle(
-                                  //       //     color: Colors.black,
-                                  //       //   ),
-                                  //       // ),
-                                  //       onPressed: () {
-                                  //         // _moveToCurrentLocation();
-                                  //         // _sheetController.animateTo(
-                                  //         //   0.05,
-                                  //         //   duration: Duration(milliseconds: 300),
-                                  //         //   curve: Curves.easeInOut,
-                                  //         // );
-                                  //       },
-                                  //     ),
-                                  //   ),
-                                  // ),
-                                  // SizedBox(
-                                  //   height: 45,
-                                  //   width: 45,
-                                  //   child: FittedBox(
-                                  //     child: FloatingActionButton(
-                                  //       backgroundColor: Colors.white,
-                                  //       child: Padding(
-                                  //         padding: const EdgeInsets.only(right: 6.0),
-                                  //         child: const Icon(
-                                  //           FontAwesomeIcons.restroom,
-                                  //           color: Colors.black54,
-                                  //           size: 24,
-                                  //         ),
-                                  //       ),
-                                  //       onPressed: () {
-                                  //         // _moveToCurrentLocation();
-                                  //         // _sheetController.animateTo(
-                                  //         //   0.05,
-                                  //         //   duration: Duration(milliseconds: 300),
-                                  //         //   curve: Curves.easeInOut,
-                                  //         // );
-                                  //       },
-                                  //     ),
-                                  //   ),
-                                  // ),
-                                  // SizedBox(width: 15,),
-                                  /// 나중에 필터기능 추가할예정
-                                  // SizedBox(
-                                  //   height: 45,
-                                  //   width: 45,
-                                  //   child: FittedBox(
-                                  //     child: FloatingActionButton(
-                                  //       heroTag: UniqueKey().toString(),
-                                  //       backgroundColor: Colors.white,
-                                  //       child: const Icon(
-                                  //         Icons.filter_alt,
-                                  //         color: Colors.black54,
-                                  //         size: 28,
-                                  //       ),
-                                  //       onPressed: () {
-                                  //         // _moveToCurrentLocation();
-                                  //         // _sheetController.animateTo(
-                                  //         //   0.05,
-                                  //         //   duration: Duration(milliseconds: 300),
-                                  //         //   curve: Curves.easeInOut,
-                                  //         // );
-                                  //       },
-                                  //     ),
-                                  //   ),
-                                  // ),
-                                  // SizedBox(width: 15,),
-                                  SizedBox(
-                                    height: 45,
-                                    width: 45,
-                                    child: FittedBox(
-                                      child: FloatingActionButton(
-                                        heroTag: UniqueKey().toString(),
-                                        backgroundColor: Colors.white,
-                                        child: const Icon(
-                                          CupertinoIcons.paperplane_fill,
-                                          color: Colors.black54,
-                                          size: 28,
+                          ValueListenableBuilder(
+                            valueListenable: _sheetExtent,
+                            builder: (myLocationValueContext, extent, _) {
+
+                              final fabPos = extent * _widgetHeight;
+                              final bottom = fabPos < 300
+                                  ? fabPos + 5
+                                  : fabPos < 500
+                                  ? fabPos - 20
+                                  : fabPos - 40;
+
+                              return Visibility(
+                                visible: fabPos < 700,
+                                child: Positioned(
+                                  bottom: bottom,
+                                  right: 10,
+                                  child: Row(
+                                    children: [
+                                      // SizedBox(
+                                      //   height: 45,
+                                      //   width: 95,
+                                      //   child: FittedBox(
+                                      //     child: FloatingActionButton.extended(
+                                      //       label: const Text(
+                                      //         '화장실',
+                                      //         style: TextStyle(
+                                      //           color: Colors.black,
+                                      //           fontSize: 16,
+                                      //           fontWeight: FontWeight.bold,
+                                      //         ),
+                                      //       ),
+                                      //       backgroundColor: Colors.white,
+                                      //       // child: const Text(
+                                      //       //   '화장실',
+                                      //       //   style: TextStyle(
+                                      //       //     color: Colors.black,
+                                      //       //   ),
+                                      //       // ),
+                                      //       onPressed: () {
+                                      //         // _moveToCurrentLocation();
+                                      //         // _sheetController.animateTo(
+                                      //         //   0.05,
+                                      //         //   duration: Duration(milliseconds: 300),
+                                      //         //   curve: Curves.easeInOut,
+                                      //         // );
+                                      //       },
+                                      //     ),
+                                      //   ),
+                                      // ),
+                                      // SizedBox(
+                                      //   height: 45,
+                                      //   width: 45,
+                                      //   child: FittedBox(
+                                      //     child: FloatingActionButton(
+                                      //       backgroundColor: Colors.white,
+                                      //       child: Padding(
+                                      //         padding: const EdgeInsets.only(right: 6.0),
+                                      //         child: const Icon(
+                                      //           FontAwesomeIcons.restroom,
+                                      //           color: Colors.black54,
+                                      //           size: 24,
+                                      //         ),
+                                      //       ),
+                                      //       onPressed: () {
+                                      //         // _moveToCurrentLocation();
+                                      //         // _sheetController.animateTo(
+                                      //         //   0.05,
+                                      //         //   duration: Duration(milliseconds: 300),
+                                      //         //   curve: Curves.easeInOut,
+                                      //         // );
+                                      //       },
+                                      //     ),
+                                      //   ),
+                                      // ),
+                                      // SizedBox(width: 15,),
+                                      /// 나중에 필터기능 추가할예정
+                                      // SizedBox(
+                                      //   height: 45,
+                                      //   width: 45,
+                                      //   child: FittedBox(
+                                      //     child: FloatingActionButton(
+                                      //       heroTag: UniqueKey().toString(),
+                                      //       backgroundColor: Colors.white,
+                                      //       child: const Icon(
+                                      //         Icons.filter_alt,
+                                      //         color: Colors.black54,
+                                      //         size: 28,
+                                      //       ),
+                                      //       onPressed: () {
+                                      //         // _moveToCurrentLocation();
+                                      //         // _sheetController.animateTo(
+                                      //         //   0.05,
+                                      //         //   duration: Duration(milliseconds: 300),
+                                      //         //   curve: Curves.easeInOut,
+                                      //         // );
+                                      //       },
+                                      //     ),
+                                      //   ),
+                                      // ),
+                                      // SizedBox(width: 15,),
+                                      SizedBox(
+                                        height: 45,
+                                        width: 45,
+                                        child: FittedBox(
+                                          child: FloatingActionButton(
+                                            heroTag: UniqueKey().toString(),
+                                            backgroundColor: Colors.white,
+                                            child: const Icon(
+                                              CupertinoIcons.paperplane_fill,
+                                              color: Colors.black54,
+                                              size: 28,
+                                            ),
+                                            onPressed: () {
+                                              _moveToCurrentLocation();
+                                              _sheetController.animateTo(
+                                                0.05,
+                                                duration: Duration(milliseconds: 300),
+                                                curve: Curves.easeInOut,
+                                              );
+                                            },
+                                          ),
                                         ),
-                                        onPressed: () {
-                                          _moveToCurrentLocation();
-                                          _sheetController.animateTo(
-                                            0.05,
-                                            duration: Duration(milliseconds: 300),
-                                            curve: Curves.easeInOut,
-                                          );
-                                        },
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                            ),
+                                ),
+                              );
+                            }
                           ),
                           ///돌아가기버튼
                           Visibility(
@@ -835,12 +853,13 @@ class _MapPageState extends State<MapPage> {
                             child: NotificationListener<DraggableScrollableNotification>(
                               onNotification: (notification) {
                                 // 시트 크기 비율(extent)로 FAB 위치와 맵 패딩 실시간 조정
-                                final e = notification.extent;
-                                _fabPosition     = e * _widgetHeight;
-                                _mapBottomPadding = e <= 0.5
-                                    ? e * _widgetHeight
-                                    : 0.5 * _widgetHeight;
-                                setState(() {});
+                                // final e = notification.extent;
+                                // _fabPosition     = e * _widgetHeight;
+                                // _mapBottomPadding = e <= 0.5
+                                //     ? e * _widgetHeight
+                                //     : 0.5 * _widgetHeight;
+                                // setState(() {});
+                                _sheetExtent.value = notification.extent;
                                 return true;
                               },
                               child: DraggableScrollableSheet(
