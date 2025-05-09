@@ -345,6 +345,15 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           YoutubeValueBuilder( //TODO 동영상 로딩이 좀 느리게 되는데 skeleton을 적용하거나 로딩 시간을 줄여야함
                             controller: _controller,
                             builder: (context, value) {
+
+                              if (value.hasError){
+                                if ((value.error == YoutubeError.notEmbeddable || value.error == YoutubeError.cannotFindVideo || value.error == YoutubeError.sameAsNotEmbeddable) && !_hasRecordedSeen){
+                                  _hasRecordedSeen = true; // 한 번 기록했음을 표시
+                                  // 현재 사용자 UID를 전달하여 recordSeenVideo 실행
+                                  recordSeenVideo(Provider.of<UserDataProvider>(context, listen: false).currentUserUID);
+                                }
+                              }
+
                               if (value.playerState == PlayerState.playing &&
                                   !_hasRecordedSeen) {
                                 _hasRecordedSeen = true; // 한 번 기록했음을 표시
