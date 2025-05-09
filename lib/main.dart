@@ -8,6 +8,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shortsmap/Provider/BookmarkProvider.dart';
 import 'package:shortsmap/Provider/ImageCacheProvider.dart';
 import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
@@ -30,18 +31,20 @@ Future<void> main() async {
     anonKey: Env.supabaseAnonKey,
   );
 
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   /// Supabase 초기화 후 현재 로그인 상태 확인
   final currentUser = Supabase.instance.client.auth.currentUser;
   final userDataProvider = UserDataProvider();
+  final bookmarkProvider = BookmarkProvider();
 
   if (currentUser != null) {
     // 로그인 상태이면 UID, email, provider를 provider에 설정
     userDataProvider.login(currentUser.id, currentUser.email!, currentUser.appMetadata['provider']!);
+    bookmarkProvider.updateLoginStatus(true, currentUser.id);
   }
-
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
 
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
 
@@ -54,7 +57,7 @@ Future<void> main() async {
     return true;
   };
 
-  runApp(MyApp(userDataProvider: userDataProvider));
+  runApp(MyApp(userDataProvider: userDataProvider, bookmarkProvider: bookmarkProvider,));
 }
 
 class MyApp extends StatefulWidget {
@@ -62,7 +65,9 @@ class MyApp extends StatefulWidget {
   /// main에서 초기화한 프로바이더를 그대로 이용하기 위해
   final UserDataProvider userDataProvider;
 
-  const MyApp({super.key, required this.userDataProvider});
+  final BookmarkProvider bookmarkProvider;
+
+  const MyApp({super.key, required this.userDataProvider, required this.bookmarkProvider,});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -79,6 +84,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => FilterProvider()),
         ChangeNotifierProvider.value(value: widget.userDataProvider),
         ChangeNotifierProvider(create: (_) => PhotoCacheProvider(apiKey: Env.googlePlaceAPIKey)),
+        ChangeNotifierProvider.value(value: widget.bookmarkProvider),
       ],
       child: MaterialApp(
         navigatorObservers: [

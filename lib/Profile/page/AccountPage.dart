@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:shortsmap/Profile/page/ProfilePage.dart';
 import 'package:shortsmap/Profile/page/WithdrawPage.dart';
+import 'package:shortsmap/Provider/BookmarkProvider.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -277,6 +278,7 @@ class AccountPage extends StatelessWidget {
                           context,
                           listen: false,
                         ).logout();
+                        Provider.of<BookmarkProvider>(context, listen: false).updateLoginStatus(false, null);
                         Navigator.of(context).pop();
                         Navigator.pushAndRemoveUntil(
                           context,

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
+import 'package:shortsmap/Provider/BookmarkProvider.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -74,6 +75,8 @@ class _LoginPageState extends State<LoginPage> {
           final String loginId = _supabase.auth.currentUser!.email!;
           final String loginProvider = _supabase.auth.currentUser!.appMetadata['provider']!;
           Provider.of<UserDataProvider>(context, listen: false).login(uid, loginId, loginProvider);
+
+          Provider.of<BookmarkProvider>(context, listen: false).updateLoginStatus(true, uid);
 
           FirebaseAnalytics.instance.logLogin(loginMethod: 'Google');
 
@@ -146,6 +149,8 @@ class _LoginPageState extends State<LoginPage> {
 
         Provider.of<UserDataProvider>(context, listen: false)
             .login(uid, loginId, loginProvider);
+
+        Provider.of<BookmarkProvider>(context, listen: false).updateLoginStatus(true, uid);
 
         FirebaseAnalytics.instance.logLogin(loginMethod: 'Apple');
 

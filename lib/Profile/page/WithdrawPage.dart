@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shortsmap/Provider/BookmarkProvider.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -167,6 +168,7 @@ class _WithdrawPageState extends State<WithdrawPage> {
           const SnackBar(content: Text('계정이 성공적으로 삭제되었습니다.')),
         );
         Provider.of<UserDataProvider>(context, listen: false).logout();
+        Provider.of<BookmarkProvider>(context, listen: false).updateLoginStatus(false, null);
         Navigator.of(context).pop();
         Navigator.pushAndRemoveUntil(
           context,
