@@ -6,16 +6,16 @@ import 'package:share_plus/share_plus.dart';  // 혹은 `share`
 
 class ShareModal extends StatelessWidget {
   final String placeName;
-  final String placeId;
   final String videoId;
   final String source;
+  final String naverMapLink;
 
   const ShareModal({
     super.key,
     required this.placeName,
-    required this.placeId,
     required this.videoId,
     required this.source,
+    required this.naverMapLink,
   });
 
   @override
@@ -58,12 +58,7 @@ class ShareModal extends StatelessWidget {
                       method: '${source}MapShare',
                     );
 
-                    /// TODO: 네이버 지도로 변경하기
-
-                    Share.share(
-                      'https://www.google.com/maps/search/?api=1&query=$placeName&query_place_id=$placeId',
-                      subject: placeName,
-                    );
+                    Share.share(naverMapLink, subject: placeName,);
                   },
                 ),
               ],
