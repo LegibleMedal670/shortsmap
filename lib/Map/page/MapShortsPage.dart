@@ -6,11 +6,12 @@ import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
+import 'package:shortsmap/Widgets/Modal/ShareModal.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 class MapShortsPage extends StatefulWidget {
-  final String storeName;
+  final String placeName;
   final String placeId;
   final String videoId;
   final String storeCaption;
@@ -20,15 +21,17 @@ class MapShortsPage extends StatefulWidget {
   final double rating;
   final String category;
   final double averagePrice;
-  final String? imageUrl;
+  final String address;
+  final String naverMapLink;
   final Map<String, double> coordinates;
+  final String? imageUrl;
   final String? phoneNumber;
   final String? website;
-  final String address;
+
 
   const MapShortsPage({
     super.key,
-    required this.storeName,
+    required this.placeName,
     required this.placeId,
     required this.videoId,
     required this.storeCaption,
@@ -43,6 +46,7 @@ class MapShortsPage extends StatefulWidget {
     required this.phoneNumber,
     required this.website,
     required this.address,
+    required this.naverMapLink,
   });
 
   @override
@@ -328,7 +332,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                     showInfoModal(context, widget.placeId, played.round());
                                   },
                                   child: Text(
-                                    widget.storeName,
+                                    widget.placeName,
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,
@@ -713,7 +717,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              widget.storeName,
+                              widget.placeName,
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -775,12 +779,8 @@ class _MapShortsPageState extends State<MapShortsPage> {
                         // 공유, 닫기 버튼
                         GestureDetector(
                           onTap: () {
-                            FirebaseAnalytics.instance.logShare(
-                                contentType: "video", itemId: widget.videoId, method: 'mapShortsShare');
-                            Share.share(
-                              'https://www.youtube.com/shorts/${widget.videoId}',
-                              subject: widget.storeName,
-                            );
+                            /// TODO: 네이버 맵 링크 받아와서 넣어주기
+                            showShareModal(context, widget.placeName, widget.videoId, 'https://map.naver.com/p/entry/place/1481312779');
                           },
                           child: Container(
                             width: 40,
@@ -804,7 +804,6 @@ class _MapShortsPageState extends State<MapShortsPage> {
                           child: Container(
                             width: 40,
                             height: 40,
-                            margin: const EdgeInsets.only(right: 5),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: Colors.black12,
@@ -890,12 +889,22 @@ class _MapShortsPageState extends State<MapShortsPage> {
                               },
                             );
 
-                            await launchUrl(
-                              Uri.parse(
-                                'https://www.google.com/maps/dir/?api=1&origin=$userLat,$userLon&destination=${widget.storeName}&destination_place_id=$placeId&travelmode=transit',
-                              ),
-                              mode: LaunchMode.externalApplication,
-                            );
+                            String deepRouteUrl = 'nmap://route/public?slat=$userLat&slng=$userLon&sname=내위치&dlat=${widget.coordinates['lat']}&dlng=${widget.coordinates['lon']}&dname=${widget.placeName}&appname=com.hwsoft.shortsmap';
+
+                            String webRouteUrl = 'http://m.map.naver.com/route.nhn?menu=route&sname=내위치&sx=$userLon&sy=$userLat&ename=${widget.placeName}&ex=${widget.coordinates['lon']}&ey=${widget.coordinates['lat']}&pathType=1&showMap=true';
+
+
+                            if (await canLaunchUrl(Uri.parse(deepRouteUrl))){
+                              await launchUrl(
+                                Uri.parse(deepRouteUrl),
+                                mode: LaunchMode.externalApplication,
+                              );
+                            } else {
+                              await launchUrl(
+                                Uri.parse(webRouteUrl),
+                                mode: LaunchMode.externalApplication,
+                              );
+                            }
                           },
                           child: Container(
                             width: MediaQuery.of(context).size.width * 0.3,
@@ -908,7 +917,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: const [
                                 Icon(
-                                  Icons.directions_car,
+                                  CupertinoIcons.car,
                                   color: Colors.black,
                                   size: 22,
                                 ),
@@ -1061,12 +1070,24 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                 },
                               );
 
-                              await launchUrl(
-                                Uri.parse(
-                                  'https://www.google.com/maps/search/?api=1&query=${widget.storeName}&query_place_id=$placeId',
-                                ),
-                                mode: LaunchMode.externalApplication,
-                              );
+                              /// TODO: 실제 링크 받아와서 넣어주기
+                              /// TODO: 그냥 네이버 링크 받아와서 ID 분리해서 쓰기
+                              String deepMapUrl = 'nmap://place?id=1481312779&appname=com.hwsoft.shortsmap';
+
+                              String webMapUrl = 'https://map.naver.com/p/entry/place/1481312779';
+
+
+                              if (await canLaunchUrl(Uri.parse(deepMapUrl))){
+                                await launchUrl(
+                                  Uri.parse(deepMapUrl),
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              } else {
+                                await launchUrl(
+                                  Uri.parse(webMapUrl),
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              }
                             },
                           ),
                           if (widget.phoneNumber != null)
@@ -1227,12 +1248,8 @@ class _MapShortsPageState extends State<MapShortsPage> {
                         GestureDetector(
                           onTap: () {
                             Navigator.pop(context);
-                            FirebaseAnalytics.instance.logShare(
-                                contentType: "video", itemId: widget.videoId, method: 'mapShortsShare');
-                            Share.share(
-                              'https://www.youtube.com/shorts/${widget.videoId}',
-                              subject: widget.storeName,
-                            );
+                            /// TODO: 네이버 맵 링크 받아와서 넣어주기
+                            showShareModal(context, widget.placeName, widget.videoId, 'https://map.naver.com/p/entry/place/1481312779');
                           },
                           child: Container(
                             color: Colors.transparent,
@@ -1461,6 +1478,30 @@ class _MapShortsPageState extends State<MapShortsPage> {
 
     double distanceInKm = distanceInMeters / 1000;
     return "${distanceInKm.toStringAsFixed(2)} km";
+  }
+
+  void showShareModal(BuildContext context, String placeName, String videoId, String naverMapLink) {
+    showModalBottomSheet(
+      backgroundColor: Colors.white,
+      context: context,
+      isScrollControlled: true,
+      enableDrag: true,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20.0),
+          topRight: Radius.circular(20.0),
+        ),
+      ),
+      builder: (BuildContext context) {
+        return ShareModal(
+          placeName: placeName,
+          videoId: videoId,
+          source: 'MapShorts',
+          naverMapLink: naverMapLink,
+        );
+      },
+    );
   }
 
 }

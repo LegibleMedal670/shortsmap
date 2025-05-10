@@ -1329,7 +1329,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         // 공유, 닫기 버튼
                         GestureDetector(
                           onTap: () {
-                            showShareModal(context, widget.placeName, placeId, widget.videoId);
+                            /// TODO: 네이버 맵 링크 받아와서 넣어주기
+                            showShareModal(context, widget.placeName, widget.videoId, 'https://map.naver.com/p/entry/place/1481312779');
                           },
                           child: Container(
                             width: 40,
@@ -1353,7 +1354,6 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           child: Container(
                             width: 40,
                             height: 40,
-                            margin: const EdgeInsets.only(right: 5),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: Colors.black12,
@@ -1370,7 +1370,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                     const SizedBox(height: 25),
                     // 버튼 Row (Call, Route, Save)
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         GestureDetector(
                           onTap: () async {
@@ -1391,6 +1391,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
+                                  duration: Duration(milliseconds: 1500),
                                   content: Text('지정된 전화번호가 없습니다.'),
                                   behavior: SnackBarBehavior.floating,
                                   margin: EdgeInsets.only(
@@ -1439,13 +1440,23 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               },
                             );
 
-                            /// TODO: 네이버 지도로 변경하기
-                            await launchUrl(
-                              Uri.parse(
-                                'https://www.google.com/maps/dir/?api=1&origin=$userLat,$userLon&destination=${widget.placeName}&destination_place_id=${widget.placeId}&travelmode=transit',
-                              ),
-                              mode: LaunchMode.externalApplication,
-                            );
+                            String deepRouteUrl = 'nmap://route/public?slat=$userLat&slng=$userLon&sname=내위치&dlat=${widget.coordinates['lat']}&dlng=${widget.coordinates['lon']}&dname=${widget.placeName}&appname=com.hwsoft.shortsmap';
+
+                            String webRouteUrl = 'http://m.map.naver.com/route.nhn?menu=route&sname=내위치&sx=$userLon&sy=$userLat&ename=${widget.placeName}&ex=${widget.coordinates['lon']}&ey=${widget.coordinates['lat']}&pathType=1&showMap=true';
+
+
+                            if (await canLaunchUrl(Uri.parse(deepRouteUrl))){
+                              await launchUrl(
+                                Uri.parse(deepRouteUrl),
+                                mode: LaunchMode.externalApplication,
+                              );
+                            } else {
+                              await launchUrl(
+                                Uri.parse(webRouteUrl),
+                                mode: LaunchMode.externalApplication,
+                              );
+                            }
+
                           },
                           child: Container(
                             width: MediaQuery.of(context).size.width * 0.3,
@@ -1458,7 +1469,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: const [
                                 Icon(
-                                  Icons.directions_car,
+                                  CupertinoIcons.car,
                                   color: Colors.black,
                                   size: 22,
                                 ),
@@ -1480,6 +1491,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
+                                  duration: Duration(milliseconds: 1500),
                                   backgroundColor: Colors.lightBlueAccent,
                                   content: Text('북마크하기 위해 로그인 해주세요'),
                                   action: SnackBarAction(
@@ -1670,13 +1682,24 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                               );
 
 
-                              /// TODO: 네이버 지도로 변경하기
-                              await launchUrl(
-                                Uri.parse(
-                                  'https://www.google.com/maps/search/?api=1&query=${widget.placeName}&query_place_id=${widget.placeId}',
-                                ),
-                                mode: LaunchMode.externalApplication,
-                              );
+                              /// TODO: 실제 링크 받아와서 넣어주기
+                              /// TODO: 그냥 네이버 링크 받아와서 ID 분리해서 쓰기
+                              String deepMapUrl = 'nmap://place?id=1481312779&appname=com.hwsoft.shortsmap';
+
+                              String webMapUrl = 'https://map.naver.com/p/entry/place/1481312779';
+
+
+                              if (await canLaunchUrl(Uri.parse(deepMapUrl))){
+                                await launchUrl(
+                                  Uri.parse(deepMapUrl),
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              } else {
+                                await launchUrl(
+                                  Uri.parse(webMapUrl),
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              }
                             },
                           ),
                           if (widget.phoneNumber != null)
@@ -1705,6 +1728,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
+                                      duration: Duration(milliseconds: 1500),
                                       content: Text('지정된 전화번호가 없습니다.'),
                                       behavior: SnackBarBehavior.floating,
                                       margin: EdgeInsets.only(
@@ -1781,7 +1805,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     );
   }
 
-  void showShareModal(BuildContext context, String placeName, String placeId, String videoId) {
+  void showShareModal(BuildContext context, String placeName, String videoId, String naverMapLink) {
     showModalBottomSheet(
       backgroundColor: Colors.white,
       context: context,
@@ -1797,9 +1821,9 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
       builder: (BuildContext context) {
         return ShareModal(
           placeName: placeName,
-          placeId: placeId,
           videoId: videoId,
           source: 'Explore',
+          naverMapLink: naverMapLink,
         );
       },
     );
@@ -1881,6 +1905,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
+                                  duration: Duration(milliseconds: 1500),
                                   backgroundColor: Colors.lightBlueAccent,
                                   content: Text('북마크하기 위해 로그인 해주세요'),
                                   action: SnackBarAction(
@@ -2021,7 +2046,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         GestureDetector(
                           onTap: () {
                             Navigator.pop(context);
-                            showShareModal(context, widget.placeName, widget.placeId, widget.videoId);
+                            /// TODO: 네이버 맵 링크 받아와서 넣어주기
+                            showShareModal(context, widget.placeName, widget.videoId, 'https://map.naver.com/p/entry/place/1481312779');
                           },
                           child: Container(
                             color: Colors.transparent,
@@ -2069,168 +2095,171 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter filterState) {
             return DraggableScrollableSheet(
-              maxChildSize: 0.9,
-              initialChildSize: 0.9,
-              minChildSize: 0.9,
+              maxChildSize: 0.4,
+              initialChildSize: 0.4,
+              minChildSize: 0.3999,
               expand: false,
               snap: false,
               builder: (context, filterScrollController) {
                 return Column(
                   children: [
                     Expanded(
-                      child: SingleChildScrollView(
-                        controller: filterScrollController,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 14),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                '지역',
-                                style: TextStyle(
-                                  color: shortPageWhite,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 18,
+                      child: Container(
+                        color: Color(0xff121212),
+                        child: SingleChildScrollView(
+                          controller: filterScrollController,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Text(
+                                  '지역',
+                                  style: TextStyle(
+                                    color: shortPageWhite,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 18,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(
-                                height:
-                                    MediaQuery.of(context).size.height * 0.015,
-                              ),
-                              Wrap(
-                                spacing: 8.0,
-                                runSpacing: 1.0,
-                                children:
-                                    regionOptions.map((region) {
-                                      return ChoiceChip(
-                                        avatar: (region == '가까운 순')
-                                         ? Icon(Icons.star, color: (selectedRegion == region)
-                                            ? Colors.black
-                                            : Colors.yellow,
-                                        )
-                                            : null,
-                                        selected: selectedRegion == region,
-                                        label: Text(
-                                          region,
-                                          style: TextStyle(
-                                            color:
-                                            (selectedRegion == region)
-                                                    ? Colors.black
-                                                    : shortPageWhite,
+                                SizedBox(
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.015,
+                                ),
+                                Wrap(
+                                  spacing: 8.0,
+                                  runSpacing: 1.0,
+                                  children:
+                                      regionOptions.map((region) {
+                                        return ChoiceChip(
+                                          avatar: (region == '가까운 순')
+                                           ? Icon(Icons.star, color: (selectedRegion == region)
+                                              ? Colors.black
+                                              : Colors.yellow,
+                                          )
+                                              : null,
+                                          selected: selectedRegion == region,
+                                          label: Text(
+                                            region,
+                                            style: TextStyle(
+                                              color:
+                                              (selectedRegion == region)
+                                                      ? Colors.black
+                                                      : shortPageWhite,
+                                            ),
                                           ),
-                                        ),
-                                        selectedColor: shortPageWhite,
-                                        backgroundColor: Color(0xff222222),
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 6,
-                                        ),
-                                        onSelected: (bool selected) {
-                                          filterState(() {
-                                            selectedRegion =
-                                                selected ? region : null;
-                                          });
-                                        },
-                                      );
-                                    }).toList(),
-                              ),
-                              SizedBox(
-                                height:
-                                    MediaQuery.of(context).size.height * 0.015,
-                              ),
+                                          selectedColor: shortPageWhite,
+                                          backgroundColor: Color(0xff222222),
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 6,
+                                          ),
+                                          onSelected: (bool selected) {
+                                            filterState(() {
+                                              selectedRegion =
+                                                  selected ? region : null;
+                                            });
+                                          },
+                                        );
+                                      }).toList(),
+                                ),
+                                SizedBox(
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.015,
+                                ),
 
-                              Text(
-                                '카테고리',
-                                style: TextStyle(
-                                  color: shortPageWhite,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 18,
+                                Text(
+                                  '카테고리',
+                                  style: TextStyle(
+                                    color: shortPageWhite,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 18,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(
-                                height:
-                                    MediaQuery.of(context).size.height * 0.02,
-                              ),
-                              Wrap(
-                                spacing: 8.0,
-                                runSpacing: 1.0,
-                                children:
-                                    categoryOptions.map((category) {
-                                      return ChoiceChip(
-                                        selected: selectedCategory == category,
-                                        label: Text(
-                                          category,
-                                          style: TextStyle(
-                                            color:
-                                                (selectedCategory == category)
-                                                    ? Colors.black
-                                                    : shortPageWhite,
+                                SizedBox(
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.02,
+                                ),
+                                Wrap(
+                                  spacing: 8.0,
+                                  runSpacing: 1.0,
+                                  children:
+                                      categoryOptions.map((category) {
+                                        return ChoiceChip(
+                                          selected: selectedCategory == category,
+                                          label: Text(
+                                            category,
+                                            style: TextStyle(
+                                              color:
+                                                  (selectedCategory == category)
+                                                      ? Colors.black
+                                                      : shortPageWhite,
+                                            ),
                                           ),
-                                        ),
-                                        selectedColor: shortPageWhite,
-                                        backgroundColor: Color(0xff222222),
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 6,
-                                        ),
-                                        onSelected: (bool selected) {
-                                          filterState(() {
-                                            selectedCategory =
-                                                selected ? category : null;
-                                          });
-                                        },
-                                      );
-                                    }).toList(),
-                              ),
-                              SizedBox(
-                                height:
-                                    MediaQuery.of(context).size.height * 0.02,
-                              ),
-                              // Text(
-                              //   'Average Price',
-                              //   style: TextStyle(
-                              //     color: shortPageWhite,
-                              //     fontWeight: FontWeight.w600,
-                              //     fontSize: 20,
-                              //   ),
-                              // ),
-                              // SizedBox(
-                              //   height:
-                              //       MediaQuery.of(context).size.height * 0.02,
-                              // ),
-                              // Wrap(
-                              //   spacing: 8.0,
-                              //   runSpacing: 1.0,
-                              //   children:
-                              //       priceOptions.map((price) {
-                              //         return ChoiceChip(
-                              //           selected: selectedPrice == price,
-                              //           label: Text(
-                              //             price,
-                              //             style: TextStyle(
-                              //               color:
-                              //                   (selectedPrice == price)
-                              //                       ? Colors.black
-                              //                       : shortPageWhite,
-                              //             ),
-                              //           ),
-                              //           selectedColor: shortPageWhite,
-                              //           backgroundColor: Color(0xff222222),
-                              //           padding: EdgeInsets.symmetric(
-                              //             horizontal: 10,
-                              //             vertical: 6,
-                              //           ),
-                              //           onSelected: (bool selected) {
-                              //             filterState(() {
-                              //               selectedPrice =
-                              //                   selected ? price : null;
-                              //             });
-                              //           },
-                              //         );
-                              //       }).toList(),
-                              // ),
-                              // Spacer(),
-                            ],
+                                          selectedColor: shortPageWhite,
+                                          backgroundColor: Color(0xff222222),
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 6,
+                                          ),
+                                          onSelected: (bool selected) {
+                                            filterState(() {
+                                              selectedCategory =
+                                                  selected ? category : null;
+                                            });
+                                          },
+                                        );
+                                      }).toList(),
+                                ),
+                                SizedBox(
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.02,
+                                ),
+                                // Text(
+                                //   'Average Price',
+                                //   style: TextStyle(
+                                //     color: shortPageWhite,
+                                //     fontWeight: FontWeight.w600,
+                                //     fontSize: 20,
+                                //   ),
+                                // ),
+                                // SizedBox(
+                                //   height:
+                                //       MediaQuery.of(context).size.height * 0.02,
+                                // ),
+                                // Wrap(
+                                //   spacing: 8.0,
+                                //   runSpacing: 1.0,
+                                //   children:
+                                //       priceOptions.map((price) {
+                                //         return ChoiceChip(
+                                //           selected: selectedPrice == price,
+                                //           label: Text(
+                                //             price,
+                                //             style: TextStyle(
+                                //               color:
+                                //                   (selectedPrice == price)
+                                //                       ? Colors.black
+                                //                       : shortPageWhite,
+                                //             ),
+                                //           ),
+                                //           selectedColor: shortPageWhite,
+                                //           backgroundColor: Color(0xff222222),
+                                //           padding: EdgeInsets.symmetric(
+                                //             horizontal: 10,
+                                //             vertical: 6,
+                                //           ),
+                                //           onSelected: (bool selected) {
+                                //             filterState(() {
+                                //               selectedPrice =
+                                //                   selected ? price : null;
+                                //             });
+                                //           },
+                                //         );
+                                //       }).toList(),
+                                // ),
+                                // Spacer(),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -2555,6 +2584,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
             if (bookmarkProvider.userId == null){
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
+                  duration: Duration(milliseconds: 1500),
                   backgroundColor: Colors.lightBlueAccent,
                   content: Text('북마크하기 위해 로그인 해주세요'),
                   action: SnackBarAction(
