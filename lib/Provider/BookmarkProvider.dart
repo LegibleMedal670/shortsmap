@@ -37,6 +37,7 @@ class BookmarkProvider with ChangeNotifier {
     if (!_isLoggedIn) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
+          duration: Duration(milliseconds: 1500),
           backgroundColor: Colors.lightBlueAccent,
           content: Text('북마크하기 위해 로그인 해주세요'),
           action: SnackBarAction(
@@ -90,6 +91,7 @@ class BookmarkProvider with ChangeNotifier {
         // 저장 되었음을 표시해주는 스낵바 TODO ( UI 조정 필요 )
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
+            duration: Duration(milliseconds: 1500),
             backgroundColor: Colors.lightBlueAccent,
             content: Text('북마크에 저장되었어요'),
             action: SnackBarAction(
@@ -116,6 +118,7 @@ class BookmarkProvider with ChangeNotifier {
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
+            duration: Duration(milliseconds: 1500),
             backgroundColor: Colors.redAccent,
             content: Text('북마크 도중 알 수 없는 에러가 발생했습니다'),
             behavior: SnackBarBehavior.floating,
@@ -135,6 +138,7 @@ class BookmarkProvider with ChangeNotifier {
     if (!_isLoggedIn) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
+          duration: Duration(milliseconds: 1500),
           backgroundColor: Colors.lightBlueAccent,
           content: Text('북마크하기 위해 로그인 해주세요'),
           action: SnackBarAction(
@@ -186,6 +190,7 @@ class BookmarkProvider with ChangeNotifier {
         // 삭제 되었음을 알려주는 스낵바 TODO ( UI 조정 필요 )
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
+            duration: Duration(milliseconds: 1500),
             backgroundColor: Colors.lightBlueAccent,
             content: Text('북마크에서 삭제되었어요'),
             action: SnackBarAction(
@@ -213,6 +218,7 @@ class BookmarkProvider with ChangeNotifier {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.redAccent,
+            duration: Duration(milliseconds: 1500),
             content: Text('북마크 취소 도중 알 수 없는 에러가 발생했습니다'),
             behavior: SnackBarBehavior.floating,
             margin: EdgeInsets.only(
