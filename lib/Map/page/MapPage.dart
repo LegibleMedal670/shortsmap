@@ -352,86 +352,100 @@ class _MapPageState extends State<MapPage> {
   Future<Set<Marker>> _buildMarkersFromBookmarks(List<BookmarkLocation> bookmarks) async {
 
     if (bookmarks.isEmpty) {
-      _isProgrammaticMove = true;
-      // 북마크가 없으면 내 현재 위치로 이동
-      await _moveToCurrentLocation();
-      return {};
-    }
-
-    // 가장 최신 위치를 초기 카메라 위치로 설정 (이미 SQL에서 정렬됨)
-    final latestBookmark = bookmarks.first;
-
-    CameraPosition newPosition = CameraPosition(
-      target: LatLng(latestBookmark.latitude, latestBookmark.longitude),
-      zoom: 18,
-    );
-
-    // if (_mapController != null) {
-    //   _mapController.animateCamera(CameraUpdate.newCameraPosition(newPosition));
-    // } else {
-    //   setState(() {
-    //     _initialCameraPosition = newPosition;
-    //   });
-    // }
-
-    // setState(() {
-      _initialCameraPosition = newPosition;
-    // });
-
-    Set<Marker> markers = {};
-
-    for (final b in bookmarks) {
-      final style = categoryStyles[b.category] ?? {
-        'icon': Icons.place,
-        'color': Colors.blue,
-      };
-
-      final icon = await getMarkerIcon(
-        backgroundColor: style['color'],
-        iconData: style['icon'],
-        size: 100,
-        iconSize: 60,
+      final position = await Geolocator.getCurrentPosition();
+      final currentPosition = CameraPosition(
+        target: LatLng(position.latitude, position.longitude),
+        zoom: 18,
       );
 
-      markers.add(Marker(
-        markerId: MarkerId(b.placeId),
-        position: LatLng(b.latitude, b.longitude),
-        icon: icon,
-        onTap: () {
-          FirebaseAnalytics.instance.logEvent(name: "tap_marker", parameters: {
-            "video_id": b.videoId,
-            "category": b.category,
-          });
+      // 맵 컨트롤러가 준비된 이후에 애니메이트
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_mapController != null) {
+          _mapController.animateCamera(
+              CameraUpdate.newCameraPosition(currentPosition)
+          );
+        }
+      });
 
-          setState(() {
-            _isProgrammaticMove = true;
-            _selectedLocation = b.placeId;
-            _locationDetailFuture = _fetchLocationDetail(b.placeId);
-            _isListDetailOpened = true;
-            _isMarkerTapped = true;
-            _selectedCategory = null;
-          });
+      return {};
+    } else {
+      // 가장 최신 위치를 초기 카메라 위치로 설정 (이미 SQL에서 정렬됨)
+      final latestBookmark = bookmarks.first;
+
+      CameraPosition newPosition = CameraPosition(
+        target: LatLng(latestBookmark.latitude, latestBookmark.longitude),
+        zoom: 18,
+      );
+
+      // if (_mapController != null) {
+      //   _mapController.animateCamera(CameraUpdate.newCameraPosition(newPosition));
+      // } else {
+      //   setState(() {
+      //     _initialCameraPosition = newPosition;
+      //   });
+      // }
+
+      // setState(() {
+      _initialCameraPosition = newPosition;
+      // });
+
+      Set<Marker> markers = {};
+
+      for (final b in bookmarks) {
+        final style = categoryStyles[b.category] ?? {
+          'icon': Icons.place,
+          'color': Colors.blue,
+        };
+
+        final icon = await getMarkerIcon(
+          backgroundColor: style['color'],
+          iconData: style['icon'],
+          size: 100,
+          iconSize: 60,
+        );
+
+        markers.add(Marker(
+          markerId: MarkerId(b.placeId),
+          position: LatLng(b.latitude, b.longitude),
+          icon: icon,
+          onTap: () {
+            FirebaseAnalytics.instance.logEvent(name: "tap_marker", parameters: {
+              "video_id": b.videoId,
+              "category": b.category,
+            });
+
+            setState(() {
+              _isProgrammaticMove = true;
+              _selectedLocation = b.placeId;
+              _locationDetailFuture = _fetchLocationDetail(b.placeId);
+              _isListDetailOpened = true;
+              _isMarkerTapped = true;
+              _selectedCategory = null;
+            });
 
 
-          _sheetController.animateTo(0.55, duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
-        },
-      ));
-    }
+            _sheetController.animateTo(0.55, duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
+          },
+        ));
+      }
 
-    // 카테고리별로 분류
-    Map<String, List<BookmarkLocation>> categorized = {};
+      // 카테고리별로 분류
+      Map<String, List<BookmarkLocation>> categorized = {};
 
-    for (final bookmark in bookmarks) {
-      categorized.putIfAbsent(bookmark.category, () => []).add(bookmark);
-    }
+      for (final bookmark in bookmarks) {
+        categorized.putIfAbsent(bookmark.category, () => []).add(bookmark);
+      }
 
-    // setState(() {
+      // setState(() {
       _bookmarkMarkers = markers;
       _allBookmarkMarkers = markers; // 전체 마커 백업
       _categorizedBookmarks = categorized;
-    // });
+      // });
 
-    return markers;
+      return markers;
+    }
+
+
   }
 
 
@@ -441,6 +455,8 @@ class _MapPageState extends State<MapPage> {
       builder: (BuildContext consumerContext, BookmarkProvider bookmarkProvider, Widget? child) {
 
         final bookmarks = bookmarkProvider.bookmarks;
+
+        print(bookmarks);
 
         return FutureBuilder(
           future: _buildMarkersFromBookmarks(bookmarks),
