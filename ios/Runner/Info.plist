@@ -67,5 +67,9 @@
 	<true/>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>더 나은 개인화 맞춤 서비스를 제공하기 위해 사용됩니다.</string>
+	<key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>nmap</string>
+    </array>
 </dict>
 </plist>
