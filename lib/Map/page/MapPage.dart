@@ -751,10 +751,13 @@ class _MapPageState extends State<MapPage> {
                                           child: FloatingActionButton(
                                             heroTag: UniqueKey().toString(),
                                             backgroundColor: Colors.white,
-                                            child: const Icon(
-                                              CupertinoIcons.paperplane_fill,
-                                              color: Colors.black54,
-                                              size: 28,
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(right: 2.0),
+                                              child: const Icon(
+                                                CupertinoIcons.paperplane_fill,
+                                                color: Colors.black54,
+                                                size: 28,
+                                              ),
                                             ),
                                             onPressed: () {
                                               _moveToCurrentLocation();
@@ -780,15 +783,18 @@ class _MapPageState extends State<MapPage> {
                               top: 70,
                               left: 10,
                               child: SizedBox(
-                                height: 50,
-                                width: 50,
+                                height: 45,
+                                width: 45,
                                 child: FittedBox(
                                   child: FloatingActionButton(
                                     backgroundColor: Colors.white,
-                                    child: const Icon(
-                                      CupertinoIcons.back,
-                                      color: Colors.black54,
-                                      size: 32,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(right: 2.0),
+                                      child: const Icon(
+                                        CupertinoIcons.back,
+                                        color: Colors.black54,
+                                        size: 32,
+                                      ),
                                     ),
                                     onPressed: () {
                                       if (_selectedLocation != null) {
@@ -961,7 +967,7 @@ class _MapPageState extends State<MapPage> {
                                                                           context,
                                                                           MaterialPageRoute(
                                                                               builder: (context) => MapShortsPage(
-                                                                                storeName: placeData['place_name'],
+                                                                                placeName: placeData['place_name'],
                                                                                 placeId: placeData['place_id'],
                                                                                 videoId: placeData['video_id'],
                                                                                 storeCaption: placeData['description'] ?? 'descriptionNull',
@@ -979,6 +985,7 @@ class _MapPageState extends State<MapPage> {
                                                                                 phoneNumber: placeData['phone_number'],
                                                                                 website: placeData['website_link'],
                                                                                 address: placeData['address'],
+                                                                                naverMapLink: 'naverMapLink', /// TODO : 서버에서 가져와서 넣기
                                                                               )));
                                                                     },
                                                                     child: Container(
@@ -1050,12 +1057,12 @@ class _MapPageState extends State<MapPage> {
                                                                   const Spacer(),
                                                                   GestureDetector(
                                                                     onTap: () {
-                                                                      showShareModal(context, placeData['place_name'], placeId, placeData['video_id']);
+                                                                      /// TODO: 네이버 맵 링크 받아와서 넣어주기
+                                                                      showShareModal(context, placeData['place_name'], placeData['video_id'], 'naverMapLink');
                                                                     },
                                                                     child: Container(
                                                                       width: 40,
                                                                       height: 40,
-                                                                      margin: const EdgeInsets.only(right: 15),
                                                                       decoration: BoxDecoration(
                                                                         shape: BoxShape.circle,
                                                                         color: Colors.black12,
@@ -1070,7 +1077,7 @@ class _MapPageState extends State<MapPage> {
 
                                                               // --- 버튼 Row (Call, Route, Explore) ---
                                                               Row(
-                                                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                                 children: [
                                                                   // Call
                                                                   GestureDetector(
@@ -1089,6 +1096,7 @@ class _MapPageState extends State<MapPage> {
                                                                       } else {
                                                                         ScaffoldMessenger.of(context).showSnackBar(
                                                                           SnackBar(
+                                                                            duration: Duration(milliseconds: 1500),
                                                                             content: Text('지정된 전화번호가 없습니다.'),
                                                                             behavior: SnackBarBehavior.floating,
                                                                             margin: EdgeInsets.only(
@@ -1128,16 +1136,23 @@ class _MapPageState extends State<MapPage> {
                                                                         },
                                                                       );
 
-                                                                      await launchUrl(
-                                                                        Uri.parse(
-                                                                          'https://www.google.com/maps/dir/?api=1'
-                                                                              '&origin=$userLat,$userLon'
-                                                                              '&destination=${Uri.encodeComponent(placeData['place_name'])}'
-                                                                              '&destination_place_id=${placeData['place_id']}'
-                                                                              '&travelmode=transit',
-                                                                        ),
-                                                                        mode: LaunchMode.externalApplication,
-                                                                      );
+                                                                      String deepRouteUrl = 'nmap://route/public?slat=$userLat&slng=$userLon&sname=내위치&dlat=${placeData['latitude']}&dlng=${placeData['longitude']}&dname=${placeData['place_name']}&appname=com.hwsoft.shortsmap';
+
+                                                                      String webRouteUrl = 'http://m.map.naver.com/route.nhn?menu=route&sname=내위치&sx=$userLon&sy=$userLat&ename=${placeData['place_name']}&ex=${placeData['longitude']}&ey=${placeData['latitude']}&pathType=1&showMap=true';
+
+
+                                                                      if (await canLaunchUrl(Uri.parse(deepRouteUrl))){
+                                                                        await launchUrl(
+                                                                          Uri.parse(deepRouteUrl),
+                                                                          mode: LaunchMode.externalApplication,
+                                                                        );
+                                                                      } else {
+                                                                        await launchUrl(
+                                                                          Uri.parse(webRouteUrl),
+                                                                          mode: LaunchMode.externalApplication,
+                                                                        );
+                                                                      }
+
                                                                     },
                                                                     child: Container(
                                                                       width: MediaQuery.of(context).size.width * 0.3,
@@ -1149,7 +1164,7 @@ class _MapPageState extends State<MapPage> {
                                                                       child: Row(
                                                                         mainAxisAlignment: MainAxisAlignment.center,
                                                                         children: const [
-                                                                          Icon(Icons.directions_car, color: Colors.black, size: 22),
+                                                                          Icon(CupertinoIcons.car, color: Colors.black, size: 22),
                                                                           SizedBox(width: 8),
                                                                           Text('길찾기', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
                                                                         ],
@@ -1171,7 +1186,7 @@ class _MapPageState extends State<MapPage> {
                                                                         context,
                                                                         MaterialPageRoute(
                                                                           builder: (_) => MapShortsPage(
-                                                                            storeName: placeData['place_name'],
+                                                                            placeName: placeData['place_name'],
                                                                             placeId: placeData['place_id'],
                                                                             videoId: placeData['video_id'],
                                                                             storeCaption: placeData['description'] ?? 'descriptionNull',
@@ -1183,7 +1198,7 @@ class _MapPageState extends State<MapPage> {
                                                                             averagePrice: placeData['average_price'] == null
                                                                                 ? 3
                                                                                 : placeData['average_price'].toDouble(),
-                                                                            imageUrl: imageUrl, // ← 여기!
+                                                                            imageUrl: imageUrl,
                                                                             coordinates: {
                                                                               'lat': placeData['latitude'],
                                                                               'lon': placeData['longitude'],
@@ -1191,6 +1206,7 @@ class _MapPageState extends State<MapPage> {
                                                                             phoneNumber: placeData['phone_number'],
                                                                             website: placeData['website_link'],
                                                                             address: placeData['address'],
+                                                                            naverMapLink: 'naverMapLink', /// TODO : 서버에서 가져와서 넣기
                                                                           ),
                                                                         ),
                                                                       );
@@ -1243,14 +1259,23 @@ class _MapPageState extends State<MapPage> {
                                                                           },
                                                                         );
 
-                                                                        await launchUrl(
-                                                                          Uri.parse(
-                                                                            'https://www.google.com/maps/search/?api=1'
-                                                                                '&query=${Uri.encodeComponent(placeData['place_name'])}'
-                                                                                '&query_place_id=${placeData['place_id']}',
-                                                                          ),
-                                                                          mode: LaunchMode.externalApplication,
-                                                                        );
+                                                                        /// TODO: 실제 링크 받아와서 넣어주기
+                                                                        String deepMapUrl = 'nmap://place?id=1481312779&appname=com.hwsoft.shortsmap';
+
+                                                                        String webMapUrl = 'https://map.naver.com/p/entry/place/1481312779';
+
+
+                                                                        if (await canLaunchUrl(Uri.parse(deepMapUrl))){
+                                                                          await launchUrl(
+                                                                            Uri.parse(deepMapUrl),
+                                                                            mode: LaunchMode.externalApplication,
+                                                                          );
+                                                                        } else {
+                                                                          await launchUrl(
+                                                                            Uri.parse(webMapUrl),
+                                                                            mode: LaunchMode.externalApplication,
+                                                                          );
+                                                                        }
                                                                       },
                                                                     ),
                                                                     if (placeData['phone_number'] != null)
@@ -2244,8 +2269,9 @@ class _MapPageState extends State<MapPage> {
                           // 성공 메시지 표시
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
+                              duration: Duration(milliseconds: 1500),
                               backgroundColor: Colors.lightBlueAccent,
-                              content: Text('북마크가 삭제되었어요'),
+                              content: Text('북마크에서 삭제되었어요'),
                               behavior: SnackBarBehavior.floating,
                               margin: EdgeInsets.only(
                                 bottom: MediaQuery.of(context).size.height * 0.02,
@@ -2255,6 +2281,19 @@ class _MapPageState extends State<MapPage> {
                             ),
                           );
                         } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: Colors.redAccent,
+                              duration: Duration(milliseconds: 1500),
+                              content: Text('북마크 취소 도중 알 수 없는 에러가 발생했습니다'),
+                              behavior: SnackBarBehavior.floating,
+                              margin: EdgeInsets.only(
+                                bottom: MediaQuery.of(context).size.height * 0.02,
+                                left: 20.0,
+                                right: 20.0,
+                              ),
+                            ),
+                          );
                           print('Delete 에러: $e');
                         }
                       },
@@ -2282,7 +2321,7 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
-  void showShareModal(BuildContext context, String placeName, String placeId, String videoId) {
+  void showShareModal(BuildContext context, String placeName, String videoId, String naverMapLink) {
     showModalBottomSheet(
       backgroundColor: Colors.white,
       context: context,
@@ -2298,9 +2337,9 @@ class _MapPageState extends State<MapPage> {
       builder: (BuildContext context) {
         return ShareModal(
           placeName: placeName,
-          placeId: placeId,
           videoId: videoId,
           source: 'Map',
+          naverMapLink: naverMapLink,
         );
       },
     );
