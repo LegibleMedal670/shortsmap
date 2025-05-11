@@ -200,7 +200,7 @@ class BookmarkProvider with ChangeNotifier {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => MapPage(placeId: placeId, videoId: videoId,),
+                    builder: (context) => MapPage(),
                   ),
                       (route) => false,
                 );
