@@ -53,6 +53,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>com.googleusercontent.apps.916848326581-8ksg7a187hji9v2ak727f3mm6n0c39jr</string>
+				<string>fb974526871518802</string>
 			</array>
 		</dict>
 	</array>
@@ -71,5 +72,9 @@
     <array>
         <string>nmap</string>
     </array>
+    <key>FacebookAppID</key>
+    <string>974526871518802</string>
+    <key>FacebookDisplayName</key>
+    <string>ShortsMap</string>
 </dict>
 </plist>

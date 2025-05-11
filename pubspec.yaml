@@ -72,7 +72,10 @@ dependencies:
   firebase_analytics: ^11.4.5
   # 파이어베이스 크래시리틱스
   firebase_crashlytics: ^4.3.5
+  # 리뷰 요청을 위한 패키지
   in_app_review: ^2.0.10
+  # 페이스북 SDK 패키지
+  facebook_app_events: ^0.19.7
 
 dev_dependencies:
   flutter_test:

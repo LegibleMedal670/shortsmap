@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:app_tracking_transparency/app_tracking_transparency.dart';
+import 'package:facebook_app_events/facebook_app_events.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_analytics/observer.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -34,6 +35,11 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  FacebookAppEvents facebookAppEvents = FacebookAppEvents();
+
+  await facebookAppEvents.setAdvertiserTracking(enabled: true);
+  await facebookAppEvents.setAutoLogAppEventsEnabled(true);
 
   /// Supabase 초기화 후 현재 로그인 상태 확인
   final currentUser = Supabase.instance.client.auth.currentUser;

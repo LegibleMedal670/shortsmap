@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="facebook_app_id">974526871518802</string>
+    <string name="facebook_client_token">7f9bef8cff5c25437114c57ec4f2758b</string>
+    <string name="fb_login_protocol_scheme">fb974526871518802</string>
+    <string name="app_name">ShortsMap</string>
+</resources>
