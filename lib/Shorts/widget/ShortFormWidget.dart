@@ -98,10 +98,6 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     '\$50~',
   ];
 
-  // 현재 선택된 값(단일 선택)
-  String? selectedRegion;
-  String? selectedCategory;
-  String? selectedPrice;
 
   Color shortPageWhite = Colors.grey[200] as Color;
 
@@ -1904,14 +1900,14 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
           topRight: Radius.circular(20.0),
         ),
       ),
-      builder: (BuildContext context) {
+      builder: (BuildContext optionContext) {
         return DraggableScrollableSheet(
           initialChildSize: 0.35,
           minChildSize: 0.35,
           maxChildSize: 0.35,
           expand: false,
           builder:
-              (context, optionScrollController) => SizedBox(
+              (sheetContext, optionScrollController) => SizedBox(
                 width: MediaQuery.of(context).size.width,
                 child: SingleChildScrollView(
                   // physics: const ClampingScrollPhysics(),
@@ -1923,7 +1919,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         GestureDetector(
                           onTap: () async {
 
-                            Navigator.pop(context);
+                            Navigator.pop(optionContext);
 
                             if (Provider.of<BookmarkProvider>(context, listen: false,).userId == null)
                             {
@@ -2102,6 +2098,11 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
 
   ///영상 필터 ModalBottomSheet
   void showFilterModal(BuildContext context) {
+
+    String? selectedRegion;
+    String? selectedCategory;
+    bool _initialized = false;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -2117,6 +2118,14 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter filterState) {
+
+            if (!_initialized) {
+              final filterProv = Provider.of<FilterProvider>(context, listen: false);
+              selectedRegion   = filterProv.orderNear ? '가까운 순' : filterProv.filterRegion ?? 'All' ;   // Provider에 정의된 프로퍼티
+              selectedCategory = filterProv.filterCategory == null ? 'All' : switchCategoryToKor(filterProv.filterCategory); // Provider에 정의된 프로퍼티
+              _initialized = true;
+            }
+
             return DraggableScrollableSheet(
               maxChildSize: 0.4,
               initialChildSize: 0.4,
@@ -2154,9 +2163,10 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                   children:
                                       regionOptions.map((region) {
                                         return ChoiceChip(
+
                                           avatar: (region == '가까운 순')
                                            ? Icon(Icons.star, color: (selectedRegion == region)
-                                              ? Colors.black
+                                              ? Color(0xff222222)
                                               : Colors.yellow,
                                           )
                                               : null,
