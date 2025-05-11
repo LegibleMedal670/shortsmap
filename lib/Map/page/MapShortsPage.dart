@@ -100,6 +100,46 @@ class _MapShortsPageState extends State<MapShortsPage> {
     });
   }
 
+  /// URL에서 마지막 숫자(ID)만 꺼내는 함수
+  String extractNaverPlaceId(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return '';
+
+    final segments = uri.pathSegments;
+    final placeIndex = segments.indexOf('place');
+    if (placeIndex != -1 && placeIndex + 1 < segments.length) {
+      return segments[placeIndex + 1];
+    }
+    return '';
+  }
+
+  Future<void> openNaverMap(String webMapUrl) async {
+    // 1) 웹 링크에서 ID 추출
+    final placeId = extractNaverPlaceId(webMapUrl);
+
+    // 2) placeId가 비어있지 않을 때만 딥링크 시도
+    if (placeId.isNotEmpty) {
+      final deepMapUrl = 'nmap://place?id=$placeId&appname=com.hwsoft.shortsmap';
+      if (await canLaunchUrl(Uri.parse(deepMapUrl))) {
+        await launchUrl(
+          Uri.parse(deepMapUrl),
+          mode: LaunchMode.externalApplication,
+        );
+        return;
+      }
+    }
+
+    // 3) placeId가 없거나(형식 불일치) 딥링크 실패 시 웹 URL 열기
+    if (await canLaunchUrl(Uri.parse(webMapUrl))) {
+      await launchUrl(
+        Uri.parse(webMapUrl),
+        mode: LaunchMode.externalApplication,
+      );
+    } else {
+      throw 'Could not launch $webMapUrl';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(
@@ -642,7 +682,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
       name: "show_info_modal",
       parameters: {
         "video_id": widget.videoId,
-        "watch_duration": _controller.currentTime
+        "watch_duration": duration,
       },
     );
 
@@ -779,8 +819,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                         // 공유, 닫기 버튼
                         GestureDetector(
                           onTap: () {
-                            /// TODO: 네이버 맵 링크 받아와서 넣어주기
-                            showShareModal(context, widget.placeName, widget.videoId, 'https://map.naver.com/p/entry/place/1481312779');
+                            showShareModal(context, widget.placeName, widget.videoId, widget.naverMapLink);
                           },
                           child: Container(
                             width: 40,
@@ -826,7 +865,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                           onTap: () async {
                             final Uri phoneUri = Uri(
                               scheme: 'tel',
-                              path: widget.phoneNumber, //TODO : 전화번호 적용
+                              path: widget.phoneNumber,
                             );
 
                             FirebaseAnalytics.instance.logEvent(
@@ -841,6 +880,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
+                                  duration: Duration(milliseconds: 1500),
                                   content: Text('지정된 전화번호가 없습니다.'),
                                   behavior: SnackBarBehavior.floating,
                                   margin: EdgeInsets.only(
@@ -1070,24 +1110,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                 },
                               );
 
-                              /// TODO: 실제 링크 받아와서 넣어주기
-                              /// TODO: 그냥 네이버 링크 받아와서 ID 분리해서 쓰기
-                              String deepMapUrl = 'nmap://place?id=1481312779&appname=com.hwsoft.shortsmap';
-
-                              String webMapUrl = 'https://map.naver.com/p/entry/place/1481312779';
-
-
-                              if (await canLaunchUrl(Uri.parse(deepMapUrl))){
-                                await launchUrl(
-                                  Uri.parse(deepMapUrl),
-                                  mode: LaunchMode.externalApplication,
-                                );
-                              } else {
-                                await launchUrl(
-                                  Uri.parse(webMapUrl),
-                                  mode: LaunchMode.externalApplication,
-                                );
-                              }
+                              openNaverMap(widget.naverMapLink);
                             },
                           ),
                           if (widget.phoneNumber != null)
@@ -1116,6 +1139,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
+                                      duration: Duration(milliseconds: 1500),
                                       content: Text('지정된 전화번호가 없습니다.'),
                                       behavior: SnackBarBehavior.floating,
                                       margin: EdgeInsets.only(
@@ -1248,8 +1272,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                         GestureDetector(
                           onTap: () {
                             Navigator.pop(context);
-                            /// TODO: 네이버 맵 링크 받아와서 넣어주기
-                            showShareModal(context, widget.placeName, widget.videoId, 'https://map.naver.com/p/entry/place/1481312779');
+                            showShareModal(context, widget.placeName, widget.videoId, widget.naverMapLink);
                           },
                           child: Container(
                             color: Colors.transparent,
@@ -1459,7 +1482,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
     // 평균속도 30km/h (500미터/분)를 가정하여 소요 시간 계산
     int travelTimeMinutes = (distanceInMeters / 500).round();
 
-    return travelTimeMinutes.toString();
+    return (travelTimeMinutes * 2).toString();
   }
 
   /// 현재 위치와 장소 위치 간의 거리를 km 단위 문자열로 반환 ("2.34 km" 형식)

@@ -35,6 +35,7 @@ class ShortFormWidget extends StatefulWidget {
   final bool isEmpty;
   final Map<String, double> coordinates;
   final PageController pageController;
+  final String naverMapLink;
   final String placeId;
   final String? phoneNumber;
   final String address;
@@ -54,6 +55,7 @@ class ShortFormWidget extends StatefulWidget {
     required this.isEmpty,
     required this.coordinates,
     required this.pageController,
+    required this.naverMapLink,
     required this.placeId,
     required this.phoneNumber,
     required this.address,
@@ -214,6 +216,46 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
       // 업데이트된 리스트 저장
       await preferences.setStringList('seenVideoIds', seenVideoIds);
 
+    }
+  }
+
+  /// URL에서 마지막 숫자(ID)만 꺼내는 함수
+  String extractNaverPlaceId(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return '';
+
+    final segments = uri.pathSegments;
+    final placeIndex = segments.indexOf('place');
+    if (placeIndex != -1 && placeIndex + 1 < segments.length) {
+      return segments[placeIndex + 1];
+    }
+    return '';
+  }
+
+  Future<void> openNaverMap(String webMapUrl) async {
+    // 1) 웹 링크에서 ID 추출
+    final placeId = extractNaverPlaceId(webMapUrl);
+
+    // 2) placeId가 비어있지 않을 때만 딥링크 시도
+    if (placeId.isNotEmpty) {
+      final deepMapUrl = 'nmap://place?id=$placeId&appname=com.hwsoft.shortsmap';
+      if (await canLaunchUrl(Uri.parse(deepMapUrl))) {
+        await launchUrl(
+          Uri.parse(deepMapUrl),
+          mode: LaunchMode.externalApplication,
+        );
+        return;
+      }
+    }
+
+    // 3) placeId가 없거나(형식 불일치) 딥링크 실패 시 웹 URL 열기
+    if (await canLaunchUrl(Uri.parse(webMapUrl))) {
+      await launchUrl(
+        Uri.parse(webMapUrl),
+        mode: LaunchMode.externalApplication,
+      );
+    } else {
+      throw 'Could not launch $webMapUrl';
     }
   }
 
@@ -1097,7 +1139,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     // 평균속도 30km/h (500미터/분)를 가정하여 소요 시간 계산
     int travelTimeMinutes = (distanceInMeters / 500).round();
 
-    return travelTimeMinutes.toString();
+    return (travelTimeMinutes * 2).toString();
   }
 
   /// 현재 위치와 장소 위치 간의 거리를 km 단위 문자열로 반환 ("2.34 km" 형식)
@@ -1329,8 +1371,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         // 공유, 닫기 버튼
                         GestureDetector(
                           onTap: () {
-                            /// TODO: 네이버 맵 링크 받아와서 넣어주기
-                            showShareModal(context, widget.placeName, widget.videoId, 'https://map.naver.com/p/entry/place/1481312779');
+                            showShareModal(context, widget.placeName, widget.videoId, widget.naverMapLink);
                           },
                           child: Container(
                             width: 40,
@@ -1681,25 +1722,8 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 },
                               );
 
+                              openNaverMap(widget.naverMapLink);
 
-                              /// TODO: 실제 링크 받아와서 넣어주기
-                              /// TODO: 그냥 네이버 링크 받아와서 ID 분리해서 쓰기
-                              String deepMapUrl = 'nmap://place?id=1481312779&appname=com.hwsoft.shortsmap';
-
-                              String webMapUrl = 'https://map.naver.com/p/entry/place/1481312779';
-
-
-                              if (await canLaunchUrl(Uri.parse(deepMapUrl))){
-                                await launchUrl(
-                                  Uri.parse(deepMapUrl),
-                                  mode: LaunchMode.externalApplication,
-                                );
-                              } else {
-                                await launchUrl(
-                                  Uri.parse(webMapUrl),
-                                  mode: LaunchMode.externalApplication,
-                                );
-                              }
                             },
                           ),
                           if (widget.phoneNumber != null)
@@ -2046,8 +2070,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         GestureDetector(
                           onTap: () {
                             Navigator.pop(context);
-                            /// TODO: 네이버 맵 링크 받아와서 넣어주기
-                            showShareModal(context, widget.placeName, widget.videoId, 'https://map.naver.com/p/entry/place/1481312779');
+                            showShareModal(context, widget.placeName, widget.videoId, widget.naverMapLink);
                           },
                           child: Container(
                             color: Colors.transparent,

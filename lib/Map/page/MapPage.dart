@@ -448,6 +448,46 @@ class _MapPageState extends State<MapPage> {
 
   }
 
+  /// URL에서 마지막 숫자(ID)만 꺼내는 함수
+  String extractNaverPlaceId(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return '';
+
+    final segments = uri.pathSegments;
+    final placeIndex = segments.indexOf('place');
+    if (placeIndex != -1 && placeIndex + 1 < segments.length) {
+      return segments[placeIndex + 1];
+    }
+    return '';
+  }
+
+  Future<void> openNaverMap(String webMapUrl) async {
+    // 1) 웹 링크에서 ID 추출
+    final placeId = extractNaverPlaceId(webMapUrl);
+
+    // 2) placeId가 비어있지 않을 때만 딥링크 시도
+    if (placeId.isNotEmpty) {
+      final deepMapUrl = 'nmap://place?id=$placeId&appname=com.hwsoft.shortsmap';
+      if (await canLaunchUrl(Uri.parse(deepMapUrl))) {
+        await launchUrl(
+          Uri.parse(deepMapUrl),
+          mode: LaunchMode.externalApplication,
+        );
+        return;
+      }
+    }
+
+    // 3) placeId가 없거나(형식 불일치) 딥링크 실패 시 웹 URL 열기
+    if (await canLaunchUrl(Uri.parse(webMapUrl))) {
+      await launchUrl(
+        Uri.parse(webMapUrl),
+        mode: LaunchMode.externalApplication,
+      );
+    } else {
+      throw 'Could not launch $webMapUrl';
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -455,8 +495,6 @@ class _MapPageState extends State<MapPage> {
       builder: (BuildContext consumerContext, BookmarkProvider bookmarkProvider, Widget? child) {
 
         final bookmarks = bookmarkProvider.bookmarks;
-
-        print(bookmarks);
 
         return FutureBuilder(
           future: _buildMarkersFromBookmarks(bookmarks),
@@ -1001,7 +1039,7 @@ class _MapPageState extends State<MapPage> {
                                                                                 phoneNumber: placeData['phone_number'],
                                                                                 website: placeData['website_link'],
                                                                                 address: placeData['address'],
-                                                                                naverMapLink: 'naverMapLink', /// TODO : 서버에서 가져와서 넣기
+                                                                                naverMapLink: placeData['naver_map_link'],
                                                                               )));
                                                                     },
                                                                     child: Container(
@@ -1073,8 +1111,7 @@ class _MapPageState extends State<MapPage> {
                                                                   const Spacer(),
                                                                   GestureDetector(
                                                                     onTap: () {
-                                                                      /// TODO: 네이버 맵 링크 받아와서 넣어주기
-                                                                      showShareModal(context, placeData['place_name'], placeData['video_id'], 'naverMapLink');
+                                                                      showShareModal(context, placeData['place_name'], placeData['video_id'], placeData['naver_map_link']);
                                                                     },
                                                                     child: Container(
                                                                       width: 40,
@@ -1222,7 +1259,7 @@ class _MapPageState extends State<MapPage> {
                                                                             phoneNumber: placeData['phone_number'],
                                                                             website: placeData['website_link'],
                                                                             address: placeData['address'],
-                                                                            naverMapLink: 'naverMapLink', /// TODO : 서버에서 가져와서 넣기
+                                                                            naverMapLink: placeData['naver_map_link'],
                                                                           ),
                                                                         ),
                                                                       );
@@ -1275,23 +1312,8 @@ class _MapPageState extends State<MapPage> {
                                                                           },
                                                                         );
 
-                                                                        /// TODO: 실제 링크 받아와서 넣어주기
-                                                                        String deepMapUrl = 'nmap://place?id=1481312779&appname=com.hwsoft.shortsmap';
+                                                                        openNaverMap(placeData['naver_map_link']);
 
-                                                                        String webMapUrl = 'https://map.naver.com/p/entry/place/1481312779';
-
-
-                                                                        if (await canLaunchUrl(Uri.parse(deepMapUrl))){
-                                                                          await launchUrl(
-                                                                            Uri.parse(deepMapUrl),
-                                                                            mode: LaunchMode.externalApplication,
-                                                                          );
-                                                                        } else {
-                                                                          await launchUrl(
-                                                                            Uri.parse(webMapUrl),
-                                                                            mode: LaunchMode.externalApplication,
-                                                                          );
-                                                                        }
                                                                       },
                                                                     ),
                                                                     if (placeData['phone_number'] != null)
@@ -2046,7 +2068,7 @@ class _MapPageState extends State<MapPage> {
     // 평균속도 30km/h (500미터/분)를 가정하여 소요 시간 계산
     int travelTimeMinutes = (distanceInMeters / 500).round();
 
-    return travelTimeMinutes.toString();
+    return (travelTimeMinutes * 2).toString();
   }
 
   /// 특정 장소의 정보를 가져오는 함수
