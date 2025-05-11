@@ -9,13 +9,14 @@ class LocationData {
   final Map<String, double> coordinates;
   final int bookmarkCount;
   final String address;
-  final String? description; // optional
-  final String? openTime; // optional
-  final String? closeTime; // optional
-  final double? rating; // optional
-  final double? averagePrice; // optional
-  final String? phoneNumber; // optional
-  final String? websiteLink; // optional
+  final String naverMapLink;
+  final String? description;     // optional
+  final String? openTime;        // optional
+  final String? closeTime;       // optional
+  final double? rating;          // optional
+  final double? averagePrice;    // optional
+  final String? phoneNumber;     // optional
+  final String? websiteLink;     // optional
 
   LocationData({
     required this.placeId,
@@ -26,6 +27,7 @@ class LocationData {
     required this.coordinates,
     required this.bookmarkCount,
     required this.address,
+    required this.naverMapLink,
     this.description,
     this.openTime,
     this.closeTime,
@@ -52,7 +54,6 @@ class LocationData {
         }
       }
     }
-    // coordinates가 반드시 있어야 하므로, 없으면 예외 처리
     if (coords == null) {
       throw FormatException('Invalid or missing geojson coordinates');
     }
@@ -73,6 +74,7 @@ class LocationData {
       averagePrice: (json['average_price'] as num?)?.toDouble(),
       phoneNumber: json['phone_number'] as String?,
       websiteLink: json['website_link'] as String?,
+      naverMapLink: json['naver_map_link'] as String,  // JSON에서 새로 읽어옴
     );
   }
 }
