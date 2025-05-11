@@ -101,7 +101,7 @@ class BookmarkProvider with ChangeNotifier {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => MapPage(placeId: placeId),
+                    builder: (context) => MapPage(placeId: placeId, videoId: videoId,),
                   ),
                       (route) => false,
                 );
@@ -200,7 +200,7 @@ class BookmarkProvider with ChangeNotifier {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => MapPage(placeId: placeId),
+                    builder: (context) => MapPage(placeId: placeId, videoId: videoId,),
                   ),
                       (route) => false,
                 );

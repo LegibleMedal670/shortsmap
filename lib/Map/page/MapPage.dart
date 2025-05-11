@@ -24,8 +24,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 class MapPage extends StatefulWidget {
   final String? placeId;
+  final String? videoId;
 
-  const MapPage({super.key, this.placeId});
+  const MapPage({super.key, this.placeId, this.videoId});
 
 
   @override
@@ -77,7 +78,11 @@ class _MapPageState extends State<MapPage> {
 
   final Map<String, Future<String>> _photoFutures = {};
 
+  /// 디테일 정보가 보여지는 장소
   String? _selectedLocation;
+
+  /// 디테일 정보가 보여지는 장소의 비디오 아이디
+  String? _selectedVideoId;
 
   // 카테고리별 아이콘 및 컬러
   Map<String, dynamic> categoryStyles = {
@@ -229,6 +234,7 @@ class _MapPageState extends State<MapPage> {
       setState(() {
         _isListDetailOpened    = true;
         _selectedLocation      = widget.placeId;
+        _selectedVideoId       = widget.videoId;
         _locationDetailFuture  = _fetchLocationDetail(widget.placeId!);
       });
     }
@@ -317,6 +323,7 @@ class _MapPageState extends State<MapPage> {
               _selectedCategory = null;
               _isListDetailOpened    = true;
               _selectedLocation      = bookmark.placeId;
+              _selectedVideoId       = bookmark.videoId;
               _locationDetailFuture  = _fetchLocationDetail(bookmark.placeId);
             });
 
@@ -417,6 +424,7 @@ class _MapPageState extends State<MapPage> {
             setState(() {
               _isProgrammaticMove = true;
               _selectedLocation = b.placeId;
+              _selectedVideoId = b.videoId;
               _locationDetailFuture = _fetchLocationDetail(b.placeId);
               _isListDetailOpened = true;
               _isMarkerTapped = true;
@@ -854,7 +862,8 @@ class _MapPageState extends State<MapPage> {
                                       if (_selectedLocation != null) {
                                         // 상세 열려 있을 때
                                         setState(() {
-                                          _selectedLocation = null;               // 상세만 닫음
+                                          _selectedLocation = null;
+                                          _selectedVideoId = null;
                                           if (_selectedCategory == null) {
                                             // 맵→상세 경로였으면 → 전체 카테고리 리스트로
                                             _isListDetailOpened = false;
@@ -881,31 +890,31 @@ class _MapPageState extends State<MapPage> {
                               ),
                             ),
                           ),
-                          ///더보기버튼 TODO 현재는 역할이 없어서 일단 삭제
-                          // Visibility(
-                          //   visible: _isListDetailOpened,
-                          //   child: Positioned(
-                          //     top: 70,
-                          //     right: 10,
-                          //     child: SizedBox(
-                          //       height: 50,
-                          //       width: 50,
-                          //       child: FittedBox(
-                          //         child: FloatingActionButton(
-                          //           backgroundColor: Colors.white,
-                          //           child: const Icon(
-                          //             Icons.more_horiz,
-                          //             color: Colors.black54,
-                          //             size: 32,
-                          //           ),
-                          //           onPressed: () {
-                          //             showReportModal(context);
-                          //           },
-                          //         ),
-                          //       ),
-                          //     ),
-                          //   ),
-                          // ),
+                          ///더보기버튼
+                          Visibility(
+                            visible: _selectedLocation != null && _selectedVideoId != null,
+                            child: Positioned(
+                              top: 70,
+                              right: 10,
+                              child: SizedBox(
+                                height: 50,
+                                width: 50,
+                                child: FittedBox(
+                                  child: FloatingActionButton(
+                                    backgroundColor: Colors.white,
+                                    child: const Icon(
+                                      Icons.more_horiz,
+                                      color: Colors.black54,
+                                      size: 32,
+                                    ),
+                                    onPressed: () {
+                                      showCancelBookmarkModal(context, _selectedVideoId!);
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                           /// 바텀시트
                           Positioned(
                             bottom: 0,
@@ -1892,6 +1901,7 @@ class _MapPageState extends State<MapPage> {
 
         setState(() {
           _selectedLocation = locationId;
+          _selectedVideoId = videoId;
           _locationDetailFuture = _fetchLocationDetail(locationId);
         });
 
@@ -2131,6 +2141,7 @@ class _MapPageState extends State<MapPage> {
         return DraggableScrollableSheet(
           initialChildSize: 0.25,
           minChildSize: 0.25,
+          maxChildSize: 0.25,
           expand: false,
           builder:
               (context, reportScrollController) => SizedBox(
@@ -2248,6 +2259,7 @@ class _MapPageState extends State<MapPage> {
         return DraggableScrollableSheet(
           initialChildSize: 0.1,
           minChildSize: 0.1,
+          maxChildSize: 0.1,
           expand: false,
           builder:
               (context, cancelBookmarkScrollController) => SizedBox(
@@ -2296,6 +2308,15 @@ class _MapPageState extends State<MapPage> {
                               });
                             });
                           }
+
+                          if (_selectedVideoId != null && _selectedVideoId != null){
+                            setState(() {
+                              _isListDetailOpened = false;
+                              _selectedLocation = null;
+                              _selectedVideoId = null;
+                            });
+                          }
+
 
                           FirebaseAnalytics.instance.logEvent(
                             name: "delete_bookmark_map_page",
