@@ -17,11 +17,11 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.1</string>
+	<string>1.0.2</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>2</string>
+	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
@@ -61,20 +61,17 @@
 	<true/>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
-		<string>sms</string>
-		<string>tel</string>
+		<string>nmap</string>
 	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>더 나은 개인화 맞춤 서비스를 제공하기 위해 사용됩니다.</string>
-	<key>LSApplicationQueriesSchemes</key>
-    <array>
-        <string>nmap</string>
-    </array>
-    <key>FacebookAppID</key>
-    <string>974526871518802</string>
-    <key>FacebookDisplayName</key>
-    <string>ShortsMap</string>
+	<key>FacebookAppID</key>
+	<string>974526871518802</string>
+	<key>FacebookDisplayName</key>
+	<string>ShortsMap</string>
+	<key>FacebookAutoLogAppEventsEnabled</key>
+	<string>true</string>
 </dict>
 </plist>
