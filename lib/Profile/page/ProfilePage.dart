@@ -43,10 +43,11 @@ class _ProfilePageState extends State<ProfilePage> {
   String? _selectedSatisfaction;
 
   final List<String> _satisfactions = [
-    '가고 싶은 장소가 많았어요',
-    '가까운 순으로 장소를 찾는 경험이 유용했어요',
-    '저장한 장소를 지도에서 바로 볼 수 있어 편했어요',
-    '만족했던 점이 없어요',
+    '영상의 개수가 많아졌으면 좋겠어요',
+    '지역이 많아졌으면 좋겠어요',
+    '카테고리가 다양해졌으면 좋겠어요',
+    '데이트 코스 영상과 코스를 한번에 저장하는 기능이 생겼으면 좋겠어요',
+    '지도에서 탐색하는 기능이 생겼으면 좋겠어요',
   ];
 
   // 3) 별점
@@ -257,7 +258,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   if (_step == 1)
                     const Text(
-                      '앱 사용 중 가장 만족스러웠던 부분을 선택해주세요',
+                      '가장 우선적으로 업데이트 되었으면 하는 부분을 \n선택해주세요',
                       style:
                       TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
