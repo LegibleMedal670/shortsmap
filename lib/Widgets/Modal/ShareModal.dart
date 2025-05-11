@@ -23,6 +23,7 @@ class ShareModal extends StatelessWidget {
     return DraggableScrollableSheet(
       initialChildSize: 0.15,
       minChildSize: 0.15,
+      maxChildSize: 0.15,
       expand: false,
       builder: (context, scrollController) => SizedBox(
         width: MediaQuery.of(context).size.width,
