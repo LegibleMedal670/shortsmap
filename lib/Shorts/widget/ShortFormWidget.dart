@@ -293,8 +293,18 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           horizontal: 8,
                         ),
                         color: Colors.transparent,
-                        child: Text(
+                        child: (filterProvider.orderNear == false && filterProvider.filterCategory == null && filterProvider.filterRegion == null)
+                            ? Text(
+                          '필터 적용하기',
+                          style: TextStyle(
+                            fontSize: 21,
+                            fontWeight: FontWeight.w600,
+                            color: shortPageWhite,
+                          ),
+                        )
+                            : Text(
                           '${filterProvider.orderNear == true ? '가까운 순' : filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory == null ? 'All' : switchCategoryToKor(filterProvider.filterCategory)} ',
+                          // '${filterProvider.filterRegion ?? '대전'} · ${filterProvider.filterCategory ?? '전시'} ',
                           style: TextStyle(
                             fontSize: 21,
                             fontWeight: FontWeight.w600,
@@ -410,10 +420,10 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                     // 원래 영상의 비율을 유지하는 크기 지정 (9:16)
                                     width:
                                         MediaQuery.of(context).size.width *
-                                        0.89,
+                                        0.87,
                                     height:
                                         (MediaQuery.of(context).size.width *
-                                            0.89) *
+                                            0.87) *
                                         (16 / 9),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(10),
@@ -2127,9 +2137,9 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
             }
 
             return DraggableScrollableSheet(
-              maxChildSize: 0.4,
-              initialChildSize: 0.4,
-              minChildSize: 0.3999,
+              maxChildSize: 0.45,
+              initialChildSize: 0.45,
+              minChildSize: 0.4499,
               expand: false,
               snap: false,
               builder: (context, filterScrollController) {
