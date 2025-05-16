@@ -42,8 +42,7 @@ Widget BottomNavBar(BuildContext context, String page) {
           onTap: () async {
             HapticFeedback.lightImpact();
             if (page != 'shorts') {
-              Navigator.push(
-                  context,
+              Navigator.of(context,rootNavigator: true).push(
                   NoPushCupertinoPageRoute(
                       builder: (context) => ShortsPage()));
             }
@@ -167,8 +166,7 @@ Widget BottomNavBar(BuildContext context, String page) {
                   ),
                 );
               } else {
-                Navigator.push(
-                  context,
+                Navigator.of(context, rootNavigator: true).push(
                   MaterialPageRoute(builder: (context) => LoginPage()),
                 );
               }

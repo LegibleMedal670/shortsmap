@@ -80,8 +80,7 @@ class AccountPage extends StatelessWidget {
                             padding: const EdgeInsets.only(right: 5.0),
                             child: InkWell(
                               onTap: () {
-                                Navigator.push(
-                                  context,
+                                Navigator.of(context, rootNavigator: true).push(
                                   MaterialPageRoute(builder: (context) => const LoginPage()), // 로그인 페이지로 push
                                 );
                               },
@@ -113,8 +112,7 @@ class AccountPage extends StatelessWidget {
                     ).isLoggedIn ? () {
                       _showLogoutDialog(context);
                     } : () {
-                      Navigator.push(
-                        context,
+                      Navigator.of(context, rootNavigator: true).push(
                         MaterialPageRoute(builder: (context) => const LoginPage()), // 로그인 페이지로 push
                       );
                     },
@@ -143,13 +141,11 @@ class AccountPage extends StatelessWidget {
                       context,
                       listen: false,
                     ).isLoggedIn ? () {
-                      Navigator.push(
-                        context,
+                      Navigator.of(context, rootNavigator: true).push(
                         MaterialPageRoute(builder: (context) => WithdrawPage()),
                       );
                     } : (){
-                      Navigator.push(
-                        context,
+                      Navigator.of(context, rootNavigator: true).push(
                         MaterialPageRoute(builder: (context) => const LoginPage()), // 로그인 페이지로 push
                       );
                     },

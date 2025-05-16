@@ -45,7 +45,7 @@ class _MapPageState extends State<MapPage> {
   late GoogleMapController _mapController;
 
   CameraPosition _initialCameraPosition =
-      CameraPosition(target: LatLng(600.793503213905154, -600.39945983265487), zoom: 20.0);
+      CameraPosition(target: LatLng(37.5563, 126.9220), zoom: 20.0);
 
   double _widgetHeight = 0;
   // double _fabPosition = 0;
@@ -629,6 +629,7 @@ class _MapPageState extends State<MapPage> {
                                 },
                                 myLocationEnabled: true,
                                 myLocationButtonEnabled: false,
+                                zoomControlsEnabled: false,
                                 initialCameraPosition: _initialCameraPosition,
                                 markers: snapshot.hasData ? markers! : {},
                               );
@@ -1016,8 +1017,7 @@ class _MapPageState extends State<MapPage> {
                                                                       },
                                                                     );
 
-                                                                    Navigator.push(
-                                                                        context,
+                                                                    Navigator.of(context, rootNavigator: true).push(
                                                                         MaterialPageRoute(
                                                                             builder: (context) => MapShortsPage(
                                                                               placeName: placeData['place_name'],
@@ -1039,7 +1039,8 @@ class _MapPageState extends State<MapPage> {
                                                                               website: placeData['website_link'],
                                                                               address: placeData['address'],
                                                                               naverMapLink: placeData['naver_map_link'],
-                                                                            )));
+                                                                            ))
+                                                                    );
                                                                   },
                                                                   child: Container(
                                                                     width: 90,
@@ -1234,8 +1235,7 @@ class _MapPageState extends State<MapPage> {
                                                                       },
                                                                     );
 
-                                                                    Navigator.push(
-                                                                      context,
+                                                                    Navigator.of(context, rootNavigator: true).push(
                                                                       MaterialPageRoute(
                                                                         builder: (_) => MapShortsPage(
                                                                           placeName: placeData['place_name'],

@@ -124,8 +124,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   /// 계정
                   ListTile(
                     onTap: () {
-                      Navigator.push(
-                        context,
+                      Navigator.of(context, rootNavigator: true).push(
                         MaterialPageRoute(builder: (context) => AccountPage()),
                       );
                     },
@@ -184,8 +183,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         onTap: userDataProvider.isLoggedIn
                             ? () => _showLogoutDialog(context)
                             : () {
-                          Navigator.push(
-                            context,
+                          Navigator.of(context, rootNavigator: true).push(
                             MaterialPageRoute(builder: (context) => const LoginPage()),
                           );
                         },
@@ -252,7 +250,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   // 단계별 제목
                   if (_step == 0)
                     const Text(
-                      '앱 사용 중 가장 개선되었으면 하는 부분을 선택해주세요',
+                      '앱 사용 중 가장 개선되었으면 하는 부분을 \n선택해주세요',
                       style:
                       TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
