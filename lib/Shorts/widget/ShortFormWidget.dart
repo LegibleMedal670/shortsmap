@@ -71,7 +71,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
   late YoutubePlayerController _controller;
   IconData _currentIcon = Icons.pause;
   double _pauseIconOpacity = 0.0;
-  bool _isExpanded = false;
+  bool _isDescriptionExpanded = false;
 
   late int _bookmarkCount;
 
@@ -372,9 +372,72 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
             onLongPress: () {
               showOptionsModal(context);
             },
-            // onDoubleTap: () {
-            //   print('doubletap');
-            // },
+            onDoubleTap: () async {
+              if (Provider.of<BookmarkProvider>(context, listen: false,).userId == null)
+              {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    duration: Duration(milliseconds: 1500),
+                    backgroundColor: Colors.lightBlueAccent,
+                    content: Text('북마크하기 위해 로그인 해주세요'),
+                    action: SnackBarAction(
+                      label: '로그인',
+                      textColor: Color(0xff121212),
+                      onPressed: () async {
+
+
+                        final played = await _controller.currentTime;
+
+                        FirebaseAnalytics.instance.logEvent(
+                          name: "login_to_bookmark",
+                          parameters: {
+                            "video_id": widget.videoId,
+                            "watch_duration": played.round(),
+                          },
+                        );
+
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => LoginPage()),
+                        );
+                      },
+                    ),
+                    behavior: SnackBarBehavior.floating,
+                    margin: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).size.height * 0.02,
+                      left: 20.0,
+                      right: 20.0,
+                    ),
+                  ),
+                );
+              }
+              else {
+
+                final played = await _controller.currentTime;
+
+                if (!Provider.of<BookmarkProvider>(context, listen: false,).isBookmarked(widget.videoId)) {
+
+                  HapticFeedback.lightImpact();
+
+
+                  setState(() {
+                    _bookmarkCount++;
+                  });
+
+                  Provider.of<BookmarkProvider>(context, listen: false,).addBookmark(context, widget.videoId, widget.category, widget.placeId, played.round());
+
+                } else {
+
+                  setState(() {
+                    _bookmarkCount--;
+                  });
+
+
+                  Provider.of<BookmarkProvider>(context, listen: false,).removeBookmark(context, widget.videoId, widget.placeId, played.round());
+
+                }
+              }
+            },
             child: SafeArea(
               child: Container(
                 width: MediaQuery.of(context).size.width,
@@ -505,11 +568,11 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
           ),
 
           ///설명 Expanded 되었을 때 가독성을 위한 그림자
-          if (_isExpanded)
+          if (_isDescriptionExpanded)
             GestureDetector(
               onTap: () {
                 setState(() {
-                  _isExpanded = false;
+                  _isDescriptionExpanded = false;
                 });
               },
               child: Container(
@@ -774,26 +837,26 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                     GestureDetector(
                       onTap:
                           () => setState(() {
-                            _isExpanded = !_isExpanded;
+                            _isDescriptionExpanded = !_isDescriptionExpanded;
                           }),
                       child: AnimatedContainer(
                         color: Colors.transparent,
-                        padding: EdgeInsets.only(top: _isExpanded ? 5 : 0),
+                        padding: EdgeInsets.only(top: _isDescriptionExpanded ? 5 : 0),
                         constraints: BoxConstraints(
                           maxHeight:
-                              _isExpanded
+                              _isDescriptionExpanded
                                   ? MediaQuery.of(context).size.height *
                                       (320 / 812)
                                   : 25,
                           minHeight:
-                              _isExpanded
+                              _isDescriptionExpanded
                                   ? MediaQuery.of(context).size.height *
-                                      (100 / 812)
+                                      (60 / 812)
                                   : 25,
                         ),
                         duration: const Duration(milliseconds: 200),
                         child:
-                            _isExpanded
+                            _isDescriptionExpanded
                                 ? SingleChildScrollView(
                                   child: Container(
                                     width:
