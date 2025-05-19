@@ -840,6 +840,7 @@ class _MapPageState extends State<MapPage> {
                               width: 45,
                               child: FittedBox(
                                 child: FloatingActionButton(
+                                  heroTag: UniqueKey().toString(),
                                   backgroundColor: Colors.white,
                                   child: Padding(
                                     padding: const EdgeInsets.only(right: 2.0),
@@ -892,6 +893,7 @@ class _MapPageState extends State<MapPage> {
                               width: 50,
                               child: FittedBox(
                                 child: FloatingActionButton(
+                                  heroTag: UniqueKey().toString(),
                                   backgroundColor: Colors.white,
                                   child: const Icon(
                                     Icons.more_horiz,
