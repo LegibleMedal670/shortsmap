@@ -37,7 +37,7 @@ class FilterProvider extends ChangeNotifier {
     }
 
     // 권한이 허용된 경우 현재 위치 가져오기
-    final position = await Geolocator.getCurrentPosition();
+    final position = await Geolocator.getCurrentPosition(locationSettings: AndroidSettings(forceLocationManager: true, accuracy: LocationAccuracy.lowest));
     _filterLat = position.latitude;
     _filterLon = position.longitude;
     _filterRegion = null;

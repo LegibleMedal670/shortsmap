@@ -52,7 +52,7 @@ class UserDataProvider extends ChangeNotifier {
         return;
       }
 
-      final position = await Geolocator.getCurrentPosition();
+      final position = await Geolocator.getCurrentPosition(locationSettings: AndroidSettings(forceLocationManager: true, accuracy: LocationAccuracy.lowest,));
 
       _currentLat = position.latitude;
       _currentLon = position.longitude;
