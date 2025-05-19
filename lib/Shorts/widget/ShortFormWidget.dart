@@ -1201,7 +1201,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
           topRight: Radius.circular(20.0),
         ),
       ),
-      builder: (BuildContext context) {
+      builder: (BuildContext sheetContext) {
         return DraggableScrollableSheet(
           maxChildSize: 0.9,
           initialChildSize: 0.37,
@@ -1209,7 +1209,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
           expand: false,
           snap: true,
           snapSizes: const [0.38, 0.9],
-          builder: (context, infoScrollController) {
+          builder: (infoScrollContext, infoScrollController) {
             return SingleChildScrollView(
               controller: infoScrollController,
               child: Padding(
@@ -1324,9 +1324,9 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              '${widget.category} · \$${widget.averagePrice == null ? '3' : widget.averagePrice!.round()}~',
+                              widget.category,
                               style: TextStyle(
-                                fontSize: MediaQuery.of(context).size.width * 0.035,
+                                fontSize: MediaQuery.of(context).size.width * 0.036,
                                 color: Colors.black54,
                               ),
                             ),
@@ -1347,7 +1347,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                       ? ' ${calculateTimeRequired(userLat, userLon, locationLat, locationLon)}분 · ${widget.placeRegion}'
                                       : ' 30분 · ${widget.placeRegion}',
                                   style: TextStyle(
-                                    fontSize: MediaQuery.of(context).size.width * 0.035,
+                                    fontSize: MediaQuery.of(context).size.width * 0.036,
                                     color: Colors.black54,
                                   ),
                                 ),
@@ -1365,7 +1365,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 Text(
                                   ' ${widget.openTime ?? '09:00'} ~ ${widget.closeTime ?? '22:00'}',
                                   style: TextStyle(
-                                    fontSize: MediaQuery.of(context).size.width * 0.035,
+                                    fontSize: MediaQuery.of(context).size.width * 0.036,
                                     color: Colors.black54,
                                   ),
                                 ),
@@ -1396,7 +1396,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ),
                         GestureDetector(
                           onTap: () {
-                            Navigator.pop(context);
+                            Navigator.of(sheetContext).pop();
                           },
                           child: Container(
                             width: 40,
@@ -1469,7 +1469,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 Text(
                                   '전화걸기',
                                   style: TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 15,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -1524,7 +1524,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 Text(
                                   '길찾기',
                                   style: TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 15,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -1534,6 +1534,9 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         ),
                         GestureDetector(
                           onTap: () async {
+
+                            Navigator.of(sheetContext).pop();
+
                             if (Provider.of<BookmarkProvider>(context, listen: false,).userId == null)
                             {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -1616,7 +1619,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 Text(
                                   '북마크',
                                   style: TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 15,
                                     fontWeight: FontWeight.w500,
                                     color: Colors.white,
                                   ),
@@ -1717,7 +1720,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                         children: [
                           _buildListTile(
                             icon: Icons.location_on_outlined,
-                            title: 'Address',
+                            title: '네이버지도에서 보기',
                             subtitle: widget.address,
                             onTap: () async {
 
@@ -1737,8 +1740,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           if (widget.phoneNumber != null)
                             _buildListTile(
                               icon: Icons.phone,
-                              title: 'Call',
-                              subtitle: '눌러서 전화걸기',
+                              title: '전화걸기',
                               onTap: () async {
 
                                 FirebaseAnalytics.instance.logEvent(
@@ -1776,8 +1778,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                           if (widget.website != null)
                             _buildListTile(
                               icon: Icons.language,
-                              title: 'Visit Website',
-                              subtitle: '웹사이트 방문하기',
+                              title: '웹사이트 방문하기',
                               onTap: () async {
 
                                 FirebaseAnalytics.instance.logEvent(
@@ -2063,7 +2064,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
                                 Icon(Icons.flag_outlined, size: 24),
                                 SizedBox(width: 20),
                                 Text(
-                                  '신고',
+                                  '신고하기',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w500,
@@ -2411,9 +2412,9 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
       ),
       builder: (BuildContext context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.3,
-          minChildSize: 0.3,
-          maxChildSize: 0.3,
+          initialChildSize: 0.33,
+          minChildSize: 0.33,
+          maxChildSize: 0.33,
           expand: false,
           builder:
               (context, reportScrollController) => SizedBox(
@@ -2548,7 +2549,7 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
   }) {
     return ListTile(
       leading: Icon(icon, color: Colors.black),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15)),
       subtitle:
           subtitle != null
               ? Text(subtitle, style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.035,))

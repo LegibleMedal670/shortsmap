@@ -698,7 +698,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
           topRight: Radius.circular(20.0),
         ),
       ),
-      builder: (BuildContext context) {
+      builder: (BuildContext sheetContext) {
         return DraggableScrollableSheet(
           maxChildSize: 0.9,
           initialChildSize: 0.37,
@@ -706,7 +706,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
           expand: false,
           snap: true,
           snapSizes: const [0.38, 0.9],
-          builder: (context, infoScrollController) {
+          builder: (infoScrollContext, infoScrollController) {
             return SingleChildScrollView(
               controller: infoScrollController,
               child: Padding(
@@ -758,17 +758,17 @@ class _MapShortsPageState extends State<MapShortsPage> {
                           children: [
                             Text(
                               widget.placeName,
-                              style: const TextStyle(
-                                fontSize: 18,
+                              style: TextStyle(
+                                fontSize: MediaQuery.of(context).size.width * 0.045,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
                               ),
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              '${widget.category} · \$${widget.averagePrice.round()}~',
-                              style: const TextStyle(
-                                fontSize: 14,
+                              widget.category,
+                              style: TextStyle(
+                                fontSize: MediaQuery.of(context).size.width * 0.036,
                                 color: Colors.black54,
                               ),
                             ),
@@ -788,8 +788,8 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                           userLon != null)
                                       ? ' ${calculateTimeRequired(userLat, userLon, locationLat, locationLon)}분 · ${widget.storeLocation}'
                                       : ' 30분 · ${widget.storeLocation}',
-                                  style: const TextStyle(
-                                    fontSize: 14,
+                                  style: TextStyle(
+                                    fontSize: MediaQuery.of(context).size.width * 0.036,
                                     color: Colors.black54,
                                   ),
                                 ),
@@ -806,8 +806,8 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                 ),
                                 Text(
                                   ' ${widget.openTime} ~ ${widget.closeTime}',
-                                  style: const TextStyle(
-                                    fontSize: 14,
+                                  style: TextStyle(
+                                    fontSize: MediaQuery.of(context).size.width * 0.036,
                                     color: Colors.black54,
                                   ),
                                 ),
@@ -838,7 +838,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                         ),
                         GestureDetector(
                           onTap: () {
-                            Navigator.pop(context);
+                            Navigator.of(sheetContext).pop();
                           },
                           child: Container(
                             width: 40,
@@ -911,7 +911,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                 Text(
                                   '전화걸기',
                                   style: TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 15,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -965,7 +965,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                 Text(
                                   '길찾기',
                                   style: TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 15,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -1099,7 +1099,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                         children: [
                           _buildListTile(
                             icon: Icons.location_on_outlined,
-                            title: 'Address',
+                            title: '네이버지도에서 보기',
                             subtitle: widget.address,
                             onTap: () async {
 
@@ -1118,8 +1118,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                           if (widget.phoneNumber != null)
                             _buildListTile(
                               icon: Icons.phone,
-                              title: 'Call',
-                              subtitle: '눌러서 전화걸기',
+                              title: '전화걸기',
                               onTap: () async {
 
                                 FirebaseAnalytics.instance.logEvent(
@@ -1157,8 +1156,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                           if (widget.website != null)
                             _buildListTile(
                               icon: Icons.language,
-                              title: 'Visit Website',
-                              subtitle: '웹사이트 방문하기',
+                              title: '웹사이트 방문하기',
                               onTap: () async {
 
                                 FirebaseAnalytics.instance.logEvent(
@@ -1259,7 +1257,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                 Icon(Icons.flag_outlined, size: 24),
                                 SizedBox(width: 20),
                                 Text(
-                                  'Report',
+                                  '신고하기',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w500,
@@ -1282,7 +1280,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                 Icon(CupertinoIcons.paperplane, size: 24),
                                 SizedBox(width: 20),
                                 Text(
-                                  'Share',
+                                  '공유하기',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w500,
@@ -1318,9 +1316,9 @@ class _MapShortsPageState extends State<MapShortsPage> {
       ),
       builder: (BuildContext context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.3,
-          minChildSize: 0.3,
-          maxChildSize: 0.3,
+          initialChildSize: 0.33,
+          minChildSize: 0.33,
+          maxChildSize: 0.33,
           expand: false,
           builder:
               (context, reportScrollController) => SizedBox(
@@ -1455,10 +1453,10 @@ class _MapShortsPageState extends State<MapShortsPage> {
   }) {
     return ListTile(
       leading: Icon(icon, color: Colors.black),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15)),
       subtitle:
           subtitle != null
-              ? Text(subtitle, style: TextStyle(fontSize: 15))
+              ? Text(subtitle, style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.035,))
               : null,
       trailing: const Icon(Icons.chevron_right, size: 26),
       onTap: onTap,

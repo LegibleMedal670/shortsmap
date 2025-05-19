@@ -136,7 +136,7 @@ class _MapPageState extends State<MapPage> {
       name: "my_location_button_clicked",
     );
 
-    final position = await Geolocator.getCurrentPosition();
+    final position = await Geolocator.getCurrentPosition(locationSettings: AndroidSettings(forceLocationManager: true, accuracy: LocationAccuracy.lowest), );
     final cameraPosition = CameraPosition(
       target: LatLng(position.latitude, position.longitude),
       zoom: 18,
@@ -1070,21 +1070,21 @@ class _MapPageState extends State<MapPage> {
                                                                   children: [
                                                                     Text(
                                                                       placeData['place_name'],
-                                                                      style: const TextStyle(
-                                                                        fontSize: 18,
+                                                                      style: TextStyle(
+                                                                        fontSize: MediaQuery.of(context).size.width * 0.046,
                                                                         fontWeight: FontWeight.bold,
                                                                         color: Colors.black,
                                                                       ),
                                                                     ),
                                                                     const SizedBox(height: 3),
                                                                     Text(
-                                                                      '${placeData['category']} · \$${placeData['average_price'] == null ? '3' : placeData['average_price'].round()}~',
-                                                                      style: const TextStyle(fontSize: 14, color: Colors.black54),
+                                                                      placeData['category'],
+                                                                      style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.036, color: Colors.black54),
                                                                     ),
                                                                     const SizedBox(height: 3),
                                                                     Row(
                                                                       children: [
-                                                                        const Icon(CupertinoIcons.bus, color: Colors.black26, size: 18),
+                                                                        Icon(CupertinoIcons.bus, color: Colors.black26, size: MediaQuery.of(context).size.width * 0.045,),
                                                                         Text(
                                                                           (placeData['latitude'] != null &&
                                                                               userLat != null &&
@@ -1092,7 +1092,7 @@ class _MapPageState extends State<MapPage> {
                                                                               userLon != null)
                                                                               ? ' ${calculateTimeRequired(userLat, userLon, placeData['latitude'], placeData['longitude'])}분 · ${placeData['region']}'
                                                                               : ' 30분 · ${placeData['region']}',
-                                                                          style: const TextStyle(fontSize: 14, color: Colors.black54),
+                                                                          style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.036, color: Colors.black54),
                                                                         ),
                                                                       ],
                                                                     ),
@@ -1102,7 +1102,7 @@ class _MapPageState extends State<MapPage> {
                                                                         const Icon(CupertinoIcons.time, color: Colors.black26, size: 18),
                                                                         Text(
                                                                           ' ${placeData['open_time'] ?? '09:00'} ~ ${placeData['close_time'] ?? '22:00'}',
-                                                                          style: const TextStyle(fontSize: 14, color: Colors.black54),
+                                                                          style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.036, color: Colors.black54),
                                                                         ),
                                                                       ],
                                                                     ),
@@ -1173,7 +1173,7 @@ class _MapPageState extends State<MapPage> {
                                                                       children: const [
                                                                         Icon(CupertinoIcons.phone, color: Colors.black, size: 22),
                                                                         SizedBox(width: 8),
-                                                                        Text('전화걸기', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                                                                        Text('전화걸기', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
                                                                       ],
                                                                     ),
                                                                   ),
@@ -1219,7 +1219,7 @@ class _MapPageState extends State<MapPage> {
                                                                       children: const [
                                                                         Icon(CupertinoIcons.car, color: Colors.black, size: 22),
                                                                         SizedBox(width: 8),
-                                                                        Text('길찾기', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                                                                        Text('길찾기', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
                                                                       ],
                                                                     ),
                                                                   ),
@@ -1277,7 +1277,7 @@ class _MapPageState extends State<MapPage> {
                                                                         SizedBox(width: 8),
                                                                         Text(
                                                                           '영상보기',
-                                                                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
+                                                                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Colors.white),
                                                                         ),
                                                                       ],
                                                                     ),
@@ -1300,7 +1300,7 @@ class _MapPageState extends State<MapPage> {
                                                                 children: [
                                                                   _buildListTile(
                                                                     icon: Icons.location_on_outlined,
-                                                                    title: 'Address',
+                                                                    title: '네이버지도에서 보기',
                                                                     subtitle: placeData['address'],
                                                                     onTap: () async {
 
@@ -1320,8 +1320,7 @@ class _MapPageState extends State<MapPage> {
                                                                   if (placeData['phone_number'] != null)
                                                                     _buildListTile(
                                                                       icon: Icons.phone,
-                                                                      title: 'Call',
-                                                                      subtitle: '눌러서 전화걸기',
+                                                                      title: '전화걸기',
                                                                       onTap: () async {
 
                                                                         FirebaseAnalytics.instance.logEvent(
@@ -1340,8 +1339,7 @@ class _MapPageState extends State<MapPage> {
                                                                   if (placeData['website_link'] != null)
                                                                     _buildListTile(
                                                                       icon: Icons.language,
-                                                                      title: 'Visit Website',
-                                                                      subtitle: '웹사이트 방문하기',
+                                                                      title: '웹사이트 방문하기',
                                                                       onTap: () async {
 
                                                                         FirebaseAnalytics.instance.logEvent(
@@ -1455,10 +1453,10 @@ class _MapPageState extends State<MapPage> {
                                                             const SizedBox(width: 15,),
                                                             Text(
                                                               _selectedCategory!,
-                                                              style: const TextStyle(
+                                                              style: TextStyle(
                                                                 color: Colors.black,
-                                                                fontSize: 20,
-                                                                fontWeight: FontWeight.bold,
+                                                                fontSize: MediaQuery.of(context).size.width * 0.055,
+                                                                fontWeight: FontWeight.w600,
                                                               ),
                                                             ),
                                                             Spacer(),
@@ -1990,8 +1988,8 @@ class _MapPageState extends State<MapPage> {
                 children: [
                   Text(
                     storeName,
-                    style: const TextStyle(
-                      fontSize: 18,
+                    style: TextStyle(
+                      fontSize: MediaQuery.of(context).size.width * 0.046,
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
                     ),
@@ -2009,8 +2007,8 @@ class _MapPageState extends State<MapPage> {
                         (lat != null && Provider.of<UserDataProvider>(context, listen: false).currentLat != null && lon != null && Provider.of<UserDataProvider>(context, listen: false).currentLon != null)
                             ? ' ${calculateTimeRequired(Provider.of<UserDataProvider>(context, listen: false).currentLat!, Provider.of<UserDataProvider>(context, listen: false).currentLon!, lat, lon)}분 · $region'
                             : ' 30분 · $region',
-                        style: const TextStyle(
-                          fontSize: 14,
+                        style: TextStyle(
+                          fontSize: MediaQuery.of(context).size.width * 0.036,
                           color: Colors.black54,
                         ),
                       ),
@@ -2027,8 +2025,8 @@ class _MapPageState extends State<MapPage> {
                       ),
                       Text(
                         ' $openTime ~ $closeTime',
-                        style: const TextStyle(
-                          fontSize: 14,
+                        style: TextStyle(
+                          fontSize: MediaQuery.of(context).size.width * 0.036,
                           color: Colors.black54,
                         ),
                       ),
@@ -2102,10 +2100,10 @@ class _MapPageState extends State<MapPage> {
   }) {
     return ListTile(
       leading: Icon(icon, color: Colors.black),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15)),
       subtitle:
       subtitle != null
-          ? Text(subtitle, style: TextStyle(fontSize: 15))
+          ? Text(subtitle, style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.035,))
           : null,
       trailing: const Icon(Icons.chevron_right, size: 26),
       onTap: onTap,
