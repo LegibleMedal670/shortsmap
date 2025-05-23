@@ -16,6 +16,7 @@ import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/SplashScreen.dart';
 import 'package:shortsmap/env.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shortsmap/Map/provider/MarkerProvider.dart';
 
 import 'firebase_options.dart';
 
@@ -91,6 +92,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider.value(value: widget.userDataProvider),
         ChangeNotifierProvider(create: (_) => PhotoCacheProvider(apiKey: Env.googlePlaceAPIKey)),
         ChangeNotifierProvider.value(value: widget.bookmarkProvider),
+        ChangeNotifierProvider(create: (_) => MarkerDataProvider(bookmarkProvider: widget.bookmarkProvider)),
       ],
       child: MaterialApp(
         navigatorObservers: [
