@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shortsmap/Map/model/LocationData.dart';
@@ -58,6 +59,9 @@ class MarkerDataProvider extends ChangeNotifier {
   // 탭한 마커의 디테일한 정보Future를 저장하기 위한 변수
   Future<Map<String, dynamic>>? _locationDetailFuture;
 
+  // 바텀시트에 표시할 대략적인 장소들의 정보Future를 저장하기 위한 변수
+  Future<List<Map<String, dynamic>>>? _currentLocationsFuture;
+
   // 마커 로딩 확인용 변수
   bool _isMarkerLoading = false;
 
@@ -104,6 +108,9 @@ class MarkerDataProvider extends ChangeNotifier {
 
   // 탭한 마커의 디테일한 정보Future를 리턴하는 Getter
   Future<Map<String, dynamic>>? get locationDetailFuture => _locationDetailFuture;
+
+  // 현재 장소들의 데이터Future를 리턴하는 Getter
+  Future<List<Map<String, dynamic>>>? get currentLocationsFuture => _currentLocationsFuture;
 
   // 카테고리 선택을 위한 Setter
   set selectCategory(String? category) {
@@ -180,12 +187,11 @@ class MarkerDataProvider extends ChangeNotifier {
           .map((e) => MarkerLocationData.fromMap(e))
           .toSet();
 
-      for (MarkerLocationData data in _viewPortLocations){
-        print(data.placeId);
-      }
+      // for (MarkerLocationData data in _viewPortLocations){
+      //   print(data.placeId);
+      // }
 
-      await _buildLocationMarkers(sheetController);
-
+      await _buildLocationMarkers(sheetController, centerLat, centerLng);
 
       notifyListeners();
     } catch (e) {
@@ -270,7 +276,7 @@ class MarkerDataProvider extends ChangeNotifier {
   }
 
   // 마커를 그리는 함수
-  Future<void> _buildLocationMarkers(DraggableScrollableController sheetController) async {
+  Future<void> _buildLocationMarkers(DraggableScrollableController sheetController, double centerLat, double centerLng) async {
 
     // 마커를 그릴 장소 데이터들을 저장할 변수
     Set<MarkerLocationData> locationData;
@@ -332,7 +338,10 @@ class MarkerDataProvider extends ChangeNotifier {
       ));
     }
 
+    await _fetchCurrentLocations(source, centerLat, centerLng);
+
     await Future.delayed(Duration(milliseconds: 1000));
+
 
     _isMarkerLoading = false;
 
@@ -366,6 +375,36 @@ class MarkerDataProvider extends ChangeNotifier {
     } on PostgrestException catch (e) {
       throw Exception("Error fetching posts: ${e.code}, ${e.message}");
     }
+
+  }
+
+  Future<void> _fetchCurrentLocations(Set<MarkerLocationData> source, double centerLat, double centerLng) async {
+
+    // 중앙 지점과의 거리순으로 장소 데이터 정렬 ( 머로할지정하기 )
+    final list = source.toList();
+    list.sort((a, b) {
+      final da = Geolocator.distanceBetween(
+          centerLat, centerLng, a.latitude, a.longitude);
+      final db = Geolocator.distanceBetween(
+          centerLat, centerLng, b.latitude, b.longitude);
+      return da.compareTo(db);
+    });
+
+    final sortedIds = list.map((e) => e.placeId).toList();
+
+    // 정렬된 순서에 따라 장소 정보 불러오기
+    _currentLocationsFuture = Supabase.instance.client
+        .rpc('get_locations_by_ids', params: {
+          '_ids': sortedIds,
+        }).then((value) {
+          final locations = List<Map<String, dynamic>>.from(value);
+
+          // 정렬된 place_id 순서에 맞게 다시 재정렬
+          locations.sort((a, b) =>
+          sortedIds.indexOf(a['place_id']) - sortedIds.indexOf(b['place_id']));
+
+          return locations;
+        });
 
   }
 

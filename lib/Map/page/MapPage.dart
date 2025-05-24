@@ -610,6 +610,7 @@ class _MapPageState extends State<MapPage> {
               Expanded(
                 child: Stack(
                   children: [
+                    /// 지도
                     Container(
                       width: MediaQuery.of(context).size.width,
                       height: MediaQuery.of(context).size.height,
@@ -666,7 +667,7 @@ class _MapPageState extends State<MapPage> {
                               myLocationEnabled: true,
                               myLocationButtonEnabled: false,
                               zoomControlsEnabled: false,
-                              initialCameraPosition: userDataProvider.currentLat != null ? CameraPosition(target: LatLng(userDataProvider.currentLat!, userDataProvider.currentLon!), zoom: 18.0) : CameraPosition(target: LatLng(37.5563, 126.9220), zoom: 18.0),
+                              initialCameraPosition: userDataProvider.currentLat != null ? CameraPosition(target: LatLng(userDataProvider.currentLat!, userDataProvider.currentLon!), zoom: 18.0) : CameraPosition(target: LatLng(37.5563, 126.9220), zoom: 18.0), // TODO 현재 위치로 설정해야함 맵을 킬 때의
                               markers: markerProvider.locationMarkers,  /// TODO: 마커 관리 방식 변경
                             );
                           }
@@ -1443,18 +1444,17 @@ class _MapPageState extends State<MapPage> {
                                               );
                                             },
                                           )
-                                              : _isListDetailOpened
-                                              ? FutureBuilder<List<Map<String, dynamic>>>(
-                                            future: _categoryLocationFuture,
+                                              : FutureBuilder<List<Map<String, dynamic>>>(
+                                            future: markerProvider.currentLocationsFuture,
                                             builder: (context, snapshot) {
 
                                               // TODO Skeleton이나 아예 흰화면으로 바꿔주기
-                                              if (snapshot.connectionState == ConnectionState.waiting) {
-                                                return const Center(child: CircularProgressIndicator());
+                                              if (snapshot.connectionState == ConnectionState.waiting || markerProvider.isMarkerLoading) {
+                                                return const Center(child: CupertinoActivityIndicator());
                                               }
 
                                               // TODO 비어있거나 에러일 때 보여줄 내용 넣기 ( 빈 화면일 일은 없을거임근데 )
-                                              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                              if (snapshot.hasError) {
                                                 print(snapshot.error);
                                                 return Center(
                                                   child: Column(
@@ -1483,6 +1483,32 @@ class _MapPageState extends State<MapPage> {
 
                                               final places = snapshot.data!;
 
+                                              if (places.isEmpty) {
+                                                return Center(
+                                                  child: Column(
+                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                    children: [
+                                                      Text(
+                                                        '장소가 없음',
+                                                        style: TextStyle(
+                                                          color: Colors.black,
+                                                          fontWeight: FontWeight.bold,
+                                                          fontSize: 20,
+                                                        ),
+                                                      ),
+                                                      SizedBox(height: 30),
+                                                      Text(
+                                                        '다른곳 탐색하세여',
+                                                        style: TextStyle(
+                                                          color: Colors.black,
+                                                          fontSize: 18,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              }
+
                                               final style = categoryStyles[_selectedCategory] ?? {
                                                 'icon': Icons.place,
                                                 'color': Colors.blue,
@@ -1505,7 +1531,7 @@ class _MapPageState extends State<MapPage> {
                                                         ),
                                                         const SizedBox(width: 15,),
                                                         Text(
-                                                          _selectedCategory!,
+                                                          '내 주변 장소들',
                                                           style: TextStyle(
                                                             color: Colors.black,
                                                             fontSize: MediaQuery.of(context).size.width * 0.055,
@@ -1611,60 +1637,6 @@ class _MapPageState extends State<MapPage> {
                                               );
                                             },
                                           )
-                                              : Column(
-                                            crossAxisAlignment:
-                                            CrossAxisAlignment.stretch,
-                                            children: [
-                                              _categorizedBookmarks.isEmpty
-                                                  ? Padding(
-                                                padding: const EdgeInsets.all(24.0),
-                                                child: Column(
-                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                  children: [
-                                                    Icon(Icons.folder_open, size: 48, color: Colors.grey),
-                                                    const SizedBox(height: 12),
-                                                    Text(
-                                                      '저장된 장소가 없습니다',
-                                                      style: TextStyle(
-                                                        fontSize: 16,
-                                                        color: Colors.grey[600],
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              )
-                                                  : ListView.separated(
-                                                padding: EdgeInsets.zero,
-                                                shrinkWrap: true,
-                                                physics: const NeverScrollableScrollPhysics(),
-                                                itemCount: _categorizedBookmarks.length,
-                                                itemBuilder: (context, index) {
-                                                  final category = _categorizedBookmarks.keys.elementAt(index);
-                                                  final items = _categorizedBookmarks[category]!;
-
-                                                  final style = categoryStyles[category] ?? {
-                                                    'icon': Icons.place,
-                                                    'color': Colors.blue,
-                                                  };
-
-                                                  return _folderTile(
-                                                    title: category,
-                                                    color: style['color'],
-                                                    icon: style['icon'],
-                                                    locations: items.length,
-                                                  );
-                                                },
-                                                separatorBuilder: (context, index) => Padding(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                                  child: Divider(
-                                                    color: Colors.grey[300],
-                                                    height: 1.5,
-                                                    thickness: 1,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
                                         ],
                                       ),
                                     ),
