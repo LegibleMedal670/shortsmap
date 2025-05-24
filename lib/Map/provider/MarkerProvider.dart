@@ -64,6 +64,12 @@ class MarkerDataProvider extends ChangeNotifier {
 
   // 마커 로딩 확인용 변수
   bool _isMarkerLoading = false;
+  // 카테고리 로딩 확인용 변수
+  bool _isCategoryChanging = false;
+
+  // 최근 불러온 컨트롤러와 좌표 저장용 변수
+  DraggableScrollableController? _lastSheetController;
+  double? _lastCenterLat, _lastCenterLng;
 
 
   /// ❌ 변수 영역 끝
@@ -93,11 +99,23 @@ class MarkerDataProvider extends ChangeNotifier {
     return source.where((loc) => loc.category == _selectedCategory).toSet();
   }
 
+  // 필터링된 장소 개수 반환하는 Getter
+  int get currentLocationLength {
+    final source = _isBookmarkMode ? _bookmarkLocations : _viewPortLocations;
+    if (_selectedCategory == null) {
+      return source.length;
+    }
+    return source.where((loc) => loc.category == _selectedCategory).length;
+  }
+
   // 마커들을 반환하는 Getter
   Set<Marker> get locationMarkers => _locationMarkers;
 
   // 마커 로딩 여부 반환하는 Getter
   bool get isMarkerLoading => _isMarkerLoading;
+
+  // 카테고리 로딩 여부 반환하는 Getter
+  bool get isCategoryChanging => _isCategoryChanging;
 
   // 버튼 눌러서 이동하는지 여부 변수를 리턴하는 Getter
   bool get isProgrammaticMove => _isProgrammaticMove;
@@ -112,9 +130,15 @@ class MarkerDataProvider extends ChangeNotifier {
   // 현재 장소들의 데이터Future를 리턴하는 Getter
   Future<List<Map<String, dynamic>>>? get currentLocationsFuture => _currentLocationsFuture;
 
+  String? get selectedCategory => _selectedCategory;
+
   // 카테고리 선택을 위한 Setter
   set selectCategory(String? category) {
     _selectedCategory = category;
+    _isCategoryChanging = true;
+    if (_lastSheetController != null && _lastCenterLat != null) {
+      _buildLocationMarkers(_lastSheetController!, _lastCenterLat!, _lastCenterLng!);
+    }
     notifyListeners();
   }
 
@@ -190,6 +214,10 @@ class MarkerDataProvider extends ChangeNotifier {
       // for (MarkerLocationData data in _viewPortLocations){
       //   print(data.placeId);
       // }
+
+      _lastSheetController = sheetController;
+      _lastCenterLat = centerLat;
+      _lastCenterLng = centerLng;
 
       await _buildLocationMarkers(sheetController, centerLat, centerLng);
 
@@ -338,12 +366,13 @@ class MarkerDataProvider extends ChangeNotifier {
       ));
     }
 
-    await _fetchCurrentLocations(source, centerLat, centerLng);
+    await _fetchCurrentLocations(locationData, centerLat, centerLng);
 
     await Future.delayed(Duration(milliseconds: 1000));
 
 
     _isMarkerLoading = false;
+    _isCategoryChanging = false;
 
 
     _locationMarkers = markers;
