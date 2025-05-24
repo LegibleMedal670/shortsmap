@@ -55,7 +55,7 @@ dependencies:
   # 공유를 위한 패키지
   share_plus: ^10.1.4
   # 구글 맵
-  google_maps_flutter: ^2.12.1
+  google_maps_flutter: ^2.12.2
   # 다양한 아이콘을 위한 패키지
   font_awesome_flutter: ^10.8.0
   # 암호화 ( 애플 로그인에서 이용 )
