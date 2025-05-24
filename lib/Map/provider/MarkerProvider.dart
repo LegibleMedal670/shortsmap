@@ -130,11 +130,14 @@ class MarkerDataProvider extends ChangeNotifier {
   // 현재 장소들의 데이터Future를 리턴하는 Getter
   Future<List<Map<String, dynamic>>>? get currentLocationsFuture => _currentLocationsFuture;
 
+  // 선택한 카테고리를 리턴하는 Getter
   String? get selectedCategory => _selectedCategory;
 
   // 카테고리 선택을 위한 Setter
   set selectCategory(String? category) {
     _selectedCategory = category;
+    _selectedLocation = null;
+    _selectedVideoId = null;
     _isCategoryChanging = true;
     if (_lastSheetController != null && _lastCenterLat != null) {
       _buildLocationMarkers(_lastSheetController!, _lastCenterLat!, _lastCenterLng!);
@@ -147,6 +150,26 @@ class MarkerDataProvider extends ChangeNotifier {
     _isBookmarkMode = val;
     notifyListeners();
   }
+
+  // 장소 선택을 위한 Setter
+  set setSelectedLocation(String? placeId){
+    _selectedLocation = placeId;
+    if (placeId != null) _locationDetailFuture = _fetchLocationDetail(placeId);
+    notifyListeners();
+  }
+
+  // 장소 비디오 아이디 선택을 위한 Setter
+  set setSelectedVideoId(String? videoId){
+    _selectedVideoId = videoId;
+    notifyListeners();
+  }
+
+  // 프로그램으로 인한 움직임을 조정하기 위한 Setter
+  set setIsProgrammaticMove(bool val){
+    _isProgrammaticMove = val;
+    notifyListeners();
+  }
+
 
   /// ❌ Getter, Setter 영역 끝
 
@@ -357,7 +380,6 @@ class MarkerDataProvider extends ChangeNotifier {
           _selectedLocation = data.placeId;
           _selectedVideoId = data.videoId;
           _locationDetailFuture =  _fetchLocationDetail(data.placeId);
-          _selectedCategory = null;
 
           notifyListeners();
 

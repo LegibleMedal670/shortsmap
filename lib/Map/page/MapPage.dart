@@ -1,27 +1,16 @@
-import 'dart:convert';
-import 'dart:ui' as ui;
-import 'dart:ui';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:shortsmap/Map/model/BookmarkLocationData.dart';
-import 'package:shortsmap/Map/model/LocationData.dart';
 import 'package:shortsmap/Map/page/MapShortsPage.dart';
 import 'package:shortsmap/Map/provider/MarkerProvider.dart';
 import 'package:shortsmap/Provider/BookmarkProvider.dart';
 import 'package:shortsmap/Provider/ImageCacheProvider.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
-import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:shortsmap/Widgets/BottomNavBar.dart';
 import 'package:shortsmap/Widgets/Modal/ShareModal.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MapPage extends StatefulWidget {
@@ -36,8 +25,6 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
-  final FocusNode _focusNode = FocusNode();
-  final TextEditingController _textEditingController = TextEditingController();
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
 
@@ -52,36 +39,7 @@ class _MapPageState extends State<MapPage> {
   // 카메라가 움직였을 때를 체크하기 위한 변수
   bool _isCameraIdle = true;
 
-
   double _widgetHeight = 0;
-  // double _fabPosition = 0;
-
-  // double _mapBottomPadding = 0.0;
-
-  // double _sheetSize = 0;
-
-  bool _isListDetailOpened = false;
-
-
-
-  final Map<String, BitmapDescriptor> _markerIconCache = {};
-
-
-
-
-  Map<String, List<BookmarkLocationData>> _categorizedBookmarks = {};
-
-  String? _selectedCategory;
-
-  bool _isProgrammaticMove = false;
-
-  bool _isMarkerTapped = false;
-
-  Future<List<Map<String, dynamic>>>? _categoryLocationFuture;
-
-  Future<Map<String, dynamic>>? _locationDetailFuture;
-
-  // Map<String, Future<String>> _photoUrlCache = {};
 
   final Map<String, Future<String>> _photoFutures = {};
 
@@ -91,49 +49,6 @@ class _MapPageState extends State<MapPage> {
   /// 디테일 정보가 보여지는 장소의 비디오 아이디
   String? _selectedVideoId;
 
-  // 카테고리별 아이콘 및 컬러
-  Map<String, dynamic> categoryStyles = {
-    'Restaurant': {'icon': Icons.restaurant, 'color': Color(0xFFFF7043)},
-    'Nature': {'icon': Icons.forest, 'color': Color(0xFF4CAF50)},
-    'Exhibitions': {'icon': Icons.palette_outlined, 'color': Color(0xFF9C27B0)},
-    'Historical Site': {'icon': Icons.account_balance, 'color': Color(0xFF795548)},
-    'Sports': {'icon': Icons.sports_tennis, 'color': Color(0xFF2196F3)},
-    'Shopping': {'icon': Icons.shopping_bag_outlined, 'color': Color(0xFFFFC107)},
-    'Cafe': {'icon': Icons.local_cafe_outlined, 'color': Color(0xFF8D6E63)},
-    'Bar': {'icon': Icons.sports_bar, 'color': Color(0xFFB71C1C)},
-  };
-
-
-
-// 현재 위치를 가져와서 지도 카메라를 이동시키는 함수
-//   Future<void> _getInitialLocation() async {
-//     try {
-//       // 원하는 정확도로 현재 위치 가져오기
-//       Position position = await Geolocator.getCurrentPosition(
-//           desiredAccuracy: LocationAccuracy.high);
-//
-//       // 가져온 위치를 이용해 새 카메라 위치 생성
-//       // CameraPosition newPosition = CameraPosition(
-//       //   target: LatLng(37.793503213905154, -122.39945983265487),
-//       //   zoom: 20.0, // 원하는 줌 레벨로 설정
-//       // );
-//
-//       CameraPosition cameraPosition = CameraPosition(target: LatLng(position.latitude, position.longitude));
-//
-//       // 맵 컨트롤러가 준비되었으면 카메라 이동
-//       if (_mapController != null) {
-//         _mapController
-//             .animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
-//       } else {
-//         // 맵 컨트롤러가 아직 생성되지 않은 경우, setState로 초기 카메라 위치 변경
-//         setState(() {
-//           _initialCameraPosition = cameraPosition;
-//         });
-//       }
-//     } catch (e) {
-//       print("현재 위치를 가져오는 중 에러 발생: $e");
-//     }
-//   }
 
   Future<void> _moveToCurrentLocation() async {
 
@@ -150,92 +65,14 @@ class _MapPageState extends State<MapPage> {
         .animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
   }
 
-  Future<BitmapDescriptor> getMarkerIcon({
-    required Color backgroundColor,
-    required IconData iconData,
-    double size = 80,     // 논리적 크기 (예: 80x80)
-    double iconSize = 40, // 논리적 내부 아이콘 크기
-  }) async {
-    // 1) 캐시 key 생성 (컬러·아이콘·크기 조합)
-    final cacheKey = '${backgroundColor.toARGB32()}_${iconData.codePoint}_${size.toInt()}_${iconSize.toInt()}';
-    if (_markerIconCache.containsKey(cacheKey)) {
-      return _markerIconCache[cacheKey]!;
-    }
-
-    // --- 기존 그리기 로직 그대로 유지 ---
-    final double scale = PlatformDispatcher.instance.views.first.devicePixelRatio;
-    final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
-    final Canvas canvas = Canvas(pictureRecorder);
-    canvas.scale(scale);
-
-    final double borderWidth = 4.0;
-    final Paint borderPaint = Paint()..color = Colors.white;
-    canvas.drawCircle(Offset(size / 2, size / 2), size / 2, borderPaint);
-
-    final Paint innerPaint = Paint()..color = backgroundColor;
-    canvas.drawCircle(Offset(size / 2, size / 2), (size / 2) - borderWidth, innerPaint);
-
-    final TextPainter textPainter = TextPainter(textDirection: TextDirection.ltr);
-    textPainter.text = TextSpan(
-      text: String.fromCharCode(iconData.codePoint),
-      style: TextStyle(
-        fontFamily: iconData.fontFamily,
-        package: iconData.fontPackage,
-        fontSize: iconSize,
-        color: Colors.white,
-      ),
-    );
-    textPainter.layout();
-    final double xCenter = (size - textPainter.width) / 2;
-    final double yCenter = (size - textPainter.height) / 2;
-    textPainter.paint(canvas, Offset(xCenter, yCenter));
-
-    final ui.Image hiResImage = await pictureRecorder.endRecording().toImage(
-      (size * scale).toInt(),
-      (size * scale).toInt(),
-    );
-    final ByteData? hiResByteData = await hiResImage.toByteData(format: ui.ImageByteFormat.png);
-    final Uint8List hiResPngBytes = hiResByteData!.buffer.asUint8List();
-
-    final ui.Codec codec = await ui.instantiateImageCodec(
-      hiResPngBytes,
-      targetWidth: size.toInt(),
-      targetHeight: size.toInt(),
-    );
-    final ui.FrameInfo frameInfo = await codec.getNextFrame();
-    final ui.Image resizedImage = frameInfo.image;
-    final ByteData? resizedByteData = await resizedImage.toByteData(format: ui.ImageByteFormat.png);
-    final Uint8List resizedPngBytes = resizedByteData!.buffer.asUint8List();
-    // --- 그리기 로직 끝 ---
-
-    // 2) 캐시에 저장하고 반환
-    final descriptor = BitmapDescriptor.fromBytes(resizedPngBytes);
-    _markerIconCache[cacheKey] = descriptor;
-    return descriptor;
-  }
-
-
 
   @override
   void initState() {
     super.initState();
 
-    // 1) 마커 아이콘 로드
-    // getMarkerIcon(
-    //   backgroundColor: Colors.green,
-    //   iconData: Icons.star_outline,
-    //   size: 100,
-    //   iconSize: 60,
-    // );
-
-    // 4) placeId가 전달된 경우 바로 상세 뷰 열기
     if (widget.placeId != null) {
-      setState(() {
-        _isListDetailOpened    = true;
-        _selectedLocation      = widget.placeId;
-        _selectedVideoId       = widget.videoId;
-        _locationDetailFuture  = _fetchLocationDetail(widget.placeId!);
-      });
+      Provider.of<MarkerDataProvider>(context, listen: false).setSelectedLocation = widget.placeId;
+      Provider.of<MarkerDataProvider>(context, listen: false).setSelectedVideoId = widget.videoId;
     }
   }
 
@@ -244,13 +81,11 @@ class _MapPageState extends State<MapPage> {
     super.didChangeDependencies();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _widgetHeight = MediaQuery.of(context).size.height;
-
     });
   }
 
   @override
   void dispose() {
-    // _focusNode.dispose();
     _sheetController.dispose();
     _sheetExtent.dispose();
     super.dispose();
@@ -346,20 +181,20 @@ class _MapPageState extends State<MapPage> {
                                 });
                               },
                               onCameraMoveStarted: () {
-                                if (_isProgrammaticMove) {
-                                  _isProgrammaticMove = false;
+                                if (markerProvider.isProgrammaticMove) {
+                                  markerProvider.setIsProgrammaticMove = false;
                                   return;
                                 }
                                 _sheetController.animateTo(
                                   0.05,
-                                  duration: const Duration(milliseconds: 300),
+                                  duration: const Duration(milliseconds: 400),
                                   curve: Curves.easeInOut,
                                 );
                               },
                               onTap: (LatLng) {
                                 _sheetController.animateTo(
                                   0.05,
-                                  duration: const Duration(milliseconds: 300),
+                                  duration: const Duration(milliseconds: 400),
                                   curve: Curves.easeInOut,
                                 );
                               },
@@ -379,10 +214,8 @@ class _MapPageState extends State<MapPage> {
 
                         final fabPos = extent * _widgetHeight;
 
-
-
                         return Visibility(
-                          visible: ((_selectedLocation == null) && !_isListDetailOpened && fabPos < 700),
+                          visible: ((markerProvider.selectedLocation == null) && fabPos < 700),
                           child: SafeArea(
                             child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -536,58 +369,58 @@ class _MapPageState extends State<MapPage> {
                         }
                     ),
                     ///돌아가기버튼
-                    Visibility(
-                      visible: _isListDetailOpened,
-                      child: Positioned(
-                        top: 70,
-                        left: 10,
-                        child: SizedBox(
-                          height: 45,
-                          width: 45,
-                          child: FittedBox(
-                            child: FloatingActionButton(
-                              heroTag: UniqueKey().toString(),
-                              backgroundColor: Colors.white,
-                              child: Padding(
-                                padding: const EdgeInsets.only(right: 2.0),
-                                child: const Icon(
-                                  CupertinoIcons.back,
-                                  color: Colors.black54,
-                                  size: 32,
-                                ),
-                              ),
-                              onPressed: () {
-                                if (_selectedLocation != null) {
-                                  // 상세 열려 있을 때
-                                  setState(() {
-                                    _selectedLocation = null;
-                                    _selectedVideoId = null;
-                                    if (_selectedCategory == null) {
-                                      // 맵→상세 경로였으면 → 전체 카테고리 리스트로
-                                      _isListDetailOpened = false;
-                                      // _markers    = _allBookmarkMarkers;  /// TODO: 마커 관리 방식 변경
-                                    }
-                                    // (_selectedCategory != null 이면 → 카테고리→상세 경로)
-                                    //    _isListDetailOpened(true)와 필터된 _markers 유지
-                                  });
-
-                                } else if (_isListDetailOpened) {
-                                  // 카테고리 리스트 화면에서 뒤로 → 전체 카테고리 뷰로
-                                  setState(() {
-                                    _isListDetailOpened = false;
-                                    // _markers    = _allBookmarkMarkers;  /// TODO: 마커 관리 방식 변경
-                                    _selectedCategory   = null;
-                                  });
-                                }
-
-                                _sheetController.animateTo(0.4,
-                                    duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                    // Visibility(
+                    //   visible: _isListDetailOpened,
+                    //   child: Positioned(
+                    //     top: 70,
+                    //     left: 10,
+                    //     child: SizedBox(
+                    //       height: 45,
+                    //       width: 45,
+                    //       child: FittedBox(
+                    //         child: FloatingActionButton(
+                    //           heroTag: UniqueKey().toString(),
+                    //           backgroundColor: Colors.white,
+                    //           child: Padding(
+                    //             padding: const EdgeInsets.only(right: 2.0),
+                    //             child: const Icon(
+                    //               CupertinoIcons.back,
+                    //               color: Colors.black54,
+                    //               size: 32,
+                    //             ),
+                    //           ),
+                    //           onPressed: () {
+                    //             if (_selectedLocation != null) {
+                    //               // 상세 열려 있을 때
+                    //               setState(() {
+                    //                 _selectedLocation = null;
+                    //                 _selectedVideoId = null;
+                    //                 if (_selectedCategory == null) {
+                    //                   // 맵→상세 경로였으면 → 전체 카테고리 리스트로
+                    //                   _isListDetailOpened = false;
+                    //                   // _markers    = _allBookmarkMarkers;  /// TODO: 마커 관리 방식 변경
+                    //                 }
+                    //                 // (_selectedCategory != null 이면 → 카테고리→상세 경로)
+                    //                 //    _isListDetailOpened(true)와 필터된 _markers 유지
+                    //               });
+                    //
+                    //             } else if (_isListDetailOpened) {
+                    //               // 카테고리 리스트 화면에서 뒤로 → 전체 카테고리 뷰로
+                    //               setState(() {
+                    //                 _isListDetailOpened = false;
+                    //                 // _markers    = _allBookmarkMarkers;  /// TODO: 마커 관리 방식 변경
+                    //                 _selectedCategory   = null;
+                    //               });
+                    //             }
+                    //
+                    //             _sheetController.animateTo(0.4,
+                    //                 duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
+                    //           },
+                    //         ),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
                     ///더보기버튼
                     Visibility(
                       visible: _selectedLocation != null && _selectedVideoId != null,
@@ -672,12 +505,12 @@ class _MapPageState extends State<MapPage> {
                                           // 헤더 공간만큼의 빈 공간(헤더는 오버레이로 표시됨)
                                           const SizedBox(height: 30),
                                           // 실제 스크롤 되는 콘텐츠
-                                          _selectedLocation != null
+                                          markerProvider.selectedLocation != null
                                               ? FutureBuilder<Map<String, dynamic>>(
-                                            future: _locationDetailFuture,
+                                            future: markerProvider.locationDetailFuture,
                                             builder: (context, snapshot) {
                                               if (snapshot.connectionState == ConnectionState.waiting) {
-                                                return const Center(child: CircularProgressIndicator());
+                                                return const Center(child: CupertinoActivityIndicator());
                                               }
                                               if (!snapshot.hasData || snapshot.data!.isEmpty) {
                                                 print(snapshot.error);
@@ -829,6 +662,29 @@ class _MapPageState extends State<MapPage> {
                                                                   color: Colors.black12,
                                                                 ),
                                                                 child: const Icon(CupertinoIcons.share, size: 20, color: Colors.black),
+                                                              ),
+                                                            ),
+                                                            SizedBox(
+                                                              width: 8,
+                                                            ),
+                                                            GestureDetector(
+                                                              onTap: () {
+                                                                markerProvider.setSelectedLocation = null;
+                                                                markerProvider.setSelectedVideoId = null;
+                                                                _sheetController.animateTo(
+                                                                  0.4,
+                                                                  duration: const Duration(milliseconds: 400),
+                                                                  curve: Curves.easeInOut,
+                                                                );
+                                                              },
+                                                              child: Container(
+                                                                width: 40,
+                                                                height: 40,
+                                                                decoration: BoxDecoration(
+                                                                  shape: BoxShape.circle,
+                                                                  color: Colors.black12,
+                                                                ),
+                                                                child: const Icon(CupertinoIcons.xmark, size: 20, color: Colors.black),
                                                               ),
                                                             ),
                                                           ],
@@ -1163,11 +1019,6 @@ class _MapPageState extends State<MapPage> {
                                                 );
                                               }
 
-                                              final style = categoryStyles[_selectedCategory] ?? {
-                                                'icon': Icons.place,
-                                                'color': Colors.blue,
-                                              };
-
                                               return Column(
                                                 children: [
                                                   Container(
@@ -1176,9 +1027,9 @@ class _MapPageState extends State<MapPage> {
                                                       children: [
                                                         CircleAvatar(
                                                           radius: 25,
-                                                          backgroundColor: style['color'],
+                                                          backgroundColor: Colors.lightBlueAccent,
                                                           child: Icon(
-                                                            style['icon'],
+                                                            Icons.place,
                                                             color: Colors.white,
                                                             size: 30,
                                                           ),
@@ -1335,121 +1186,14 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
-  /// 카테고리 목록 타일
-  ListTile _folderTile({
-    String title = 'default',
-    Color color = Colors.green,
-    String owner = 'My List',
-    IconData icon = Icons.star_border,
-    int locations = 0,
-  }) {
-    return ListTile(
-      onTap: () {
-        final items = _categorizedBookmarks[title]!;
-        final locationIds = items.map((e) => e.placeId).toList();
-
-        _isProgrammaticMove = true;
-
-        final latest = items.first;
-
-        _mapController.animateCamera(CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: LatLng(latest.latitude, latest.longitude),
-            zoom: 18,
-          ),
-        ));
-
-        setState(() {
-          /// TODO: 마커 관리 방식 변경
-          // _markers = _allBookmarkMarkers
-          //     .where((m) => locationIds.contains(m.markerId.value))
-          //     .toSet();
-
-          _selectedCategory = title;
-          _isListDetailOpened = true;
-
-          final items = _categorizedBookmarks[title]!;
-
-          // 1. 최신순으로 BookmarkLocation 정렬
-          final sortedItems = List<BookmarkLocationData>.from(items)
-            ..sort((a, b) => b.bookmarkedAt.compareTo(a.bookmarkedAt));
-
-          final sortedIds = sortedItems.map((e) => e.placeId).toList();
-
-          // 2. 정렬된 순서에 따라 장소 정보 불러오기
-          _categoryLocationFuture = Supabase.instance.client
-              .rpc('get_locations_by_ids', params: {
-            '_ids': sortedIds,
-          }).then((value) {
-            final locations = List<Map<String, dynamic>>.from(value);
-
-            // 3. 정렬된 location_id 순서에 맞게 다시 재정렬
-            locations.sort((a, b) =>
-            sortedIds.indexOf(a['place_id']) - sortedIds.indexOf(b['place_id']));
-
-            return locations;
-          });
-
-        });
-
-        FirebaseAnalytics.instance.logEvent(
-          name: "tap_folder_tile",
-          parameters: {
-            "category": title,
-          },
-        );
-
-        _sheetController.animateTo(
-          0.5,
-          duration: Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      },
-      leading: CircleAvatar(
-        radius: 20,
-        backgroundColor: color,
-        child: Icon(
-          icon,
-          color: Colors.white,
-          size: 25,
-        ),
-      ),
-      title: Text(
-        title,
-        style: const TextStyle(
-          color: Colors.black54,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      subtitle: Row(
-        children: [
-          Text(owner),
-          const Text(
-            ' · ',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const Icon(
-            Icons.location_on,
-            size: 16,
-          ),
-          Text(locations.toString()),
-        ],
-      ),
-      // trailing: InkWell(
-      //   onTap: () {
-      //     print(title);
-      //   },
-      //   child: const Icon(Icons.more_vert),
-      // ),
-    );
-  }
-
   /// 장소 간략한 정보 있는 타일
   Widget _locationTile(bool isLoading, String locationId, String? imageUrl, String storeName, String region, String openTime, String closeTime, double lat, double lon, String videoId) {
+
+    final markerProvider = context.read<MarkerDataProvider>();
+
     return GestureDetector(
       onTap: (){
-        _isProgrammaticMove = true;
+        markerProvider.setIsProgrammaticMove = true;
 
         _mapController.animateCamera(CameraUpdate.newCameraPosition(
           CameraPosition(
@@ -1458,11 +1202,8 @@ class _MapPageState extends State<MapPage> {
           ),
         ));
 
-        setState(() {
-          _selectedLocation = locationId;
-          _selectedVideoId = videoId;
-          _locationDetailFuture = _fetchLocationDetail(locationId);
-        });
+        markerProvider.setSelectedLocation = locationId;
+        markerProvider.setSelectedVideoId = videoId;
 
         FirebaseAnalytics.instance.logEvent(
           name: "tap_location_tile",
@@ -1474,7 +1215,7 @@ class _MapPageState extends State<MapPage> {
 
         _sheetController.animateTo(
           0.55,
-          duration: Duration(milliseconds: 300),
+          duration: Duration(milliseconds: 400),
           curve: Curves.easeInOut,
         );
 
@@ -1638,29 +1379,6 @@ class _MapPageState extends State<MapPage> {
     int travelTimeMinutes = (distanceInMeters / 500).round();
 
     return (travelTimeMinutes * 2).toString();
-  }
-
-  /// 특정 장소의 정보를 가져오는 함수
-  Future<Map<String, dynamic>> _fetchLocationDetail(String placeId) async {
-
-
-    try{
-      final response = await Supabase.instance.client
-          .rpc('get_location_detail_by_id', params: {
-        '_place_id': placeId,
-      });
-
-      List<dynamic> data = response;
-
-      if (data.isEmpty) print('empty'); // TODO 비었을 때 처리 ( 빌일은 없을거긴함 )
-
-      Map<String, dynamic> locationData = data[0];
-
-      return locationData;
-    } on PostgrestException catch (e) {
-      throw Exception("Error fetching posts: ${e.code}, ${e.message}");
-    }
-
   }
 
   /// 신고, 위치, 웹사이트 등 옵션 타일
