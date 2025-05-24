@@ -1,4 +1,4 @@
-class BookmarkLocation {
+class BookmarkLocationData {
   final String placeId;
   final String videoId;
   final String category;
@@ -8,7 +8,7 @@ class BookmarkLocation {
   final DateTime bookmarkedAt;
 
 
-  BookmarkLocation({
+  BookmarkLocationData({
     required this.placeId,
     required this.videoId,
     required this.category,
@@ -18,8 +18,8 @@ class BookmarkLocation {
     required this.bookmarkedAt,
   });
 
-  factory BookmarkLocation.fromMap(Map<String, dynamic> map) {
-    return BookmarkLocation(
+  factory BookmarkLocationData.fromMap(Map<String, dynamic> map) {
+    return BookmarkLocationData(
       placeId: map['place_id'],
       videoId: map['video_id'],
       category: map['category'],

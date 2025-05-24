@@ -1,16 +1,16 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
-import 'package:shortsmap/Map/model/BookmarkLocation.dart';
+import 'package:shortsmap/Map/model/BookmarkLocationData.dart';
 import 'package:shortsmap/Map/page/MapPage.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class BookmarkProvider with ChangeNotifier {
-  List<BookmarkLocation> _bookmarks = [];
+  List<BookmarkLocationData> _bookmarks = [];
   bool _isLoggedIn = false;
   String? _userId;
 
-  List<BookmarkLocation> get bookmarks => _bookmarks;
+  List<BookmarkLocationData> get bookmarks => _bookmarks;
 
   String? get userId => _userId;
 
@@ -29,7 +29,7 @@ class BookmarkProvider with ChangeNotifier {
   Future<void> loadBookmarks(String userId) async {
     if (!_isLoggedIn) return;
     final response = await Supabase.instance.client.rpc('get_user_bookmarks', params: {'_user_id': userId});
-    _bookmarks = (response as List).map((e) => BookmarkLocation.fromMap(e)).toList();
+    _bookmarks = (response as List).map((e) => BookmarkLocationData.fromMap(e)).toList();
     notifyListeners();
   }
 
