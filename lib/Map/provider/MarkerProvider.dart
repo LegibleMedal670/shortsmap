@@ -68,8 +68,8 @@ class MarkerDataProvider extends ChangeNotifier {
   bool _isCategoryChanging = false;
 
   // 최근 불러온 컨트롤러와 좌표 저장용 변수
-  DraggableScrollableController? _lastSheetController;
-  double? _lastCenterLat, _lastCenterLng;
+  // DraggableScrollableController? _lastSheetController;
+  // double? _lastCenterLat, _lastCenterLng;
 
 
   /// ❌ 변수 영역 끝
@@ -134,16 +134,16 @@ class MarkerDataProvider extends ChangeNotifier {
   String? get selectedCategory => _selectedCategory;
 
   // 카테고리 선택을 위한 Setter
-  set selectCategory(String? category) {
-    _selectedCategory = category;
-    _selectedLocation = null;
-    _selectedVideoId = null;
-    _isCategoryChanging = true;
-    if (_lastSheetController != null && _lastCenterLat != null) {
-      _buildLocationMarkers(_lastSheetController!, _lastCenterLat!, _lastCenterLng!);
-    }
-    notifyListeners();
-  }
+  // set selectCategory(String? category) {
+  //   _selectedCategory = category;
+  //   _selectedLocation = null;
+  //   _selectedVideoId = null;
+  //   _isCategoryChanging = true;
+  //   if (_lastSheetController != null && _lastCenterLat != null) {
+  //     _buildLocationMarkers(_lastSheetController!, _lastCenterLat!, _lastCenterLng!);
+  //   }
+  //   notifyListeners();
+  // }
 
   // 북마크 모드 선택을 위한 Setter
   set setBookmarkMode(bool val) {
@@ -238,9 +238,9 @@ class MarkerDataProvider extends ChangeNotifier {
       //   print(data.placeId);
       // }
 
-      _lastSheetController = sheetController;
-      _lastCenterLat = centerLat;
-      _lastCenterLng = centerLng;
+      // _lastSheetController = sheetController;
+      // _lastCenterLat = centerLat;
+      // _lastCenterLng = centerLng;
 
       await _buildLocationMarkers(sheetController, centerLat, centerLng);
 
@@ -327,7 +327,7 @@ class MarkerDataProvider extends ChangeNotifier {
   }
 
   // 마커를 그리는 함수
-  Future<void> _buildLocationMarkers(DraggableScrollableController sheetController, double centerLat, double centerLng) async {
+  Future<void> _buildLocationMarkers(DraggableScrollableController sheetController, double calcLat, double calcLng) async {
 
     // 마커를 그릴 장소 데이터들을 저장할 변수
     Set<MarkerLocationData> locationData;
@@ -388,7 +388,7 @@ class MarkerDataProvider extends ChangeNotifier {
       ));
     }
 
-    await _fetchCurrentLocations(locationData, centerLat, centerLng);
+    await _fetchCurrentLocations(locationData, calcLat, calcLng);
 
     await Future.delayed(Duration(milliseconds: 1000));
 
@@ -429,15 +429,15 @@ class MarkerDataProvider extends ChangeNotifier {
 
   }
 
-  Future<void> _fetchCurrentLocations(Set<MarkerLocationData> source, double centerLat, double centerLng) async {
+  Future<void> _fetchCurrentLocations(Set<MarkerLocationData> source, double calcLat, double calcLng) async {
 
     // 중앙 지점과의 거리순으로 장소 데이터 정렬 ( 머로할지정하기 )
     final list = source.toList();
     list.sort((a, b) {
       final da = Geolocator.distanceBetween(
-          centerLat, centerLng, a.latitude, a.longitude);
+          calcLat, calcLng, a.latitude, a.longitude);
       final db = Geolocator.distanceBetween(
-          centerLat, centerLng, b.latitude, b.longitude);
+          calcLat, calcLng, b.latitude, b.longitude);
       return da.compareTo(db);
     });
 
@@ -457,6 +457,17 @@ class MarkerDataProvider extends ChangeNotifier {
           return locations;
         });
 
+  }
+
+  void selectCategory(String? category, DraggableScrollableController sheetController, double? centerLat, double? centerLng){
+    _selectedCategory = category;
+    _selectedLocation = null;
+    _selectedVideoId = null;
+    _isCategoryChanging = true;
+    if (centerLat != null && centerLng != null) {
+      _buildLocationMarkers(sheetController, centerLat, centerLng);
+    }
+    notifyListeners();
   }
 
   /// ❌ 함수 영역 끝
