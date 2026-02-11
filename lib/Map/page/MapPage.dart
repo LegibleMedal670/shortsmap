@@ -16,8 +16,10 @@ import 'package:url_launcher/url_launcher.dart';
 class MapPage extends StatefulWidget {
   final String? placeId;
   final String? videoId;
+  final double? placeLat;
+  final double? placeLng;
 
-  const MapPage({super.key, this.placeId, this.videoId});
+  const MapPage({super.key, this.placeId, this.videoId, this.placeLat, this.placeLng});
 
 
   @override
@@ -49,6 +51,7 @@ class _MapPageState extends State<MapPage> {
   /// 디테일 정보가 보여지는 장소의 비디오 아이디
   String? _selectedVideoId;
 
+  CameraPosition? _initialCameraPosition;
 
   Future<void> _moveToCurrentLocation() async {
 
@@ -73,6 +76,8 @@ class _MapPageState extends State<MapPage> {
     if (widget.placeId != null) {
       Provider.of<MarkerDataProvider>(context, listen: false).setSelectedLocation = widget.placeId;
       Provider.of<MarkerDataProvider>(context, listen: false).setSelectedVideoId = widget.videoId;
+
+      _initialCameraPosition = CameraPosition(target: LatLng(widget.placeLat!, widget.placeLng!), zoom: 17.0 );
     }
   }
 
@@ -169,7 +174,9 @@ class _MapPageState extends State<MapPage> {
                                 if (_isFirstLoad){
                                   _isFirstLoad = false;
                                   final bounds = await _mapController.getVisibleRegion();
-                                  await markerProvider.loadLocationsInViewport(context: context, minLat: bounds.southwest.latitude,
+                                  await markerProvider.loadLocationsInViewport(
+                                    context: context,
+                                    minLat: bounds.southwest.latitude,
                                     maxLat: bounds.northeast.latitude,
                                     minLng: bounds.southwest.longitude,
                                     maxLng: bounds.northeast.longitude,
@@ -201,7 +208,11 @@ class _MapPageState extends State<MapPage> {
                               myLocationEnabled: true,
                               myLocationButtonEnabled: false,
                               zoomControlsEnabled: false,
-                              initialCameraPosition: userDataProvider.currentLat != null ? CameraPosition(target: LatLng(userDataProvider.currentLat!, userDataProvider.currentLon!), zoom: 17.0) : CameraPosition(target: LatLng(37.5563, 126.9220), zoom: 18.0), // TODO 현재 위치로 설정해야함 맵을 킬 때의
+                              initialCameraPosition: _initialCameraPosition != null
+                                  ? _initialCameraPosition!
+                                  : userDataProvider.currentLat != null
+                                    ? CameraPosition(target: LatLng(userDataProvider.currentLat!, userDataProvider.currentLon!), zoom: 17.0)
+                                    : CameraPosition(target: LatLng(37.5563, 126.9220), zoom: 18.0), // TODO 현재 위치로 설정해야함 맵을 킬 때의
                               markers: markerProvider.locationMarkers,  /// TODO: 마커 관리 방식 변경
                             );
                           }
@@ -221,35 +232,67 @@ class _MapPageState extends State<MapPage> {
                               padding: const EdgeInsets.symmetric(horizontal: 15),
                               child: Column(
                                 children: [
-                                  Container(
-                                    // width: MediaQuery.of(context).size.width * 0.9,
-                                    height: MediaQuery.of(context).size.height * 0.055,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(8),
-                                      color: Colors.white,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.grey.withValues(alpha: 0.5),
-                                          spreadRadius: 3,
-                                          blurRadius: 3,
-                                          offset: const Offset(0, 3),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        SizedBox(width: MediaQuery.of(context).size.width * 0.02,),
-                                        Icon(Icons.location_on_outlined),
-                                        SizedBox(width: MediaQuery.of(context).size.width * 0.02,),
-                                        Text(
-                                          'Search Here!',
-                                          style: TextStyle(
-                                            color: Colors.black54,
-                                            fontSize: MediaQuery.of(context).size.width * 0.038,
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Container(
+                                          // width: MediaQuery.of(context).size.width * 0.9,
+                                          height: MediaQuery.of(context).size.height * 0.055,
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(8),
+                                            color: Colors.white,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.grey.withValues(alpha: 0.5),
+                                                spreadRadius: 3,
+                                                blurRadius: 3,
+                                                offset: const Offset(0, 3),
+                                              ),
+                                            ],
                                           ),
-                                        )
-                                      ],
-                                    )
+                                          child: Row(
+                                            children: [
+                                              SizedBox(width: MediaQuery.of(context).size.width * 0.02,),
+                                              Icon(Icons.location_on_outlined),
+                                              SizedBox(width: MediaQuery.of(context).size.width * 0.02,),
+                                              Text(
+                                                'Search Here!',
+                                                style: TextStyle(
+                                                  color: Colors.black54,
+                                                  fontSize: MediaQuery.of(context).size.width * 0.038,
+                                                ),
+                                              )
+                                            ],
+                                          )
+                                        ),
+                                      ),
+                                      SizedBox(width: 10,),
+                                      GestureDetector(
+                                        onTap: (){
+                                          markerProvider.setBookmarkMode = true;
+                                        },
+                                        child: Container(
+                                          width: 40,
+                                          height: MediaQuery.of(context).size.height * 0.055,
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(8),
+                                            color: Colors.white,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.grey.withValues(alpha: 0.5),
+                                                spreadRadius: 3,
+                                                blurRadius: 3,
+                                                offset: const Offset(0, 3),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Center(
+                                            child: Icon(CupertinoIcons.bookmark),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   SizedBox(
                                     height: 4,
@@ -353,8 +396,14 @@ class _MapPageState extends State<MapPage> {
                                                 horizontal: 10,
                                                 vertical: 6,
                                               ),
-                                              onSelected: (bool selected) {
-                                                markerProvider.selectCategory = selected ? category : null;
+                                              onSelected: (bool selected) async {
+
+                                                final bounds = await _mapController.getVisibleRegion();
+
+                                                final centerLat = (bounds.southwest.latitude + bounds.northeast.latitude) / 2;
+                                                final centerLng = (bounds.southwest.longitude + bounds.northeast.longitude) / 2;
+
+                                                markerProvider.selectCategory(selected ? category : null, _sheetController, centerLat, centerLng);
                                               },
                                             ),
                                           );
@@ -879,6 +928,46 @@ class _MapPageState extends State<MapPage> {
 
                                                                 },
                                                               ),
+                                                              Divider(height: 2),
+                                                              _buildListTile(
+                                                                icon: Icons.event_available,
+                                                                title: '예약하러 가기',
+                                                                subtitle: '숙소·액티비티 예약',
+                                                                onTap: () async {
+
+                                                                  FirebaseAnalytics.instance.logEvent(
+                                                                    name: "tap_reservation",
+                                                                    parameters: {
+                                                                      "video_id": placeData['video_id'],
+                                                                    },
+                                                                  );
+
+                                                                  // openNaverMap(widget.naverMapLink);
+
+                                                                  /// 예약하러 가는 링크 열어주는 함수 만들어서 넣기
+
+                                                                },
+                                                              ),
+                                                              Divider(height: 2),
+                                                              _buildListTile(
+                                                                icon: Icons.description_outlined,
+                                                                title: '텍스트후기 보러가기',
+                                                                subtitle: '생생한 텍스트 후기',
+                                                                onTap: () async {
+
+                                                                  FirebaseAnalytics.instance.logEvent(
+                                                                    name: "tap_text_review",
+                                                                    parameters: {
+                                                                      "video_id": placeData['video_id'],
+                                                                    },
+                                                                  );
+
+                                                                  // openNaverMap(widget.naverMapLink);
+
+                                                                  /// 텍스트후기 보러가는 링크 열어주는 함수 만들어서 넣기
+
+                                                                },
+                                                              ),
                                                               if (placeData['phone_number'] != null)
                                                                 const Divider(height: 2),
                                                               if (placeData['phone_number'] != null)
@@ -959,7 +1048,7 @@ class _MapPageState extends State<MapPage> {
                                             builder: (context, snapshot) {
 
                                               // TODO Skeleton이나 아예 흰화면으로 바꿔주기
-                                              if (snapshot.connectionState == ConnectionState.waiting || markerProvider.isMarkerLoading || markerProvider.isCategoryChanging) {
+                                              if (snapshot.connectionState == ConnectionState.waiting || markerProvider.isMarkerLoading || markerProvider.isCategoryChanging || snapshot.data == null) {
                                                 return const Center(child: CupertinoActivityIndicator());
                                               }
 

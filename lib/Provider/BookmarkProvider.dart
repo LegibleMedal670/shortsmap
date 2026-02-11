@@ -33,7 +33,7 @@ class BookmarkProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addBookmark(BuildContext context, String videoId, String category, String placeId, int watchDuration) async {
+  Future<void> addBookmark(BuildContext context, String videoId, String category, String placeId, int watchDuration, double lat, double lng) async {
     if (!_isLoggedIn) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -101,7 +101,7 @@ class BookmarkProvider with ChangeNotifier {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => MapPage(placeId: placeId, videoId: videoId,),
+                    builder: (context) => MapPage(placeId: placeId, videoId: videoId, placeLat: lat, placeLng: lng,),
                   ),
                       (route) => false,
                 );
@@ -193,19 +193,6 @@ class BookmarkProvider with ChangeNotifier {
             duration: Duration(milliseconds: 1500),
             backgroundColor: Colors.lightBlueAccent,
             content: Text('북마크에서 삭제되었어요'),
-            action: SnackBarAction(
-              label: '보러 가기',
-              textColor: Color(0xff121212),
-              onPressed: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => MapPage(),
-                  ),
-                      (route) => false,
-                );
-              },
-            ),
             behavior: SnackBarBehavior.floating,
             margin: EdgeInsets.only(
               bottom: MediaQuery.of(context).size.height * 0.02,
