@@ -71,6 +71,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
         loop: false,
         showVideoAnnotations: false,
         pointerEvents: PointerEvents.none,
+        origin: 'https://www.youtube-nocookie.com',
       ),
     );
 
@@ -202,12 +203,12 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                                 MediaQuery.of(
                                                   context,
                                                 ).size.width *
-                                                0.89,
+                                                0.87,
                                             height:
                                                 (MediaQuery.of(
                                                       context,
                                                     ).size.width *
-                                                    0.89) *
+                                                    0.87) *
                                                 (16 / 9),
                                             decoration: BoxDecoration(
                                               borderRadius:
@@ -1111,6 +1112,46 @@ class _MapShortsPageState extends State<MapShortsPage> {
                               );
 
                               openNaverMap(widget.naverMapLink);
+                            },
+                          ),
+                          Divider(height: 2),
+                          _buildListTile(
+                            icon: Icons.event_available,
+                            title: '예약하러 가기',
+                            subtitle: '숙소·액티비티 예약',
+                            onTap: () async {
+
+                              FirebaseAnalytics.instance.logEvent(
+                                name: "tap_reservation",
+                                parameters: {
+                                  "video_id": widget.videoId,
+                                },
+                              );
+
+                              // openNaverMap(widget.naverMapLink);
+
+                              /// 예약하러 가는 링크 열어주는 함수 만들어서 넣기
+
+                            },
+                          ),
+                          Divider(height: 2),
+                          _buildListTile(
+                            icon: Icons.description_outlined,
+                            title: '텍스트후기 보러가기',
+                            subtitle: '생생한 텍스트 후기',
+                            onTap: () async {
+
+                              FirebaseAnalytics.instance.logEvent(
+                                name: "tap_text_review",
+                                parameters: {
+                                  "video_id": widget.videoId,
+                                },
+                              );
+
+                              // openNaverMap(widget.naverMapLink);
+
+                              /// 텍스트후기 보러가는 링크 열어주는 함수 만들어서 넣기
+
                             },
                           ),
                           if (widget.phoneNumber != null)
