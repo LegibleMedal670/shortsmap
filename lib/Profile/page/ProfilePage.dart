@@ -123,6 +123,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   /// 계정
                   ListTile(
+                    minLeadingWidth: 0,
                     onTap: () {
                       Navigator.of(context, rootNavigator: true).push(
                         MaterialPageRoute(builder: (context) => AccountPage()),
@@ -133,13 +134,14 @@ class _ProfilePageState extends State<ProfilePage> {
                       '계정',
                       style: TextStyle(
                         color: primaryTextColor,
-                        fontSize: 20,
+                        fontSize: 17,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
                   /// 개발자와 소통
                   ListTile(
+                    minLeadingWidth: 0,
                     onTap: () async {
                       await FirebaseAnalytics.instance.logEvent(name: "tap_communicate_with_dev");
                       await launchUrl(
@@ -152,13 +154,14 @@ class _ProfilePageState extends State<ProfilePage> {
                       '개발자와 소통하기',
                       style: TextStyle(
                         color: primaryTextColor,
-                        fontSize: 20,
+                        fontSize: 17,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
                   /// 이용 약관
                   ListTile(
+                    minLeadingWidth: 0,
                     onTap: () async {
                       await FirebaseAnalytics.instance.logEvent(name: "tap_term");
                       await launchUrl(
@@ -171,7 +174,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       '이용 약관',
                       style: TextStyle(
                         color: primaryTextColor,
-                        fontSize: 20,
+                        fontSize: 17,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -180,6 +183,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   Consumer<UserDataProvider>(
                     builder: (context, userDataProvider, _) {
                       return ListTile(
+                        minLeadingWidth: 0,
                         onTap: userDataProvider.isLoggedIn
                             ? () => _showLogoutDialog(context)
                             : () {
@@ -195,7 +199,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           userDataProvider.isLoggedIn ? '로그아웃' : '로그인',
                           style: const TextStyle(
                             color: primaryTextColor,
-                            fontSize: 20,
+                            fontSize: 17,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
