@@ -42,7 +42,7 @@
 ## 기술 스택
 - Frontend: Flutter
 - Backend: Supabase (DB, Auth)
-- Firebase: FCM, Crashlytics, Analytics Events
+- Firebase: Crashlytics, Analytics Events(GA4)
 
 ---
 
