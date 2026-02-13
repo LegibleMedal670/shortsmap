@@ -1,16 +1,62 @@
-# shortsmap
+# ShortsMap
 
-A new Flutter project.
+숏폼 영상으로 장소를 발견하고, 바로 지도에 저장하는 **숏폼-지도 통합 서비스**.
 
-## Getting Started
+텍스트/이미지 중심 리뷰의 한계를 넘어, **영상으로 장소의 분위기와 감성을 확인하고** 바로 저장·공유까지 이어지는 경험을 목표로 합니다.
 
-This project is a starting point for a Flutter application.
+## 한줄 소개
+**영상 → 장소 정보 확인 → 지도 저장 → 공유**를 한 번에 해결하는 숏폼 지도 앱
 
-A few resources to get you started if this is your first Flutter project:
+---
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## 문제 (AS-IS)
+- 텍스트/이미지 기반 리뷰는 현장감 전달에 한계가 있음
+- 숏폼 플랫폼에서 영상 속 장소 정보를 찾기 어렵고 검색이 불편함
+- 해시태그 기반 검색은 특정 지역 탐색에 한계가 있음
+- 영상에서 장소를 발견한 뒤 지도 앱으로 전환해 확인/저장해야 하는 번거로움
+- 영상+장소를 묶어 공유할 수 있는 기능이 부족함
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 해결 (TO-BE)
+- 숏폼 영상과 지도 UI/UX 통합
+- 영상 시청 중 장소 정보 확인 및 원클릭 지도 저장
+- 지역/카테고리/평점 기반 검색 및 필터
+- SNS 연동 공유 (인스타그램 스토리, 카카오톡 등)
+
+---
+
+## 주요 기능
+- 숏폼 영상 기반 장소 탐색
+- 장소 정보 확인 및 지도 저장
+- 지역/카테고리/평점 필터 검색
+- SNS 공유 및 리스트 공유
+
+---
+
+## 타겟 유저
+- 여행객: 현지 분위기를 영상으로 빠르게 파악하고 저장
+- 맛집 애호가: 실제 분위기와 음식 모습을 영상으로 확인
+- 주말 나들이 직장인: 빠른 탐색과 원스톱 탐색 흐름 선호
+
+---
+
+## 기술 스택
+- Frontend: Flutter
+- Backend: Supabase (DB, Auth)
+- Firebase: FCM, Crashlytics, Analytics Events
+
+---
+
+## 구조 (간단)
+- Flutter 앱에서 영상 탐색/저장/공유
+- Supabase로 사용자, 저장 장소, 메타데이터 관리
+- Firebase로 푸시 및 분석/크래시 로그 수집
+
+---
+
+## 프로젝트 상태
+- App Store 출시 이후 유지보수 중단 상태
+
+---
+
+## 블로그
+- 관련 포스팅: **추후 추가 예정**
