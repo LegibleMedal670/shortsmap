@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' as riv;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/cupertino.dart';
@@ -12,7 +13,8 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shortsmap/Map/page/MapPage.dart';
 import 'package:shortsmap/Provider/BookmarkProvider.dart';
-import 'package:shortsmap/Provider/ImageCacheProvider.dart';
+import 'package:shortsmap/Provider/PhotoCacheServiceProvider.dart';
+import 'package:shortsmap/Service/PhotoCacheService.dart';
 import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
@@ -21,7 +23,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
-class ShortFormWidget extends StatefulWidget {
+class ShortFormWidget extends riv.ConsumerStatefulWidget {
   final String placeName;
   final String? description;
   final String placeRegion;
@@ -64,10 +66,10 @@ class ShortFormWidget extends StatefulWidget {
   });
 
   @override
-  State<ShortFormWidget> createState() => _ShortFormWidgetState();
+  riv.ConsumerState<ShortFormWidget> createState() => _ShortFormWidgetState();
 }
 
-class _ShortFormWidgetState extends State<ShortFormWidget> {
+class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
   late YoutubePlayerController _controller;
   IconData _currentIcon = Icons.pause;
   double _pauseIconOpacity = 0.0;
@@ -108,10 +110,13 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     super.initState();
     if (!widget.isEmpty) {
 
-      _photoUrlFuture = Provider.of<PhotoCacheProvider>(
-        context,
-        listen: false,
-      ).getPhotoUrlForPlace(widget.placeId);
+      // _photoUrlFuture = Provider.of<PhotoCacheService>(
+      //   context,
+      //   listen: false,
+      // ).getPhotoUrlForPlace(widget.placeId);
+
+      _photoUrlFuture = ref.read(photoCacheServiceProvider)
+          .getPhotoUrlForPlace(widget.placeId);
 
       _bookmarkCount = widget.bookmarkCount;
 
@@ -1239,10 +1244,13 @@ class _ShortFormWidgetState extends State<ShortFormWidget> {
     final double? locationLat = widget.coordinates['lat'];
     final double? locationLon = widget.coordinates['lon'];
 
-    final futurePhotos = Provider.of<PhotoCacheProvider>(
-      context,
-      listen: false,
-    ).getPhotoUrlForPlace(widget.placeId);
+    // final futurePhotos = Provider.of<PhotoCacheService>(
+    //   context,
+    //   listen: false,
+    // ).getPhotoUrlForPlace(widget.placeId);
+
+    final futurePhotos = ref.read(photoCacheServiceProvider)
+        .getPhotoUrlForPlace(widget.placeId);
 
     FirebaseAnalytics.instance.logEvent(
       name: "show_info_modal",

@@ -8,9 +8,10 @@ import 'package:firebase_analytics/observer.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' as riv;
 import 'package:provider/provider.dart';
 import 'package:shortsmap/Provider/BookmarkProvider.dart';
-import 'package:shortsmap/Provider/ImageCacheProvider.dart';
+import 'package:shortsmap/Service/PhotoCacheService.dart';
 import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/SplashScreen.dart';
@@ -64,7 +65,7 @@ Future<void> main() async {
     return true;
   };
 
-  runApp(MyApp(userDataProvider: userDataProvider, bookmarkProvider: bookmarkProvider,));
+  runApp(riv.ProviderScope(child: MyApp(userDataProvider: userDataProvider, bookmarkProvider: bookmarkProvider,)));
 }
 
 class MyApp extends StatefulWidget {
@@ -90,7 +91,7 @@ class _MyAppState extends State<MyApp> {
       providers: [
         ChangeNotifierProvider(create: (_) => FilterProvider()),
         ChangeNotifierProvider.value(value: widget.userDataProvider),
-        ChangeNotifierProvider(create: (_) => PhotoCacheProvider(apiKey: Env.googlePlaceAPIKey)),
+        // ChangeNotifierProvider(create: (_) => PhotoCacheProvider(apiKey: Env.googlePlaceAPIKey)),
         ChangeNotifierProvider.value(value: widget.bookmarkProvider),
         ChangeNotifierProvider(create: (_) => MarkerDataProvider(bookmarkProvider: widget.bookmarkProvider)),
       ],

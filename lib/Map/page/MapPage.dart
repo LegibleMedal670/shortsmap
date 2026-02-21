@@ -7,11 +7,13 @@ import 'package:provider/provider.dart';
 import 'package:shortsmap/Map/page/MapShortsPage.dart';
 import 'package:shortsmap/Map/provider/MarkerProvider.dart';
 import 'package:shortsmap/Provider/BookmarkProvider.dart';
-import 'package:shortsmap/Provider/ImageCacheProvider.dart';
+import 'package:shortsmap/Provider/PhotoCacheServiceProvider.dart';
+import 'package:shortsmap/Service/PhotoCacheService.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Widgets/BottomNavBar.dart';
 import 'package:shortsmap/Widgets/Modal/ShareModal.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' as riv;
 
 class MapPage extends StatefulWidget {
   final String? placeId;
@@ -572,44 +574,286 @@ class _MapPageState extends State<MapPage> {
                                               final placeData = snapshot.data!;
                                               final placeId = placeData['place_id'] as String;
 
-                                              // 1) photoFuture 메모이제이션
-                                              _photoFutures[placeId] ??=
-                                                  Provider.of<PhotoCacheProvider>(context, listen: false)
-                                                      .getPhotoUrlForPlace(placeId);
-                                              final photoFuture = _photoFutures[placeId]!;
+                                              return riv.Consumer(
+                                                builder: (context, ref, child){
+                                                  // 1) photoFuture 메모이제이션
+                                                  _photoFutures[placeId] ??=
+                                                      ref.read(photoCacheServiceProvider).getPhotoUrlForPlace(placeId);
+                                                  final photoFuture = _photoFutures[placeId]!;
 
-                                              final userLat = Provider.of<UserDataProvider>(context, listen: false).currentLat;
-                                              final userLon = Provider.of<UserDataProvider>(context, listen: false).currentLon;
+                                                  final userLat = Provider.of<UserDataProvider>(context, listen: false).currentLat;
+                                                  final userLon = Provider.of<UserDataProvider>(context, listen: false).currentLon;
 
-                                              // 2) photoFuture 로 전체 상세 UI 감싸기
-                                              return FutureBuilder<String>(
-                                                future: photoFuture,
-                                                builder: (context, photoSnapshot) {
-                                                  final imageUrl = photoSnapshot.data;
-                                                  final isLoading = photoSnapshot.connectionState == ConnectionState.waiting;
-                                                  final isEmpty = photoSnapshot.hasData && photoSnapshot.data!.isEmpty;
+                                                  // 2) photoFuture 로 전체 상세 UI 감싸기
+                                                  return FutureBuilder<String>(
+                                                    future: photoFuture,
+                                                    builder: (context, photoSnapshot) {
+                                                      final imageUrl = photoSnapshot.data;
+                                                      final isLoading = photoSnapshot.connectionState == ConnectionState.waiting;
+                                                      final isEmpty = photoSnapshot.hasData && photoSnapshot.data!.isEmpty;
 
-                                                  return Padding(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 14.0),
-                                                    child: Column(
-                                                      children: [
-                                                        // --- 상단 Row (Avatar + 텍스트 + 공유 버튼) ---
-                                                        Row(
-                                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                                      return Padding(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                                                        child: Column(
                                                           children: [
-                                                            GestureDetector(
-                                                              onTap: (){
+                                                            // --- 상단 Row (Avatar + 텍스트 + 공유 버튼) ---
+                                                            Row(
+                                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                                              children: [
+                                                                GestureDetector(
+                                                                  onTap: (){
 
-                                                                FirebaseAnalytics.instance.logEvent(
-                                                                  name: "tap_location_image",
-                                                                  parameters: {
-                                                                    "video_id": placeData['video_id'],
+                                                                    FirebaseAnalytics.instance.logEvent(
+                                                                      name: "tap_location_image",
+                                                                      parameters: {
+                                                                        "video_id": placeData['video_id'],
+                                                                      },
+                                                                    );
+
+                                                                    Navigator.of(context, rootNavigator: true).push(
+                                                                        MaterialPageRoute(
+                                                                            builder: (context) => MapShortsPage(
+                                                                              placeName: placeData['place_name'],
+                                                                              placeId: placeData['place_id'],
+                                                                              videoId: placeData['video_id'],
+                                                                              storeCaption: placeData['description'] ?? 'descriptionNull',
+                                                                              storeLocation: placeData['region'],
+                                                                              openTime: placeData['open_time'] ?? '09:00',
+                                                                              closeTime: placeData['close_time'] ?? '20:00',
+                                                                              rating: placeData['rating'] ?? 4.0,
+                                                                              category: placeData['category'],
+                                                                              averagePrice: placeData['average_price'] == null ? 3 : placeData['average_price'].toDouble(),
+                                                                              imageUrl: imageUrl,
+                                                                              coordinates: {
+                                                                                'lat': placeData['latitude'],
+                                                                                'lon': placeData['longitude'],
+                                                                              },
+                                                                              phoneNumber: placeData['phone_number'],
+                                                                              website: placeData['website_link'],
+                                                                              address: placeData['address'],
+                                                                              naverMapLink: placeData['naver_map_link'],
+                                                                            ))
+                                                                    );
                                                                   },
-                                                                );
+                                                                  child: Container(
+                                                                    width: 90,
+                                                                    height: 90,
+                                                                    decoration: BoxDecoration(
+                                                                      shape: BoxShape.circle,
+                                                                      border: Border.all(color: Colors.lightBlue, width: 2),
+                                                                    ),
+                                                                    child: Padding(
+                                                                      padding: const EdgeInsets.all(2.0),
+                                                                      child: CircleAvatar(
+                                                                        radius: 90,
+                                                                        backgroundImage: imageUrl == null ? null : NetworkImage(imageUrl),
+                                                                        backgroundColor: Colors.grey[300],
+                                                                        child: imageUrl == null ? Icon(
+                                                                          Icons.location_on_outlined,
+                                                                          color: Colors.black,
+                                                                          size: 30,
+                                                                        ) : null,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                const SizedBox(width: 10),
+                                                                Column(
+                                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                                  children: [
+                                                                    Text(
+                                                                      placeData['place_name'],
+                                                                      style: TextStyle(
+                                                                        fontSize: MediaQuery.of(context).size.width * 0.046,
+                                                                        fontWeight: FontWeight.bold,
+                                                                        color: Colors.black,
+                                                                      ),
+                                                                    ),
+                                                                    const SizedBox(height: 3),
+                                                                    Text(
+                                                                      placeData['category'],
+                                                                      style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.036, color: Colors.black54),
+                                                                    ),
+                                                                    const SizedBox(height: 3),
+                                                                    Row(
+                                                                      children: [
+                                                                        Icon(CupertinoIcons.bus, color: Colors.black26, size: MediaQuery.of(context).size.width * 0.045,),
+                                                                        Text(
+                                                                          (placeData['latitude'] != null &&
+                                                                              userLat != null &&
+                                                                              placeData['longitude'] != null &&
+                                                                              userLon != null)
+                                                                              ? ' ${calculateTimeRequired(userLat, userLon, placeData['latitude'], placeData['longitude'])}분 · ${placeData['region']}'
+                                                                              : ' 30분 · ${placeData['region']}',
+                                                                          style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.036, color: Colors.black54),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                    const SizedBox(height: 3),
+                                                                    Row(
+                                                                      children: [
+                                                                        const Icon(CupertinoIcons.time, color: Colors.black26, size: 18),
+                                                                        Text(
+                                                                          ' ${placeData['open_time'] ?? '09:00'} ~ ${placeData['close_time'] ?? '22:00'}',
+                                                                          style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.036, color: Colors.black54),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                                const Spacer(),
+                                                                GestureDetector(
+                                                                  onTap: () {
+                                                                    showShareModal(context, placeData['place_name'], placeData['video_id'], placeData['naver_map_link']);
+                                                                  },
+                                                                  child: Container(
+                                                                    width: 40,
+                                                                    height: 40,
+                                                                    decoration: BoxDecoration(
+                                                                      shape: BoxShape.circle,
+                                                                      color: Colors.black12,
+                                                                    ),
+                                                                    child: const Icon(CupertinoIcons.share, size: 20, color: Colors.black),
+                                                                  ),
+                                                                ),
+                                                                SizedBox(
+                                                                  width: 8,
+                                                                ),
+                                                                GestureDetector(
+                                                                  onTap: () {
+                                                                    markerProvider.setSelectedLocation = null;
+                                                                    markerProvider.setSelectedVideoId = null;
+                                                                    _sheetController.animateTo(
+                                                                      0.4,
+                                                                      duration: const Duration(milliseconds: 400),
+                                                                      curve: Curves.easeInOut,
+                                                                    );
+                                                                  },
+                                                                  child: Container(
+                                                                    width: 40,
+                                                                    height: 40,
+                                                                    decoration: BoxDecoration(
+                                                                      shape: BoxShape.circle,
+                                                                      color: Colors.black12,
+                                                                    ),
+                                                                    child: const Icon(CupertinoIcons.xmark, size: 20, color: Colors.black),
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
 
-                                                                Navigator.of(context, rootNavigator: true).push(
-                                                                    MaterialPageRoute(
-                                                                        builder: (context) => MapShortsPage(
+                                                            const SizedBox(height: 25),
+
+                                                            // --- 버튼 Row (Call, Route, Explore) ---
+                                                            Row(
+                                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                              children: [
+                                                                // Call
+                                                                GestureDetector(
+                                                                  onTap: () async {
+                                                                    final Uri phoneUri = Uri(scheme: 'tel', path: placeData['phone_number']);
+
+                                                                    FirebaseAnalytics.instance.logEvent(
+                                                                      name: "tap_call",
+                                                                      parameters: {
+                                                                        "video_id": placeData['video_id'],
+                                                                      },
+                                                                    );
+
+                                                                    if (await canLaunchUrl(phoneUri)) {
+                                                                      await launchUrl(phoneUri);
+                                                                    } else {
+                                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                                        SnackBar(
+                                                                          duration: Duration(milliseconds: 1500),
+                                                                          content: Text('지정된 전화번호가 없습니다.'),
+                                                                          behavior: SnackBarBehavior.floating,
+                                                                          margin: EdgeInsets.only(
+                                                                            bottom: MediaQuery.of(context).size.height * 0.06,
+                                                                            left: 20.0,
+                                                                            right: 20.0,
+                                                                          ),
+                                                                        ),
+                                                                      );
+                                                                    }
+                                                                  },
+                                                                  child: Container(
+                                                                    width: MediaQuery.of(context).size.width * 0.3,
+                                                                    padding: const EdgeInsets.symmetric(vertical: 6),
+                                                                    decoration: BoxDecoration(
+                                                                      color: Colors.black12,
+                                                                      borderRadius: BorderRadius.circular(20),
+                                                                    ),
+                                                                    child: Row(
+                                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                                      children: const [
+                                                                        Icon(CupertinoIcons.phone, color: Colors.black, size: 22),
+                                                                        SizedBox(width: 8),
+                                                                        Text('전화걸기', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                                                                      ],
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                // Route
+                                                                GestureDetector(
+                                                                  onTap: () async {
+
+                                                                    FirebaseAnalytics.instance.logEvent(
+                                                                      name: "tap_route",
+                                                                      parameters: {
+                                                                        "video_id": placeData['video_id'],
+                                                                      },
+                                                                    );
+
+                                                                    String deepRouteUrl = 'nmap://route/public?slat=$userLat&slng=$userLon&sname=내위치&dlat=${placeData['latitude']}&dlng=${placeData['longitude']}&dname=${placeData['place_name']}&appname=com.hwsoft.shortsmap';
+
+                                                                    String webRouteUrl = 'http://m.map.naver.com/route.nhn?menu=route&sname=내위치&sx=$userLon&sy=$userLat&ename=${placeData['place_name']}&ex=${placeData['longitude']}&ey=${placeData['latitude']}&pathType=1&showMap=true';
+
+
+                                                                    if (await canLaunchUrl(Uri.parse(deepRouteUrl))){
+                                                                      await launchUrl(
+                                                                        Uri.parse(deepRouteUrl),
+                                                                        mode: LaunchMode.externalApplication,
+                                                                      );
+                                                                    } else {
+                                                                      await launchUrl(
+                                                                        Uri.parse(webRouteUrl),
+                                                                        mode: LaunchMode.externalApplication,
+                                                                      );
+                                                                    }
+
+                                                                  },
+                                                                  child: Container(
+                                                                    width: MediaQuery.of(context).size.width * 0.3,
+                                                                    padding: const EdgeInsets.symmetric(vertical: 6),
+                                                                    decoration: BoxDecoration(
+                                                                      color: Colors.black12,
+                                                                      borderRadius: BorderRadius.circular(20),
+                                                                    ),
+                                                                    child: Row(
+                                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                                      children: const [
+                                                                        Icon(CupertinoIcons.car, color: Colors.black, size: 22),
+                                                                        SizedBox(width: 8),
+                                                                        Text('길찾기', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                                                                      ],
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                // Explore
+                                                                GestureDetector(
+                                                                  onTap: () {
+
+                                                                    FirebaseAnalytics.instance.logEvent(
+                                                                      name: "tap_explore",
+                                                                      parameters: {
+                                                                        "video_id": placeData['video_id'],
+                                                                      },
+                                                                    );
+
+                                                                    Navigator.of(context, rootNavigator: true).push(
+                                                                      MaterialPageRoute(
+                                                                        builder: (_) => MapShortsPage(
                                                                           placeName: placeData['place_name'],
                                                                           placeId: placeData['place_id'],
                                                                           videoId: placeData['video_id'],
@@ -619,7 +863,9 @@ class _MapPageState extends State<MapPage> {
                                                                           closeTime: placeData['close_time'] ?? '20:00',
                                                                           rating: placeData['rating'] ?? 4.0,
                                                                           category: placeData['category'],
-                                                                          averagePrice: placeData['average_price'] == null ? 3 : placeData['average_price'].toDouble(),
+                                                                          averagePrice: placeData['average_price'] == null
+                                                                              ? 3
+                                                                              : placeData['average_price'].toDouble(),
                                                                           imageUrl: imageUrl,
                                                                           coordinates: {
                                                                             'lat': placeData['latitude'],
@@ -629,415 +875,174 @@ class _MapPageState extends State<MapPage> {
                                                                           website: placeData['website_link'],
                                                                           address: placeData['address'],
                                                                           naverMapLink: placeData['naver_map_link'],
-                                                                        ))
-                                                                );
-                                                              },
-                                                              child: Container(
-                                                                width: 90,
-                                                                height: 90,
-                                                                decoration: BoxDecoration(
-                                                                  shape: BoxShape.circle,
-                                                                  border: Border.all(color: Colors.lightBlue, width: 2),
-                                                                ),
-                                                                child: Padding(
-                                                                  padding: const EdgeInsets.all(2.0),
-                                                                  child: CircleAvatar(
-                                                                    radius: 90,
-                                                                    backgroundImage: imageUrl == null ? null : NetworkImage(imageUrl),
-                                                                    backgroundColor: Colors.grey[300],
-                                                                    child: imageUrl == null ? Icon(
-                                                                      Icons.location_on_outlined,
-                                                                      color: Colors.black,
-                                                                      size: 30,
-                                                                    ) : null,
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ),
-                                                            const SizedBox(width: 10),
-                                                            Column(
-                                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                                              children: [
-                                                                Text(
-                                                                  placeData['place_name'],
-                                                                  style: TextStyle(
-                                                                    fontSize: MediaQuery.of(context).size.width * 0.046,
-                                                                    fontWeight: FontWeight.bold,
-                                                                    color: Colors.black,
-                                                                  ),
-                                                                ),
-                                                                const SizedBox(height: 3),
-                                                                Text(
-                                                                  placeData['category'],
-                                                                  style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.036, color: Colors.black54),
-                                                                ),
-                                                                const SizedBox(height: 3),
-                                                                Row(
-                                                                  children: [
-                                                                    Icon(CupertinoIcons.bus, color: Colors.black26, size: MediaQuery.of(context).size.width * 0.045,),
-                                                                    Text(
-                                                                      (placeData['latitude'] != null &&
-                                                                          userLat != null &&
-                                                                          placeData['longitude'] != null &&
-                                                                          userLon != null)
-                                                                          ? ' ${calculateTimeRequired(userLat, userLon, placeData['latitude'], placeData['longitude'])}분 · ${placeData['region']}'
-                                                                          : ' 30분 · ${placeData['region']}',
-                                                                      style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.036, color: Colors.black54),
+                                                                        ),
+                                                                      ),
+                                                                    );
+                                                                  },
+                                                                  child: Container(
+                                                                    width: MediaQuery.of(context).size.width * 0.3,
+                                                                    padding: const EdgeInsets.symmetric(vertical: 6),
+                                                                    decoration: BoxDecoration(
+                                                                      color: Colors.lightBlue,
+                                                                      borderRadius: BorderRadius.circular(20),
                                                                     ),
-                                                                  ],
-                                                                ),
-                                                                const SizedBox(height: 3),
-                                                                Row(
-                                                                  children: [
-                                                                    const Icon(CupertinoIcons.time, color: Colors.black26, size: 18),
-                                                                    Text(
-                                                                      ' ${placeData['open_time'] ?? '09:00'} ~ ${placeData['close_time'] ?? '22:00'}',
-                                                                      style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.036, color: Colors.black54),
+                                                                    child: Row(
+                                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                                      children: const [
+                                                                        Icon(CupertinoIcons.play_arrow_solid, color: Colors.white, size: 22),
+                                                                        SizedBox(width: 8),
+                                                                        Text(
+                                                                          '영상보기',
+                                                                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Colors.white),
+                                                                        ),
+                                                                      ],
                                                                     ),
-                                                                  ],
+                                                                  ),
                                                                 ),
                                                               ],
                                                             ),
-                                                            const Spacer(),
-                                                            GestureDetector(
-                                                              onTap: () {
-                                                                showShareModal(context, placeData['place_name'], placeData['video_id'], placeData['naver_map_link']);
-                                                              },
-                                                              child: Container(
-                                                                width: 40,
-                                                                height: 40,
-                                                                decoration: BoxDecoration(
-                                                                  shape: BoxShape.circle,
-                                                                  color: Colors.black12,
-                                                                ),
-                                                                child: const Icon(CupertinoIcons.share, size: 20, color: Colors.black),
+
+                                                            const SizedBox(height: 25),
+
+                                                            // --- 추가 정보 리스트 ---
+                                                            Container(
+                                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                                              decoration: BoxDecoration(
+                                                                color: Colors.grey[200],
+                                                                borderRadius: BorderRadius.circular(8),
+                                                                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
                                                               ),
-                                                            ),
-                                                            SizedBox(
-                                                              width: 8,
-                                                            ),
-                                                            GestureDetector(
-                                                              onTap: () {
-                                                                markerProvider.setSelectedLocation = null;
-                                                                markerProvider.setSelectedVideoId = null;
-                                                                _sheetController.animateTo(
-                                                                  0.4,
-                                                                  duration: const Duration(milliseconds: 400),
-                                                                  curve: Curves.easeInOut,
-                                                                );
-                                                              },
-                                                              child: Container(
-                                                                width: 40,
-                                                                height: 40,
-                                                                decoration: BoxDecoration(
-                                                                  shape: BoxShape.circle,
-                                                                  color: Colors.black12,
-                                                                ),
-                                                                child: const Icon(CupertinoIcons.xmark, size: 20, color: Colors.black),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
+                                                              child: Column(
+                                                                children: [
+                                                                  _buildListTile(
+                                                                    icon: Icons.location_on_outlined,
+                                                                    title: '네이버지도에서 보기',
+                                                                    subtitle: placeData['address'],
+                                                                    onTap: () async {
 
-                                                        const SizedBox(height: 25),
+                                                                      FirebaseAnalytics.instance.logEvent(
+                                                                        name: "tap_address",
+                                                                        parameters: {
+                                                                          "video_id": placeData['video_id'],
+                                                                        },
+                                                                      );
 
-                                                        // --- 버튼 Row (Call, Route, Explore) ---
-                                                        Row(
-                                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                          children: [
-                                                            // Call
-                                                            GestureDetector(
-                                                              onTap: () async {
-                                                                final Uri phoneUri = Uri(scheme: 'tel', path: placeData['phone_number']);
+                                                                      openNaverMap(placeData['naver_map_link']);
 
-                                                                FirebaseAnalytics.instance.logEvent(
-                                                                  name: "tap_call",
-                                                                  parameters: {
-                                                                    "video_id": placeData['video_id'],
-                                                                  },
-                                                                );
-
-                                                                if (await canLaunchUrl(phoneUri)) {
-                                                                  await launchUrl(phoneUri);
-                                                                } else {
-                                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                                    SnackBar(
-                                                                      duration: Duration(milliseconds: 1500),
-                                                                      content: Text('지정된 전화번호가 없습니다.'),
-                                                                      behavior: SnackBarBehavior.floating,
-                                                                      margin: EdgeInsets.only(
-                                                                        bottom: MediaQuery.of(context).size.height * 0.06,
-                                                                        left: 20.0,
-                                                                        right: 20.0,
-                                                                      ),
-                                                                    ),
-                                                                  );
-                                                                }
-                                                              },
-                                                              child: Container(
-                                                                width: MediaQuery.of(context).size.width * 0.3,
-                                                                padding: const EdgeInsets.symmetric(vertical: 6),
-                                                                decoration: BoxDecoration(
-                                                                  color: Colors.black12,
-                                                                  borderRadius: BorderRadius.circular(20),
-                                                                ),
-                                                                child: Row(
-                                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                                  children: const [
-                                                                    Icon(CupertinoIcons.phone, color: Colors.black, size: 22),
-                                                                    SizedBox(width: 8),
-                                                                    Text('전화걸기', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                            ),
-                                                            // Route
-                                                            GestureDetector(
-                                                              onTap: () async {
-
-                                                                FirebaseAnalytics.instance.logEvent(
-                                                                  name: "tap_route",
-                                                                  parameters: {
-                                                                    "video_id": placeData['video_id'],
-                                                                  },
-                                                                );
-
-                                                                String deepRouteUrl = 'nmap://route/public?slat=$userLat&slng=$userLon&sname=내위치&dlat=${placeData['latitude']}&dlng=${placeData['longitude']}&dname=${placeData['place_name']}&appname=com.hwsoft.shortsmap';
-
-                                                                String webRouteUrl = 'http://m.map.naver.com/route.nhn?menu=route&sname=내위치&sx=$userLon&sy=$userLat&ename=${placeData['place_name']}&ex=${placeData['longitude']}&ey=${placeData['latitude']}&pathType=1&showMap=true';
-
-
-                                                                if (await canLaunchUrl(Uri.parse(deepRouteUrl))){
-                                                                  await launchUrl(
-                                                                    Uri.parse(deepRouteUrl),
-                                                                    mode: LaunchMode.externalApplication,
-                                                                  );
-                                                                } else {
-                                                                  await launchUrl(
-                                                                    Uri.parse(webRouteUrl),
-                                                                    mode: LaunchMode.externalApplication,
-                                                                  );
-                                                                }
-
-                                                              },
-                                                              child: Container(
-                                                                width: MediaQuery.of(context).size.width * 0.3,
-                                                                padding: const EdgeInsets.symmetric(vertical: 6),
-                                                                decoration: BoxDecoration(
-                                                                  color: Colors.black12,
-                                                                  borderRadius: BorderRadius.circular(20),
-                                                                ),
-                                                                child: Row(
-                                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                                  children: const [
-                                                                    Icon(CupertinoIcons.car, color: Colors.black, size: 22),
-                                                                    SizedBox(width: 8),
-                                                                    Text('길찾기', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                            ),
-                                                            // Explore
-                                                            GestureDetector(
-                                                              onTap: () {
-
-                                                                FirebaseAnalytics.instance.logEvent(
-                                                                  name: "tap_explore",
-                                                                  parameters: {
-                                                                    "video_id": placeData['video_id'],
-                                                                  },
-                                                                );
-
-                                                                Navigator.of(context, rootNavigator: true).push(
-                                                                  MaterialPageRoute(
-                                                                    builder: (_) => MapShortsPage(
-                                                                      placeName: placeData['place_name'],
-                                                                      placeId: placeData['place_id'],
-                                                                      videoId: placeData['video_id'],
-                                                                      storeCaption: placeData['description'] ?? 'descriptionNull',
-                                                                      storeLocation: placeData['region'],
-                                                                      openTime: placeData['open_time'] ?? '09:00',
-                                                                      closeTime: placeData['close_time'] ?? '20:00',
-                                                                      rating: placeData['rating'] ?? 4.0,
-                                                                      category: placeData['category'],
-                                                                      averagePrice: placeData['average_price'] == null
-                                                                          ? 3
-                                                                          : placeData['average_price'].toDouble(),
-                                                                      imageUrl: imageUrl,
-                                                                      coordinates: {
-                                                                        'lat': placeData['latitude'],
-                                                                        'lon': placeData['longitude'],
-                                                                      },
-                                                                      phoneNumber: placeData['phone_number'],
-                                                                      website: placeData['website_link'],
-                                                                      address: placeData['address'],
-                                                                      naverMapLink: placeData['naver_map_link'],
-                                                                    ),
+                                                                    },
                                                                   ),
-                                                                );
-                                                              },
-                                                              child: Container(
-                                                                width: MediaQuery.of(context).size.width * 0.3,
-                                                                padding: const EdgeInsets.symmetric(vertical: 6),
-                                                                decoration: BoxDecoration(
-                                                                  color: Colors.lightBlue,
-                                                                  borderRadius: BorderRadius.circular(20),
-                                                                ),
-                                                                child: Row(
-                                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                                  children: const [
-                                                                    Icon(CupertinoIcons.play_arrow_solid, color: Colors.white, size: 22),
-                                                                    SizedBox(width: 8),
-                                                                    Text(
-                                                                      '영상보기',
-                                                                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Colors.white),
+                                                                  Divider(height: 2),
+                                                                  _buildListTile(
+                                                                    icon: Icons.event_available,
+                                                                    title: '예약하러 가기',
+                                                                    subtitle: '숙소·액티비티 예약',
+                                                                    onTap: () async {
+
+                                                                      FirebaseAnalytics.instance.logEvent(
+                                                                        name: "tap_reservation",
+                                                                        parameters: {
+                                                                          "video_id": placeData['video_id'],
+                                                                        },
+                                                                      );
+
+                                                                      // openNaverMap(widget.naverMapLink);
+
+                                                                      /// 예약하러 가는 링크 열어주는 함수 만들어서 넣기
+
+                                                                    },
+                                                                  ),
+                                                                  Divider(height: 2),
+                                                                  _buildListTile(
+                                                                    icon: Icons.description_outlined,
+                                                                    title: '텍스트후기 보러가기',
+                                                                    subtitle: '생생한 텍스트 후기',
+                                                                    onTap: () async {
+
+                                                                      FirebaseAnalytics.instance.logEvent(
+                                                                        name: "tap_text_review",
+                                                                        parameters: {
+                                                                          "video_id": placeData['video_id'],
+                                                                        },
+                                                                      );
+
+                                                                      // openNaverMap(widget.naverMapLink);
+
+                                                                      /// 텍스트후기 보러가는 링크 열어주는 함수 만들어서 넣기
+
+                                                                    },
+                                                                  ),
+                                                                  if (placeData['phone_number'] != null)
+                                                                    const Divider(height: 2),
+                                                                  if (placeData['phone_number'] != null)
+                                                                    _buildListTile(
+                                                                      icon: Icons.phone,
+                                                                      title: '전화걸기',
+                                                                      onTap: () async {
+
+                                                                        FirebaseAnalytics.instance.logEvent(
+                                                                          name: "tap_call",
+                                                                          parameters: {
+                                                                            "video_id": placeData['video_id'],
+                                                                          },
+                                                                        );
+
+                                                                        final Uri phoneUri = Uri(scheme: 'tel', path: placeData['phone_number']);
+                                                                        if (await canLaunchUrl(phoneUri)) await launchUrl(phoneUri);
+                                                                      },
                                                                     ),
-                                                                  ],
-                                                                ),
+                                                                  if (placeData['website_link'] != null)
+                                                                    const Divider(height: 2),
+                                                                  if (placeData['website_link'] != null)
+                                                                    _buildListTile(
+                                                                      icon: Icons.language,
+                                                                      title: '웹사이트 방문하기',
+                                                                      onTap: () async {
+
+                                                                        FirebaseAnalytics.instance.logEvent(
+                                                                          name: "tap_visit_website",
+                                                                          parameters: {
+                                                                            "video_id": placeData['video_id'],
+                                                                          },
+                                                                        );
+
+                                                                        await launchUrl(Uri.parse(placeData['website_link']),
+                                                                            mode: LaunchMode.inAppBrowserView);
+                                                                      },
+                                                                    ),
+                                                                  const Divider(height: 2),
+                                                                  _buildListTile(
+                                                                    icon: Icons.flag,
+                                                                    title: '신고하기',
+                                                                    onTap: () {
+                                                                      showReportModal(context, placeData['video_id']);
+                                                                    },
+                                                                  ),
+                                                                  const Divider(height: 2),
+                                                                  _buildListTile(
+                                                                    icon: Icons.verified_outlined,
+                                                                    title: '장소 소유자 인증하기',
+                                                                    onTap: () async {
+
+                                                                      FirebaseAnalytics.instance.logEvent(
+                                                                        name: "tap_place_owner",
+                                                                        parameters: {
+                                                                          "video_id": placeData['video_id'],
+                                                                        },
+                                                                      );
+
+                                                                      await launchUrl(
+                                                                        Uri.parse('https://forms.gle/yXcva654ddrWfWwYA'),
+                                                                        mode: LaunchMode.inAppBrowserView,
+                                                                      );
+                                                                    },
+                                                                  ),
+                                                                ],
                                                               ),
                                                             ),
                                                           ],
                                                         ),
-
-                                                        const SizedBox(height: 25),
-
-                                                        // --- 추가 정보 리스트 ---
-                                                        Container(
-                                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                                          decoration: BoxDecoration(
-                                                            color: Colors.grey[200],
-                                                            borderRadius: BorderRadius.circular(8),
-                                                            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
-                                                          ),
-                                                          child: Column(
-                                                            children: [
-                                                              _buildListTile(
-                                                                icon: Icons.location_on_outlined,
-                                                                title: '네이버지도에서 보기',
-                                                                subtitle: placeData['address'],
-                                                                onTap: () async {
-
-                                                                  FirebaseAnalytics.instance.logEvent(
-                                                                    name: "tap_address",
-                                                                    parameters: {
-                                                                      "video_id": placeData['video_id'],
-                                                                    },
-                                                                  );
-
-                                                                  openNaverMap(placeData['naver_map_link']);
-
-                                                                },
-                                                              ),
-                                                              Divider(height: 2),
-                                                              _buildListTile(
-                                                                icon: Icons.event_available,
-                                                                title: '예약하러 가기',
-                                                                subtitle: '숙소·액티비티 예약',
-                                                                onTap: () async {
-
-                                                                  FirebaseAnalytics.instance.logEvent(
-                                                                    name: "tap_reservation",
-                                                                    parameters: {
-                                                                      "video_id": placeData['video_id'],
-                                                                    },
-                                                                  );
-
-                                                                  // openNaverMap(widget.naverMapLink);
-
-                                                                  /// 예약하러 가는 링크 열어주는 함수 만들어서 넣기
-
-                                                                },
-                                                              ),
-                                                              Divider(height: 2),
-                                                              _buildListTile(
-                                                                icon: Icons.description_outlined,
-                                                                title: '텍스트후기 보러가기',
-                                                                subtitle: '생생한 텍스트 후기',
-                                                                onTap: () async {
-
-                                                                  FirebaseAnalytics.instance.logEvent(
-                                                                    name: "tap_text_review",
-                                                                    parameters: {
-                                                                      "video_id": placeData['video_id'],
-                                                                    },
-                                                                  );
-
-                                                                  // openNaverMap(widget.naverMapLink);
-
-                                                                  /// 텍스트후기 보러가는 링크 열어주는 함수 만들어서 넣기
-
-                                                                },
-                                                              ),
-                                                              if (placeData['phone_number'] != null)
-                                                                const Divider(height: 2),
-                                                              if (placeData['phone_number'] != null)
-                                                                _buildListTile(
-                                                                  icon: Icons.phone,
-                                                                  title: '전화걸기',
-                                                                  onTap: () async {
-
-                                                                    FirebaseAnalytics.instance.logEvent(
-                                                                      name: "tap_call",
-                                                                      parameters: {
-                                                                        "video_id": placeData['video_id'],
-                                                                      },
-                                                                    );
-
-                                                                    final Uri phoneUri = Uri(scheme: 'tel', path: placeData['phone_number']);
-                                                                    if (await canLaunchUrl(phoneUri)) await launchUrl(phoneUri);
-                                                                  },
-                                                                ),
-                                                              if (placeData['website_link'] != null)
-                                                                const Divider(height: 2),
-                                                              if (placeData['website_link'] != null)
-                                                                _buildListTile(
-                                                                  icon: Icons.language,
-                                                                  title: '웹사이트 방문하기',
-                                                                  onTap: () async {
-
-                                                                    FirebaseAnalytics.instance.logEvent(
-                                                                      name: "tap_visit_website",
-                                                                      parameters: {
-                                                                        "video_id": placeData['video_id'],
-                                                                      },
-                                                                    );
-
-                                                                    await launchUrl(Uri.parse(placeData['website_link']),
-                                                                        mode: LaunchMode.inAppBrowserView);
-                                                                  },
-                                                                ),
-                                                              const Divider(height: 2),
-                                                              _buildListTile(
-                                                                icon: Icons.flag,
-                                                                title: '신고하기',
-                                                                onTap: () {
-                                                                  showReportModal(context, placeData['video_id']);
-                                                                },
-                                                              ),
-                                                              const Divider(height: 2),
-                                                              _buildListTile(
-                                                                icon: Icons.verified_outlined,
-                                                                title: '장소 소유자 인증하기',
-                                                                onTap: () async {
-
-                                                                  FirebaseAnalytics.instance.logEvent(
-                                                                    name: "tap_place_owner",
-                                                                    parameters: {
-                                                                      "video_id": placeData['video_id'],
-                                                                    },
-                                                                  );
-
-                                                                  await launchUrl(
-                                                                    Uri.parse('https://forms.gle/yXcva654ddrWfWwYA'),
-                                                                    mode: LaunchMode.inAppBrowserView,
-                                                                  );
-                                                                },
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
+                                                      );
+                                                    },
                                                   );
                                                 },
                                               );
@@ -1184,43 +1189,50 @@ class _MapPageState extends State<MapPage> {
 
                                                       final placeId = p['place_id'];
 
-                                                      _photoFutures[placeId] ??= Provider.of<PhotoCacheProvider>(context, listen: false).getPhotoUrlForPlace(placeId);
+                                                      // _photoFutures[placeId] ??= Provider.of<PhotoCacheService>(context, listen: false).getPhotoUrlForPlace(placeId);
 
-                                                      return FutureBuilder<String>(
-                                                        future: _photoFutures[placeId],
-                                                        builder: (context, photoSnapshot) {
-                                                          final imageUrl = photoSnapshot.data;
+                                                      return riv.Consumer(
+                                                        builder: (context, ref, child){
 
-                                                          if (snapshot.connectionState == ConnectionState.waiting) {
-                                                            return _locationTile(
-                                                              true,
-                                                              placeId,
-                                                              imageUrl,
-                                                              p['place_name'] ?? '',
-                                                              p['region'] ?? '',
-                                                              p['open_time'] ?? '09:00',
-                                                              p['close_time'] ?? '22:00',
-                                                              (p['latitude'] as num).toDouble(),
-                                                              (p['longitude'] as num).toDouble(),
-                                                              p['video_id'] ?? '',
-                                                            );
-                                                          }
+                                                          _photoFutures[placeId] ??= ref.read(photoCacheServiceProvider).getPhotoUrlForPlace(placeId);
 
-                                                          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                                                            print(snapshot.error);
-                                                          }
+                                                          return FutureBuilder<String>(
+                                                            future: _photoFutures[placeId],
+                                                            builder: (context, photoSnapshot) {
+                                                              final imageUrl = photoSnapshot.data;
 
-                                                          return _locationTile(
-                                                            false,
-                                                            placeId,
-                                                            imageUrl,
-                                                            p['place_name'] ?? '',
-                                                            p['region'] ?? '',
-                                                            p['open_time'] ?? '09:00',
-                                                            p['close_time'] ?? '22:00',
-                                                            (p['latitude'] as num).toDouble(),
-                                                            (p['longitude'] as num).toDouble(),
-                                                            p['video_id'] ?? '',
+                                                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                                                return _locationTile(
+                                                                  true,
+                                                                  placeId,
+                                                                  imageUrl,
+                                                                  p['place_name'] ?? '',
+                                                                  p['region'] ?? '',
+                                                                  p['open_time'] ?? '09:00',
+                                                                  p['close_time'] ?? '22:00',
+                                                                  (p['latitude'] as num).toDouble(),
+                                                                  (p['longitude'] as num).toDouble(),
+                                                                  p['video_id'] ?? '',
+                                                                );
+                                                              }
+
+                                                              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                                                print(snapshot.error);
+                                                              }
+
+                                                              return _locationTile(
+                                                                false,
+                                                                placeId,
+                                                                imageUrl,
+                                                                p['place_name'] ?? '',
+                                                                p['region'] ?? '',
+                                                                p['open_time'] ?? '09:00',
+                                                                p['close_time'] ?? '22:00',
+                                                                (p['latitude'] as num).toDouble(),
+                                                                (p['longitude'] as num).toDouble(),
+                                                                p['video_id'] ?? '',
+                                                              );
+                                                            },
                                                           );
                                                         },
                                                       );

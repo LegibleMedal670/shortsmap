@@ -2,11 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-class PhotoCacheProvider extends ChangeNotifier {
+class PhotoCacheService{
   final String apiKey;
   final Map<String, String> _cache = {};
 
-  PhotoCacheProvider({required this.apiKey});
+  PhotoCacheService({required this.apiKey});
 
   // 1) placeId → photoName
   Future<String> _getFirstPhotoName(String placeId) async {
