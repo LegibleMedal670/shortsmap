@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shortsmap/Shorts/model/LocationData.dart';
-import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
+import 'package:shortsmap/Provider/FilterProvider.dart';
 import 'package:shortsmap/Shorts/widget/ShimmerWidget.dart';
 import 'package:shortsmap/Shorts/widget/ShortFormWidget.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
-import 'package:shortsmap/Widgets/BottomNavBar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' as riv;
 
 class ShortsPage extends StatefulWidget {
   const ShortsPage({super.key});
@@ -120,15 +120,18 @@ class _ShortsPageState extends State<ShortsPage> {
       body: Column(
         children: [
           Expanded(
-            child: Consumer<FilterProvider>(
-              builder: (context, provider, child) {
+            child: riv.Consumer(
+              builder: (context, ref, child) {
+
+                final filter = ref.watch(filterProvider);
+
                 return FutureBuilder(
                   future: _fetchDataFromSupabase(
-                    provider.filterRegion,
-                    provider.filterCategory,
-                    provider.orderNear,
-                    provider.filterLat,
-                    provider.filterLon,
+                      filter.region,
+                      filter.category,
+                      filter.orderNear,
+                      filter.lat,
+                      filter.lon,
                     Provider.of<UserDataProvider>(context, listen: false).currentUserUID
                   ),
                   builder: (context, snapshot) {
@@ -203,40 +206,6 @@ class _ShortsPageState extends State<ShortsPage> {
           // BottomNavBar(context, 'shorts'),
         ],
       ),
-      // bottomNavigationBar: BottomNavigationBar(
-      //   type: BottomNavigationBarType.fixed,
-      //   backgroundColor: Colors.black,
-      //   selectedItemColor: Colors.grey[200],
-      //   selectedFontSize: 13,
-      //   unselectedItemColor: Colors.grey,
-      //   unselectedFontSize: 13,
-      //   elevation: 0,
-      //   currentIndex: 0,
-      //   onTap: (index) {
-      //     HapticFeedback.lightImpact();
-      //     if (index != 0){
-      //       print(index);
-      //     }
-      //   },
-      //   items: [
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.travel_explore),
-      //       label: 'Explore',
-      //     ),
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.calendar_month),
-      //       label: 'Plan',
-      //     ),
-      //     BottomNavigationBarItem(
-      //       icon: Icon(CupertinoIcons.tickets),
-      //       label: 'Reserve',
-      //     ),
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.forum_outlined),
-      //       label: 'Community',
-      //     ),
-      //   ],
-      // ),
     );
   }
 }

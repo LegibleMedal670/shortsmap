@@ -15,7 +15,7 @@ import 'package:shortsmap/Map/page/MapPage.dart';
 import 'package:shortsmap/Provider/BookmarkProvider.dart';
 import 'package:shortsmap/Provider/PhotoCacheServiceProvider.dart';
 import 'package:shortsmap/Service/PhotoCacheService.dart';
-import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
+import 'package:shortsmap/Provider/FilterProvider.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:shortsmap/Widgets/Modal/ShareModal.dart';
@@ -271,6 +271,8 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
       ),
     );
 
+    final filter = ref.watch(filterProvider);
+
 
 
     /// TODO: 빈 위젯 등 위젯들 분리
@@ -291,34 +293,30 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                     color: shortPageWhite,
                     size: 26,
                   ),
-                  Consumer<FilterProvider>(
-                    builder: (providerContext, filterProvider, child) {
-                      return Container(
-                        padding: EdgeInsets.symmetric(
-                          vertical: 8,
-                          horizontal: 8,
-                        ),
-                        color: Colors.transparent,
-                        child: (filterProvider.orderNear == false && filterProvider.filterCategory == null && filterProvider.filterRegion == null)
-                            ? Text(
-                          '필터 적용하기',
-                          style: TextStyle(
-                            fontSize: 21,
-                            fontWeight: FontWeight.w600,
-                            color: shortPageWhite,
-                          ),
-                        )
-                            : Text(
-                          '${filterProvider.orderNear == true ? '가까운 순' : filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory == null ? 'All' : switchCategoryToKor(filterProvider.filterCategory)} ',
-                          // '${filterProvider.filterRegion ?? '대전'} · ${filterProvider.filterCategory ?? '전시'} ',
-                          style: TextStyle(
-                            fontSize: 21,
-                            fontWeight: FontWeight.w600,
-                            color: shortPageWhite,
-                          ),
-                        ),
-                      );
-                    },
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 8,
+                    ),
+                    color: Colors.transparent,
+                    child: (filter.orderNear == false && filter.category == null && filter.region == null)
+                        ? Text(
+                      '필터 적용하기',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w600,
+                        color: shortPageWhite,
+                      ),
+                    )
+                        : Text(
+                      '${filter.orderNear == true ? '가까운 순' : filter.region ?? 'All'} · ${filter.category == null ? 'All' : switchCategoryToKor(filter.category)} ',
+                      // '${filterProvider.filterRegion ?? '대전'} · ${filterProvider.filterCategory ?? '전시'} ',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w600,
+                        color: shortPageWhite,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -616,35 +614,31 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                     color: shortPageWhite,
                     size: 26,
                   ),
-                  Consumer<FilterProvider>(
-                    builder: (providerContext, filterProvider, child) {
-                      return Container(
-                        padding: EdgeInsets.symmetric(
-                          vertical: 8,
-                          horizontal: 8,
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 8,
+                    ),
+                    color: Colors.transparent,
+                    child:
+                    (filter.orderNear == false && filter.category == null && filter.region == null)
+                      ? Text(
+                        '필터 적용하기',
+                        style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w600,
+                        color: shortPageWhite,
                         ),
-                        color: Colors.transparent,
-                        child:
-                        (filterProvider.orderNear == false && filterProvider.filterCategory == null && filterProvider.filterRegion == null)
-                          ? Text(
-                            '필터 적용하기',
-                            style: TextStyle(
-                            fontSize: 21,
-                            fontWeight: FontWeight.w600,
-                            color: shortPageWhite,
-                            ),
-                          )
-                            : Text(
-                          '${filterProvider.orderNear == true ? '가까운 순' : filterProvider.filterRegion ?? 'All'} · ${filterProvider.filterCategory == null ? 'All' : switchCategoryToKor(filterProvider.filterCategory)} ',
-                          // '${filterProvider.filterRegion ?? '대전'} · ${filterProvider.filterCategory ?? '전시'} ',
-                          style: TextStyle(
-                            fontSize: 21,
-                            fontWeight: FontWeight.w600,
-                            color: shortPageWhite,
-                          ),
-                        ),
-                      );
-                    },
+                      )
+                        : Text(
+                      '${filter.orderNear == true ? '가까운 순' : filter.region ?? 'All'} · ${filter.category == null ? 'All' : switchCategoryToKor(filter.category)} ',
+                      // '${filterProvider.filterRegion ?? '대전'} · ${filterProvider.filterCategory ?? '전시'} ',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w600,
+                        color: shortPageWhite,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -2239,10 +2233,11 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter filterState) {
 
+            final filter = ref.read(filterProvider);
+
             if (!_initialized) {
-              final filterProv = Provider.of<FilterProvider>(context, listen: false);
-              selectedRegion   = filterProv.orderNear ? '가까운 순' : filterProv.filterRegion ?? 'All' ;   // Provider에 정의된 프로퍼티
-              selectedCategory = filterProv.filterCategory == null ? 'All' : switchCategoryToKor(filterProv.filterCategory); // Provider에 정의된 프로퍼티
+              selectedRegion   = filter.orderNear ? '가까운 순' : filter.region ?? 'All' ;   // Provider에 정의된 프로퍼티
+              selectedCategory = filter.category == null ? 'All' : switchCategoryToKor(filter.category); // Provider에 정의된 프로퍼티
               _initialized = true;
             }
 
@@ -2418,81 +2413,80 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                       ),
                     ),
                     SafeArea(
-                      child: Consumer<FilterProvider>(
-                        builder: (
-                          filterProviderContext,
-                          filterProvider,
-                          child,
-                        ) {
-                          return GestureDetector(
-                            onTap: () async {
-                              if (selectedRegion == '가까운 순') {
-                                await filterProvider.setAroundVideoCategory(
-                                  context,
-                                  (selectedCategory == 'All')
-                                      ? null
-                                      : switchCategoryToEng(selectedCategory),
-                                );
+                      child: GestureDetector(
+                        onTap: () async {
 
-                                FirebaseAnalytics.instance.logEvent(
-                                  name: "apply_filter",
-                                  parameters: {
-                                    "order_near": "true",
-                                    "selected_region": 'null',
-                                    "selected_category": selectedCategory == null ? 'All' : selectedCategory == 'All' ? 'All' : selectedCategory!,
-                                  },
-                                );
+                          final notifier = ref.read(filterProvider.notifier);
+
+                          if (selectedRegion == '가까운 순') {
+
+                            final result = await notifier.setAroundVideoCategory(
+                              (selectedCategory == 'All')
+                                  ? null
+                                  : switchCategoryToEng(selectedCategory),
+                            );
+
+                            if (result == FilterResult.permissionDenied) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Location Permission Denied.")),
+      );
+                            } else {
+                              FirebaseAnalytics.instance.logEvent(
+                                name: "apply_filter",
+                                parameters: {
+                                  "order_near": "true",
+                                  "selected_region": 'null',
+                                  "selected_category": selectedCategory == null ? 'All' : selectedCategory == 'All' ? 'All' : selectedCategory!,
+                                },
+                              );
 
 
-                                await Provider.of<UserDataProvider>(
-                                  context,
-                                  listen: false,
-                                ).setCurrentLocation(
-                                  filterProvider.filterLat,
-                                  filterProvider.filterLon,
-                                );
-                              } else {
-                                filterProvider.setBasicVideoCategory(
-                                  (selectedRegion == 'All')
-                                      ? null
-                                      : selectedRegion,
-                                  (selectedCategory == 'All')
-                                      ? null
-                                      : switchCategoryToEng(selectedCategory),
-                                );
+                              final updated = ref.read(filterProvider);
+                              await Provider.of<UserDataProvider>(context, listen: false)
+                                  .setCurrentLocation(updated.lat, updated.lon);
+                            }
 
-                                FirebaseAnalytics.instance.logEvent(
-                                  name: "apply_filter",
-                                  parameters: {
-                                    "order_near": "true",
-                                    "selected_region": selectedRegion == null ? 'All' : selectedRegion == 'All' ? 'All' : selectedRegion!,
-                                    "selected_category": selectedCategory == null ? 'All' : selectedCategory == 'All' ? 'All' : selectedCategory!,
-                                  },
-                                );
-                              }
 
-                              Navigator.pop(context);
-                            },
-                            child: Container(
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                              width: MediaQuery.of(context).size.width * 0.8,
-                              decoration: BoxDecoration(
-                                color: Colors.lightBlueAccent,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  '필터 적용하기',
-                                  style: TextStyle(
-                                    color: Color(0xff121212),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 20,
-                                  ),
-                                ),
+                          } else {
+                            notifier.setBasicVideoCategory(
+                              (selectedRegion == 'All')
+                                  ? null
+                                  : selectedRegion,
+                              (selectedCategory == 'All')
+                                  ? null
+                                  : switchCategoryToEng(selectedCategory),
+                            );
+
+                            FirebaseAnalytics.instance.logEvent(
+                              name: "apply_filter",
+                              parameters: {
+                                "order_near": "true",
+                                "selected_region": selectedRegion == null ? 'All' : selectedRegion == 'All' ? 'All' : selectedRegion!,
+                                "selected_category": selectedCategory == null ? 'All' : selectedCategory == 'All' ? 'All' : selectedCategory!,
+                              },
+                            );
+                          }
+
+                          Navigator.pop(context);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          width: MediaQuery.of(context).size.width * 0.8,
+                          decoration: BoxDecoration(
+                            color: Colors.lightBlueAccent,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '필터 적용하기',
+                              style: TextStyle(
+                                color: Color(0xff121212),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
                               ),
                             ),
-                          );
-                        },
+                          ),
+                        ),
                       ),
                     ),
                   ],

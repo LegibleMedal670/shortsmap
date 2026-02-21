@@ -11,8 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as riv;
 import 'package:provider/provider.dart';
 import 'package:shortsmap/Provider/BookmarkProvider.dart';
-import 'package:shortsmap/Service/PhotoCacheService.dart';
-import 'package:shortsmap/Shorts/provider/FilterProvider.dart';
 import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/SplashScreen.dart';
 import 'package:shortsmap/env.dart';
@@ -89,7 +87,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => FilterProvider()),
+        // ChangeNotifierProvider(create: (_) => FilterProvider()),
         ChangeNotifierProvider.value(value: widget.userDataProvider),
         // ChangeNotifierProvider(create: (_) => PhotoCacheProvider(apiKey: Env.googlePlaceAPIKey)),
         ChangeNotifierProvider.value(value: widget.bookmarkProvider),
