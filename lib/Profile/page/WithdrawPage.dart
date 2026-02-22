@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' as riv;
 import 'package:provider/provider.dart';
 import 'package:shortsmap/Provider/BookmarkProvider.dart';
-import 'package:shortsmap/Provider/UserDataProvider.dart';
+import 'package:shortsmap/Provider/UserSessionProvider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'ProfilePage.dart';
 
-class WithdrawPage extends StatefulWidget {
+class WithdrawPage extends riv.ConsumerStatefulWidget {
   const WithdrawPage({Key? key}) : super(key: key);
 
   @override
-  _WithdrawPageState createState() => _WithdrawPageState();
+  riv.ConsumerState<WithdrawPage> createState() => _WithdrawPageState();
 }
 
-class _WithdrawPageState extends State<WithdrawPage> {
+class _WithdrawPageState extends riv.ConsumerState<WithdrawPage> {
   bool _agreed = false;
 
   @override
@@ -93,7 +94,7 @@ class _WithdrawPageState extends State<WithdrawPage> {
                     height: 48,
                     child: ElevatedButton(
                       onPressed: !_agreed ? null : (){
-                          _onWithdraw(Provider.of<UserDataProvider>(context, listen: false).currentUserUID!);
+                          _onWithdraw(ref.read(userSessionProvider).currentUserUID!);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red, // 활성 시 빨간색
@@ -167,7 +168,7 @@ class _WithdrawPageState extends State<WithdrawPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('계정이 성공적으로 삭제되었습니다.')),
         );
-        Provider.of<UserDataProvider>(context, listen: false).logout();
+        ref.read(userSessionProvider.notifier).logout();
         Provider.of<BookmarkProvider>(context, listen: false).updateLoginStatus(false, null);
         Navigator.of(context).pop();
         Navigator.pushAndRemoveUntil(

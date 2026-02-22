@@ -6,22 +6,23 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shortsmap/Profile/page/AccountPage.dart';
 import 'package:shortsmap/Provider/BookmarkProvider.dart';
-import 'package:shortsmap/Provider/UserDataProvider.dart';
+import 'package:shortsmap/Provider/UserSessionProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:shortsmap/Widgets/BottomNavBar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' as riv;
 
 // 공통으로 사용하는 기본 텍스트/아이콘 색상
 const Color primaryTextColor = Color(0xFF121212);
 
-class ProfilePage extends StatefulWidget {
+class ProfilePage extends riv.ConsumerStatefulWidget {
   const ProfilePage({super.key});
   @override
-  State<ProfilePage> createState() => _ProfilePageState();
+  riv.ConsumerState<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _ProfilePageState extends riv.ConsumerState<ProfilePage> {
 
   int _step = 0;
   bool _hasRated = true;
@@ -180,11 +181,16 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                   /// 로그인/로그아웃
-                  Consumer<UserDataProvider>(
-                    builder: (context, userDataProvider, _) {
+                  riv.Consumer(
+                    builder: (context, ref, child) {
+
+                      final isLoggedIn = ref.watch(
+                        userSessionProvider.select((s) => s.isLoggedIn),
+                      );
+
                       return ListTile(
                         minLeadingWidth: 0,
-                        onTap: userDataProvider.isLoggedIn
+                        onTap: isLoggedIn
                             ? () => _showLogoutDialog(context)
                             : () {
                           Navigator.of(context, rootNavigator: true).push(
@@ -192,11 +198,11 @@ class _ProfilePageState extends State<ProfilePage> {
                           );
                         },
                         leading: Icon(
-                          userDataProvider.isLoggedIn ? Icons.logout : Icons.login,
+                          isLoggedIn ? Icons.logout : Icons.login,
                           color: primaryTextColor,
                         ),
                         title: Text(
-                          userDataProvider.isLoggedIn ? '로그아웃' : '로그인',
+                          isLoggedIn ? '로그아웃' : '로그인',
                           style: const TextStyle(
                             color: primaryTextColor,
                             fontSize: 17,
@@ -340,7 +346,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
 
           // 기존 BottomNavBar
-          BottomNavBar(context, 'profile'),
+          BottomNavBar(context, 'profile', canOpenMap: () => ref.read(userSessionProvider).currentUserUID != null,),
         ],
       ),
     );
@@ -364,6 +370,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _showLogoutDialog(BuildContext context) {
+
+    final currentUserUID = ref.read(userSessionProvider).currentUserUID ?? 'e';
+
     showDialog(
       context: context,
       builder: (context) {
@@ -431,12 +440,12 @@ class _ProfilePageState extends State<ProfilePage> {
                         await FirebaseAnalytics.instance.logEvent(
                           name: "logout",
                           parameters: {
-                            'uid': Provider.of<UserDataProvider>(context, listen: false).loginProvider!
+                            'uid': currentUserUID!,
                           },
                         );
                         await Supabase.instance.client.auth.signOut();
                         Navigator.of(context).pop();
-                        Provider.of<UserDataProvider>(context, listen: false).logout();
+                        ref.read(userSessionProvider.notifier).logout();
                         Provider.of<BookmarkProvider>(context, listen: false).updateLoginStatus(false, null);
                       },
                     ),

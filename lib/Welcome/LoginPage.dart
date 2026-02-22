@@ -3,24 +3,25 @@ import 'dart:io';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' as riv;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 import 'package:shortsmap/Provider/BookmarkProvider.dart';
-import 'package:shortsmap/Provider/UserDataProvider.dart';
+import 'package:shortsmap/Provider/UserSessionProvider.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:crypto/crypto.dart';
 
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends riv.ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  riv.ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends riv.ConsumerState<LoginPage> {
 
   final _supabase = Supabase.instance.client;
 
@@ -46,6 +47,8 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
 
+      /// google sign in 용 Id들이 노출되어 있음.
+      /// 번들 ID 제한 설정을 해둬 지금은 괜찮지만 앞으로는 .env에서 관리하도록 하자..
       const iosClientId = '916848326581-8ksg7a187hji9v2ak727f3mm6n0c39jr.apps.googleusercontent.com';
       const serverClientId = '916848326581-tgrq4r69qhcgb9vfr7ojmj5tbudcvl96.apps.googleusercontent.com';
 
@@ -74,7 +77,7 @@ class _LoginPageState extends State<LoginPage> {
           final uid = _supabase.auth.currentUser!.id;
           final String loginId = _supabase.auth.currentUser!.email!;
           final String loginProvider = _supabase.auth.currentUser!.appMetadata['provider']!;
-          Provider.of<UserDataProvider>(context, listen: false).login(uid, loginId, loginProvider);
+          ref.read(userSessionProvider.notifier).login(uid, loginId, loginProvider);
 
           Provider.of<BookmarkProvider>(context, listen: false).updateLoginStatus(true, uid);
 
@@ -147,8 +150,7 @@ class _LoginPageState extends State<LoginPage> {
         final String loginId = user.email ?? 'unknown@email.com';
         final String loginProvider = user.appMetadata['provider'] ?? 'apple';
 
-        Provider.of<UserDataProvider>(context, listen: false)
-            .login(uid, loginId, loginProvider);
+        ref.read(userSessionProvider.notifier).login(uid, loginId, loginProvider);
 
         Provider.of<BookmarkProvider>(context, listen: false).updateLoginStatus(true, uid);
 

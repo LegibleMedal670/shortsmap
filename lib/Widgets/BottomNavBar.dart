@@ -2,11 +2,9 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:shortsmap/Map/page/MapPage.dart';
 import 'package:shortsmap/Profile/page/ProfilePage.dart';
 import 'package:shortsmap/Shorts/page/ShortsPage.dart';
-import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
 
 class NoPushCupertinoPageRoute<T> extends CupertinoPageRoute<T> {
@@ -26,7 +24,7 @@ class NoPushCupertinoPageRoute<T> extends CupertinoPageRoute<T> {
 }
 
 
-Widget BottomNavBar(BuildContext context, String page) {
+Widget BottomNavBar(BuildContext context, String page, {required bool Function() canOpenMap,}) {
   return Container(
     height: (Platform.isIOS)
         ? MediaQuery.of(context).size.height * (75 / 812)
@@ -154,23 +152,21 @@ Widget BottomNavBar(BuildContext context, String page) {
         InkWell(
           onTap: () async {
             HapticFeedback.lightImpact();
-            if (page != 'map') {
-              if (Provider.of<UserDataProvider>(context, listen: false).currentUserUID != null) {
-                Navigator.pushReplacement(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder: (context, animation1, animation2) =>
-                    const MapPage(),
-                    transitionDuration: Duration.zero,
-                    reverseTransitionDuration: Duration.zero,
-                  ),
-                );
-              } else {
-                Navigator.of(context, rootNavigator: true).push(
-                  MaterialPageRoute(builder: (context) => LoginPage()),
-                );
-              }
-
+            if (page == 'map') return;
+            if (canOpenMap()) {
+              Navigator.pushReplacement(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation1, animation2) =>
+                  const MapPage(),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
+            } else {
+              Navigator.of(context, rootNavigator: true).push(
+                MaterialPageRoute(builder: (context) => LoginPage()),
+              );
             }
           },
           child: Column(

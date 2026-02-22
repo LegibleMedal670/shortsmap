@@ -1,18 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart' as prov;
 import 'package:shortsmap/Profile/page/ProfilePage.dart';
 import 'package:shortsmap/Profile/page/WithdrawPage.dart';
 import 'package:shortsmap/Provider/BookmarkProvider.dart';
-import 'package:shortsmap/Provider/UserDataProvider.dart';
+import 'package:shortsmap/Provider/UserSessionProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class AccountPage extends StatelessWidget {
+class AccountPage extends ConsumerWidget {
   const AccountPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLoggedIn = ref.watch(
+      userSessionProvider.select((user) => user.isLoggedIn),
+    );
+    final loginId = ref.watch(
+      userSessionProvider.select((user) => user.loginId),
+    );
+    final loginProvider = ref.watch(
+      userSessionProvider.select((user) => user.loginProvider),
+    );
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: _buildAppBar(context),
@@ -37,13 +48,7 @@ class AccountPage extends StatelessWidget {
                           ),
                         ),
                         Spacer(),
-                        Text(
-                          Provider.of<UserDataProvider>(
-                                context,
-                                listen: false,
-                              ).loginId ??
-                              '로그인하지 않음',
-                        ),
+                        Text(loginId ?? '로그인하지 않음'),
                       ],
                     ),
                   ),
@@ -61,31 +66,37 @@ class AccountPage extends StatelessWidget {
                           ),
                         ),
                         Spacer(),
-                        if (Provider.of<UserDataProvider>(context, listen: false,).isLoggedIn)
+                        if (isLoggedIn)
                           Padding(
-                          padding: const EdgeInsets.only(right: 15.0),
-                          child: FaIcon(
-                            (Provider.of<UserDataProvider>(context, listen: false,).loginProvider == 'google')
-                              ? FontAwesomeIcons.google // 구글 아이콘
-                              : (Provider.of<UserDataProvider>(context, listen: false,).loginProvider == 'apple')
-                                ? FontAwesomeIcons.apple // 애플 아이콘
-                                : FontAwesomeIcons.envelope // 이메일 아이콘
-                            ,
-                            color: Colors.black87, // 검정색으로 설정
-                            size: 24, // 크기 지정 (필요시)
+                            padding: const EdgeInsets.only(right: 15.0),
+                            child: FaIcon(
+                              (loginProvider == 'google')
+                                  ? FontAwesomeIcons
+                                      .google // 구글 아이콘
+                                  : (loginProvider == 'apple')
+                                  ? FontAwesomeIcons
+                                      .apple // 애플 아이콘
+                                  : FontAwesomeIcons.envelope, // 이메일 아이콘
+                              color: Colors.black87, // 검정색으로 설정
+                              size: 24, // 크기 지정 (필요시)
+                            ),
                           ),
-                        ),
-                        if (!Provider.of<UserDataProvider>(context, listen: false,).isLoggedIn)
+                        if (!isLoggedIn)
                           Padding(
                             padding: const EdgeInsets.only(right: 5.0),
                             child: InkWell(
                               onTap: () {
                                 Navigator.of(context, rootNavigator: true).push(
-                                  MaterialPageRoute(builder: (context) => const LoginPage()), // 로그인 페이지로 push
+                                  MaterialPageRoute(
+                                    builder: (context) => const LoginPage(),
+                                  ), // 로그인 페이지로 push
                                 );
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
                                   border: Border.all(color: Colors.black87),
                                   borderRadius: BorderRadius.circular(8),
@@ -106,16 +117,18 @@ class AccountPage extends StatelessWidget {
                     ),
                   ),
                   GestureDetector(
-                    onTap: Provider.of<UserDataProvider>(
-                      context,
-                      listen: false,
-                    ).isLoggedIn ? () {
-                      _showLogoutDialog(context);
-                    } : () {
-                      Navigator.of(context, rootNavigator: true).push(
-                        MaterialPageRoute(builder: (context) => const LoginPage()), // 로그인 페이지로 push
-                      );
-                    },
+                    onTap:
+                        isLoggedIn
+                            ? () {
+                              _showLogoutDialog(context, ref);
+                            }
+                            : () {
+                              Navigator.of(context, rootNavigator: true).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const LoginPage(),
+                                ), // 로그인 페이지로 push
+                              );
+                            },
                     child: Container(
                       padding: EdgeInsets.symmetric(
                         horizontal: 18,
@@ -137,18 +150,22 @@ class AccountPage extends StatelessWidget {
                     ),
                   ),
                   GestureDetector(
-                    onTap: Provider.of<UserDataProvider>(
-                      context,
-                      listen: false,
-                    ).isLoggedIn ? () {
-                      Navigator.of(context, rootNavigator: true).push(
-                        MaterialPageRoute(builder: (context) => WithdrawPage()),
-                      );
-                    } : (){
-                      Navigator.of(context, rootNavigator: true).push(
-                        MaterialPageRoute(builder: (context) => const LoginPage()), // 로그인 페이지로 push
-                      );
-                    },
+                    onTap:
+                        isLoggedIn
+                            ? () {
+                              Navigator.of(context, rootNavigator: true).push(
+                                MaterialPageRoute(
+                                  builder: (context) => WithdrawPage(),
+                                ),
+                              );
+                            }
+                            : () {
+                              Navigator.of(context, rootNavigator: true).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const LoginPage(),
+                                ), // 로그인 페이지로 push
+                              );
+                            },
                     child: Container(
                       padding: EdgeInsets.symmetric(
                         horizontal: 18,
@@ -196,7 +213,7 @@ class AccountPage extends StatelessWidget {
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (context) {
@@ -268,13 +285,13 @@ class AccountPage extends StatelessWidget {
                               MediaQuery.of(context).size.height * (20 / 812),
                         ),
                       ),
-                      onPressed: () {
-                        Supabase.instance.client.auth.signOut();
-                        Provider.of<UserDataProvider>(
+                      onPressed: () async {
+                        await Supabase.instance.client.auth.signOut();
+                        ref.read(userSessionProvider.notifier).logout();
+                        prov.Provider.of<BookmarkProvider>(
                           context,
                           listen: false,
-                        ).logout();
-                        Provider.of<BookmarkProvider>(context, listen: false).updateLoginStatus(false, null);
+                        ).updateLoginStatus(false, null);
                         Navigator.of(context).pop();
                         Navigator.pushAndRemoveUntil(
                           context,

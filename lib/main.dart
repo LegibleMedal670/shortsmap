@@ -11,7 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as riv;
 import 'package:provider/provider.dart';
 import 'package:shortsmap/Provider/BookmarkProvider.dart';
-import 'package:shortsmap/Provider/UserDataProvider.dart';
+import 'package:shortsmap/Provider/UserSessionProvider.dart';
 import 'package:shortsmap/Welcome/SplashScreen.dart';
 import 'package:shortsmap/env.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -43,12 +43,16 @@ Future<void> main() async {
 
   /// Supabase 초기화 후 현재 로그인 상태 확인
   final currentUser = Supabase.instance.client.auth.currentUser;
-  final userDataProvider = UserDataProvider();
   final bookmarkProvider = BookmarkProvider();
+  final container = riv.ProviderContainer();
 
   if (currentUser != null) {
     // 로그인 상태이면 UID, email, provider를 provider에 설정
-    userDataProvider.login(currentUser.id, currentUser.email!, currentUser.appMetadata['provider']!);
+    container.read(userSessionProvider.notifier).login(
+      currentUser.id,
+      currentUser.email!,
+      currentUser.appMetadata['provider']!,
+    );
     bookmarkProvider.updateLoginStatus(true, currentUser.id);
   }
 
@@ -63,17 +67,16 @@ Future<void> main() async {
     return true;
   };
 
-  runApp(riv.ProviderScope(child: MyApp(userDataProvider: userDataProvider, bookmarkProvider: bookmarkProvider,)));
+  runApp(riv.UncontrolledProviderScope(container: container, child: MyApp( bookmarkProvider: bookmarkProvider,)));
 }
 
 class MyApp extends StatefulWidget {
 
   /// main에서 초기화한 프로바이더를 그대로 이용하기 위해
-  final UserDataProvider userDataProvider;
 
   final BookmarkProvider bookmarkProvider;
 
-  const MyApp({super.key, required this.userDataProvider, required this.bookmarkProvider,});
+  const MyApp({super.key, required this.bookmarkProvider,});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -88,7 +91,7 @@ class _MyAppState extends State<MyApp> {
     return MultiProvider(
       providers: [
         // ChangeNotifierProvider(create: (_) => FilterProvider()),
-        ChangeNotifierProvider.value(value: widget.userDataProvider),
+        // ChangeNotifierProvider.value(value: widget.userDataProvider),
         // ChangeNotifierProvider(create: (_) => PhotoCacheProvider(apiKey: Env.googlePlaceAPIKey)),
         ChangeNotifierProvider.value(value: widget.bookmarkProvider),
         ChangeNotifierProvider(create: (_) => MarkerDataProvider(bookmarkProvider: widget.bookmarkProvider)),

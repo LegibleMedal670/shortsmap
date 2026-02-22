@@ -2,15 +2,14 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' as riv;
 import 'package:geolocator/geolocator.dart';
-import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:shortsmap/Provider/UserDataProvider.dart';
+import 'package:shortsmap/Provider/UserSessionProvider.dart';
 import 'package:shortsmap/Widgets/Modal/ShareModal.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
-class MapShortsPage extends StatefulWidget {
+class MapShortsPage extends riv.ConsumerStatefulWidget {
   final String placeName;
   final String placeId;
   final String videoId;
@@ -27,7 +26,6 @@ class MapShortsPage extends StatefulWidget {
   final String? imageUrl;
   final String? phoneNumber;
   final String? website;
-
 
   const MapShortsPage({
     super.key,
@@ -50,10 +48,10 @@ class MapShortsPage extends StatefulWidget {
   });
 
   @override
-  State<MapShortsPage> createState() => _MapShortsPageState();
+  riv.ConsumerState<MapShortsPage> createState() => _MapShortsPageState();
 }
 
-class _MapShortsPageState extends State<MapShortsPage> {
+class _MapShortsPageState extends riv.ConsumerState<MapShortsPage> {
   late YoutubePlayerController _controller;
   IconData _currentIcon = Icons.pause;
   double _pauseIconOpacity = 0.0;
@@ -120,7 +118,8 @@ class _MapShortsPageState extends State<MapShortsPage> {
 
     // 2) placeId가 비어있지 않을 때만 딥링크 시도
     if (placeId.isNotEmpty) {
-      final deepMapUrl = 'nmap://place?id=$placeId&appname=com.hwsoft.shortsmap';
+      final deepMapUrl =
+          'nmap://place?id=$placeId&appname=com.hwsoft.shortsmap';
       if (await canLaunchUrl(Uri.parse(deepMapUrl))) {
         await launchUrl(
           Uri.parse(deepMapUrl),
@@ -143,6 +142,13 @@ class _MapShortsPageState extends State<MapShortsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final userLat = ref.watch(
+      userSessionProvider.select((user) => user.currentLat),
+    );
+    final userLon = ref.watch(
+      userSessionProvider.select((user) => user.currentLon),
+    );
+
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle.dark.copyWith(
         statusBarColor: Colors.black, // Color for Android
@@ -234,7 +240,9 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                   child: Center(
                                     child: AnimatedOpacity(
                                       opacity: _pauseIconOpacity,
-                                      duration: const Duration(milliseconds: 300),
+                                      duration: const Duration(
+                                        milliseconds: 300,
+                                      ),
                                       curve: Curves.easeInOutCirc,
                                       child: Container(
                                         padding: const EdgeInsets.all(15),
@@ -355,12 +363,18 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                 child: CircleAvatar(
                                   radius: 20,
                                   backgroundColor: Colors.grey[300],
-                                  backgroundImage: widget.imageUrl == null ? null : NetworkImage(widget.imageUrl!),
-                                  child: widget.imageUrl == null ? Icon(
-                                    Icons.location_on_outlined,
-                                    color: Colors.black,
-                                    size: 30,
-                                  ) : null,
+                                  backgroundImage:
+                                      widget.imageUrl == null
+                                          ? null
+                                          : NetworkImage(widget.imageUrl!),
+                                  child:
+                                      widget.imageUrl == null
+                                          ? Icon(
+                                            Icons.location_on_outlined,
+                                            color: Colors.black,
+                                            size: 30,
+                                          )
+                                          : null,
                                 ),
                               ),
                               SizedBox(width: 10),
@@ -369,8 +383,15 @@ class _MapShortsPageState extends State<MapShortsPage> {
                               Flexible(
                                 child: GestureDetector(
                                   onTap: () async {
-                                    final played = await _controller.currentTime;
-                                    showInfoModal(context, widget.placeId, played.round());
+                                    final played =
+                                        await _controller.currentTime;
+                                    showInfoModal(
+                                      context,
+                                      widget.placeId,
+                                      played.round(),
+                                      userLat: userLat,
+                                      userLon: userLon,
+                                    );
                                   },
                                   child: Text(
                                     widget.placeName,
@@ -390,7 +411,13 @@ class _MapShortsPageState extends State<MapShortsPage> {
                               GestureDetector(
                                 onTap: () async {
                                   final played = await _controller.currentTime;
-                                  showInfoModal(context, widget.placeId, played.round());
+                                  showInfoModal(
+                                    context,
+                                    widget.placeId,
+                                    played.round(),
+                                    userLat: userLat,
+                                    userLon: userLon,
+                                  );
                                 },
                                 child: Container(
                                   width: 60,
@@ -612,7 +639,9 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                   horizontal: 8,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withAlpha(50), // withValues → withAlpha
+                                  color: Colors.black.withAlpha(
+                                    50,
+                                  ), // withValues → withAlpha
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: Colors.white.withAlpha(80),
@@ -629,12 +658,10 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                     SizedBox(width: 5),
                                     Text(
                                       (() {
-                                        final userLat =
-                                            Provider.of<UserDataProvider>(context, listen: false).currentLat;
-                                        final userLon =
-                                            Provider.of<UserDataProvider>(context, listen: false).currentLon;
-                                        final targetLat = widget.coordinates['lat'];
-                                        final targetLon = widget.coordinates['lon'];
+                                        final targetLat =
+                                            widget.coordinates['lat'];
+                                        final targetLon =
+                                            widget.coordinates['lon'];
 
                                         if (userLat == null ||
                                             userLon == null ||
@@ -644,11 +671,17 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                         }
 
                                         return calculateDistanceTextInKm(
-                                            userLat, userLon, targetLat, targetLon);
+                                          userLat,
+                                          userLon,
+                                          targetLat,
+                                          targetLon,
+                                        );
                                       })(),
                                       style: TextStyle(
                                         color: shortPageWhite,
-                                        fontSize: MediaQuery.of(context).size.width * 0.032,
+                                        fontSize:
+                                            MediaQuery.of(context).size.width *
+                                            0.032,
                                       ),
                                     ),
                                   ],
@@ -670,21 +703,19 @@ class _MapShortsPageState extends State<MapShortsPage> {
   }
 
   ///More 버튼을 누르면 나오는 ModalBottomSheet
-  void showInfoModal(BuildContext context, String placeId, int duration) {
-    final double? userLat =
-        Provider.of<UserDataProvider>(context, listen: false).currentLat;
-    final double? userLon =
-        Provider.of<UserDataProvider>(context, listen: false).currentLon;
+  void showInfoModal(
+    BuildContext context,
+    String placeId,
+    int duration, {
+    double? userLat,
+    double? userLon,
+  }) {
     final double? locationLat = widget.coordinates['lat'];
     final double? locationLon = widget.coordinates['lon'];
 
-
     FirebaseAnalytics.instance.logEvent(
       name: "show_info_modal",
-      parameters: {
-        "video_id": widget.videoId,
-        "watch_duration": duration,
-      },
+      parameters: {"video_id": widget.videoId, "watch_duration": duration},
     );
 
     showModalBottomSheet(
@@ -717,7 +748,8 @@ class _MapShortsPageState extends State<MapShortsPage> {
                     Center(
                       child: Container(
                         margin: const EdgeInsets.symmetric(vertical: 12),
-                        width: 40, height: 4,
+                        width: 40,
+                        height: 4,
                         decoration: BoxDecoration(
                           color: Colors.grey[400],
                           borderRadius: BorderRadius.circular(2),
@@ -743,12 +775,18 @@ class _MapShortsPageState extends State<MapShortsPage> {
                             child: CircleAvatar(
                               radius: 90,
                               backgroundColor: Colors.black12,
-                              backgroundImage: widget.imageUrl == null ? null : NetworkImage(widget.imageUrl!),
-                              child: widget.imageUrl == null ? Icon(
-                                Icons.location_on_outlined,
-                                color: Colors.black,
-                                size: 30,
-                              ) : null,
+                              backgroundImage:
+                                  widget.imageUrl == null
+                                      ? null
+                                      : NetworkImage(widget.imageUrl!),
+                              child:
+                                  widget.imageUrl == null
+                                      ? Icon(
+                                        Icons.location_on_outlined,
+                                        color: Colors.black,
+                                        size: 30,
+                                      )
+                                      : null,
                             ),
                           ),
                         ),
@@ -760,7 +798,8 @@ class _MapShortsPageState extends State<MapShortsPage> {
                             Text(
                               widget.placeName,
                               style: TextStyle(
-                                fontSize: MediaQuery.of(context).size.width * 0.045,
+                                fontSize:
+                                    MediaQuery.of(context).size.width * 0.045,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
                               ),
@@ -769,7 +808,8 @@ class _MapShortsPageState extends State<MapShortsPage> {
                             Text(
                               widget.category,
                               style: TextStyle(
-                                fontSize: MediaQuery.of(context).size.width * 0.036,
+                                fontSize:
+                                    MediaQuery.of(context).size.width * 0.036,
                                 color: Colors.black54,
                               ),
                             ),
@@ -790,7 +830,9 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                       ? ' ${calculateTimeRequired(userLat, userLon, locationLat, locationLon)}분 · ${widget.storeLocation}'
                                       : ' 30분 · ${widget.storeLocation}',
                                   style: TextStyle(
-                                    fontSize: MediaQuery.of(context).size.width * 0.036,
+                                    fontSize:
+                                        MediaQuery.of(context).size.width *
+                                        0.036,
                                     color: Colors.black54,
                                   ),
                                 ),
@@ -808,7 +850,9 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                 Text(
                                   ' ${widget.openTime} ~ ${widget.closeTime}',
                                   style: TextStyle(
-                                    fontSize: MediaQuery.of(context).size.width * 0.036,
+                                    fontSize:
+                                        MediaQuery.of(context).size.width *
+                                        0.036,
                                     color: Colors.black54,
                                   ),
                                 ),
@@ -820,7 +864,12 @@ class _MapShortsPageState extends State<MapShortsPage> {
                         // 공유, 닫기 버튼
                         GestureDetector(
                           onTap: () {
-                            showShareModal(context, widget.placeName, widget.videoId, widget.naverMapLink);
+                            showShareModal(
+                              context,
+                              widget.placeName,
+                              widget.videoId,
+                              widget.naverMapLink,
+                            );
                           },
                           child: Container(
                             width: 40,
@@ -871,9 +920,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
 
                             FirebaseAnalytics.instance.logEvent(
                               name: "tap_call",
-                              parameters: {
-                                "video_id": widget.videoId,
-                              },
+                              parameters: {"video_id": widget.videoId},
                             );
 
                             if (await canLaunchUrl(phoneUri)) {
@@ -885,7 +932,9 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                   content: Text('지정된 전화번호가 없습니다.'),
                                   behavior: SnackBarBehavior.floating,
                                   margin: EdgeInsets.only(
-                                    bottom: MediaQuery.of(context).size.height * 0.06,
+                                    bottom:
+                                        MediaQuery.of(context).size.height *
+                                        0.06,
                                     left: 20.0,
                                     right: 20.0,
                                   ),
@@ -922,20 +971,18 @@ class _MapShortsPageState extends State<MapShortsPage> {
                         ),
                         GestureDetector(
                           onTap: () async {
-
                             FirebaseAnalytics.instance.logEvent(
                               name: "tap_route",
-                              parameters: {
-                                "video_id": widget.videoId,
-                              },
+                              parameters: {"video_id": widget.videoId},
                             );
 
-                            String deepRouteUrl = 'nmap://route/public?slat=$userLat&slng=$userLon&sname=내위치&dlat=${widget.coordinates['lat']}&dlng=${widget.coordinates['lon']}&dname=${widget.placeName}&appname=com.hwsoft.shortsmap';
+                            String deepRouteUrl =
+                                'nmap://route/public?slat=$userLat&slng=$userLon&sname=내위치&dlat=${widget.coordinates['lat']}&dlng=${widget.coordinates['lon']}&dname=${widget.placeName}&appname=com.hwsoft.shortsmap';
 
-                            String webRouteUrl = 'http://m.map.naver.com/route.nhn?menu=route&sname=내위치&sx=$userLon&sy=$userLat&ename=${widget.placeName}&ex=${widget.coordinates['lon']}&ey=${widget.coordinates['lat']}&pathType=1&showMap=true';
+                            String webRouteUrl =
+                                'http://m.map.naver.com/route.nhn?menu=route&sname=내위치&sx=$userLon&sy=$userLat&ename=${widget.placeName}&ex=${widget.coordinates['lon']}&ey=${widget.coordinates['lat']}&pathType=1&showMap=true';
 
-
-                            if (await canLaunchUrl(Uri.parse(deepRouteUrl))){
+                            if (await canLaunchUrl(Uri.parse(deepRouteUrl))) {
                               await launchUrl(
                                 Uri.parse(deepRouteUrl),
                                 mode: LaunchMode.externalApplication,
@@ -974,6 +1021,7 @@ class _MapShortsPageState extends State<MapShortsPage> {
                             ),
                           ),
                         ),
+
                         /// 북마크 삭제 버튼 넣기?
                         // GestureDetector(
                         //   onTap: (){
@@ -1103,12 +1151,9 @@ class _MapShortsPageState extends State<MapShortsPage> {
                             title: '네이버지도에서 보기',
                             subtitle: widget.address,
                             onTap: () async {
-
                               FirebaseAnalytics.instance.logEvent(
                                 name: "tap_address",
-                                parameters: {
-                                  "video_id": widget.videoId,
-                                },
+                                parameters: {"video_id": widget.videoId},
                               );
 
                               openNaverMap(widget.naverMapLink);
@@ -1120,18 +1165,14 @@ class _MapShortsPageState extends State<MapShortsPage> {
                             title: '예약하러 가기',
                             subtitle: '숙소·액티비티 예약',
                             onTap: () async {
-
                               FirebaseAnalytics.instance.logEvent(
                                 name: "tap_reservation",
-                                parameters: {
-                                  "video_id": widget.videoId,
-                                },
+                                parameters: {"video_id": widget.videoId},
                               );
 
                               // openNaverMap(widget.naverMapLink);
 
                               /// 예약하러 가는 링크 열어주는 함수 만들어서 넣기
-
                             },
                           ),
                           Divider(height: 2),
@@ -1140,18 +1181,14 @@ class _MapShortsPageState extends State<MapShortsPage> {
                             title: '텍스트후기 보러가기',
                             subtitle: '생생한 텍스트 후기',
                             onTap: () async {
-
                               FirebaseAnalytics.instance.logEvent(
                                 name: "tap_text_review",
-                                parameters: {
-                                  "video_id": widget.videoId,
-                                },
+                                parameters: {"video_id": widget.videoId},
                               );
 
                               // openNaverMap(widget.naverMapLink);
 
                               /// 텍스트후기 보러가는 링크 열어주는 함수 만들어서 넣기
-
                             },
                           ),
                           if (widget.phoneNumber != null)
@@ -1161,12 +1198,9 @@ class _MapShortsPageState extends State<MapShortsPage> {
                               icon: Icons.phone,
                               title: '전화걸기',
                               onTap: () async {
-
                                 FirebaseAnalytics.instance.logEvent(
                                   name: "tap_call",
-                                  parameters: {
-                                    "video_id": widget.videoId,
-                                  },
+                                  parameters: {"video_id": widget.videoId},
                                 );
 
                                 final Uri phoneUri = Uri(
@@ -1183,7 +1217,9 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                       content: Text('지정된 전화번호가 없습니다.'),
                                       behavior: SnackBarBehavior.floating,
                                       margin: EdgeInsets.only(
-                                        bottom: MediaQuery.of(context).size.height * 0.06,
+                                        bottom:
+                                            MediaQuery.of(context).size.height *
+                                            0.06,
                                         left: 20.0,
                                         right: 20.0,
                                       ),
@@ -1192,19 +1228,15 @@ class _MapShortsPageState extends State<MapShortsPage> {
                                 }
                               },
                             ),
-                          if (widget.website != null)
-                            const Divider(height: 2),
+                          if (widget.website != null) const Divider(height: 2),
                           if (widget.website != null)
                             _buildListTile(
                               icon: Icons.language,
                               title: '웹사이트 방문하기',
                               onTap: () async {
-
                                 FirebaseAnalytics.instance.logEvent(
                                   name: "tap_visit_website",
-                                  parameters: {
-                                    "video_id": widget.videoId,
-                                  },
+                                  parameters: {"video_id": widget.videoId},
                                 );
 
                                 await launchUrl(
@@ -1226,12 +1258,9 @@ class _MapShortsPageState extends State<MapShortsPage> {
                             icon: Icons.verified_outlined,
                             title: '장소 소유자 인증하기',
                             onTap: () async {
-
                               FirebaseAnalytics.instance.logEvent(
                                 name: "tap_place_owner",
-                                parameters: {
-                                  "video_id": widget.videoId,
-                                },
+                                parameters: {"video_id": widget.videoId},
                               );
 
                               await launchUrl(
@@ -1311,7 +1340,12 @@ class _MapShortsPageState extends State<MapShortsPage> {
                         GestureDetector(
                           onTap: () {
                             Navigator.pop(context);
-                            showShareModal(context, widget.placeName, widget.videoId, widget.naverMapLink);
+                            showShareModal(
+                              context,
+                              widget.placeName,
+                              widget.videoId,
+                              widget.naverMapLink,
+                            );
                           },
                           child: Container(
                             color: Colors.transparent,
@@ -1494,10 +1528,18 @@ class _MapShortsPageState extends State<MapShortsPage> {
   }) {
     return ListTile(
       leading: Icon(icon, color: Colors.black),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15)),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
+      ),
       subtitle:
           subtitle != null
-              ? Text(subtitle, style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.035,))
+              ? Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: MediaQuery.of(context).size.width * 0.035,
+                ),
+              )
               : null,
       trailing: const Icon(Icons.chevron_right, size: 26),
       onTap: onTap,
@@ -1526,11 +1568,11 @@ class _MapShortsPageState extends State<MapShortsPage> {
 
   /// 현재 위치와 장소 위치 간의 거리를 km 단위 문자열로 반환 ("2.34 km" 형식)
   String calculateDistanceTextInKm(
-      double lat1,
-      double lon1,
-      double lat2,
-      double lon2,
-      ) {
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
     double distanceInMeters = Geolocator.distanceBetween(
       lat1,
       lon1,
@@ -1542,7 +1584,12 @@ class _MapShortsPageState extends State<MapShortsPage> {
     return "${distanceInKm.toStringAsFixed(2)} km";
   }
 
-  void showShareModal(BuildContext context, String placeName, String videoId, String naverMapLink) {
+  void showShareModal(
+    BuildContext context,
+    String placeName,
+    String videoId,
+    String naverMapLink,
+  ) {
     showModalBottomSheet(
       backgroundColor: Colors.white,
       context: context,
@@ -1565,5 +1612,4 @@ class _MapShortsPageState extends State<MapShortsPage> {
       },
     );
   }
-
 }

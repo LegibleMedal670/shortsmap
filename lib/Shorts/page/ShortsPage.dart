@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shortsmap/Provider/UserSessionProvider.dart';
 import 'package:shortsmap/Shorts/model/LocationData.dart';
 import 'package:shortsmap/Provider/FilterProvider.dart';
 import 'package:shortsmap/Shorts/widget/ShimmerWidget.dart';
 import 'package:shortsmap/Shorts/widget/ShortFormWidget.dart';
-import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as riv;
 
@@ -17,7 +16,6 @@ class ShortsPage extends StatefulWidget {
 }
 
 class _ShortsPageState extends State<ShortsPage> {
-
   /// Supabase client
   final _supabase = Supabase.instance.client;
 
@@ -36,8 +34,14 @@ class _ShortsPageState extends State<ShortsPage> {
   }
 
   /// Supabase RPC 호출: search_locations
-  Future<List<LocationData>> _fetchDataFromSupabase(String? region, String? category, bool orderNear, double? lat, double? lon, String? uid) async {
-
+  Future<List<LocationData>> _fetchDataFromSupabase(
+    String? region,
+    String? category,
+    bool orderNear,
+    double? lat,
+    double? lon,
+    String? uid,
+  ) async {
     //북마크 캐시 삭제
     await clearCache();
 
@@ -57,9 +61,11 @@ class _ShortsPageState extends State<ShortsPage> {
         );
 
         final locationData =
-        (response as List<dynamic>).map((locationJson) {
-          return LocationData.fromJson(locationJson as Map<String, dynamic>);
-        }).toList();
+            (response as List<dynamic>).map((locationJson) {
+              return LocationData.fromJson(
+                locationJson as Map<String, dynamic>,
+              );
+            }).toList();
 
         //로딩 시간이 있는척하기 위한 딜레이
         await Future.delayed(const Duration(milliseconds: 700));
@@ -69,10 +75,10 @@ class _ShortsPageState extends State<ShortsPage> {
         throw Exception("Error fetching posts: ${e.code}, ${e.message}");
       }
     } else {
-
       SharedPreferences preferences = await SharedPreferences.getInstance();
 
-      List<String> seenVideoIds = preferences.getStringList('seenVideoIds') ?? [];
+      List<String> seenVideoIds =
+          preferences.getStringList('seenVideoIds') ?? [];
 
       try {
         // RPC 파라미터 구성
@@ -89,9 +95,11 @@ class _ShortsPageState extends State<ShortsPage> {
         );
 
         final locationData =
-        (response as List<dynamic>).map((locationJson) {
-          return LocationData.fromJson(locationJson as Map<String, dynamic>);
-        }).toList();
+            (response as List<dynamic>).map((locationJson) {
+              return LocationData.fromJson(
+                locationJson as Map<String, dynamic>,
+              );
+            }).toList();
 
         //로딩 시간이 있는척하기 위한 딜레이
         await Future.delayed(const Duration(milliseconds: 700));
@@ -105,11 +113,9 @@ class _ShortsPageState extends State<ShortsPage> {
 
   ///북마크 캐시 삭제
   Future<void> clearCache() async {
-
     SharedPreferences preferences = await SharedPreferences.getInstance();
 
     preferences.remove('bookMarkList');
-
   }
 
   @override
@@ -122,23 +128,24 @@ class _ShortsPageState extends State<ShortsPage> {
           Expanded(
             child: riv.Consumer(
               builder: (context, ref, child) {
-
                 final filter = ref.watch(filterProvider);
+                final uid = ref.watch(
+                  userSessionProvider.select((user) => user.currentUserUID),
+                );
 
                 return FutureBuilder(
                   future: _fetchDataFromSupabase(
-                      filter.region,
-                      filter.category,
-                      filter.orderNear,
-                      filter.lat,
-                      filter.lon,
-                    Provider.of<UserDataProvider>(context, listen: false).currentUserUID
+                    filter.region,
+                    filter.category,
+                    filter.orderNear,
+                    filter.lat,
+                    filter.lon,
+                    uid,
                   ),
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
                       print(snapshot.error);
                       return ShimmerWidget(mode: 'error');
-
                     }
 
                     if (snapshot.connectionState == ConnectionState.waiting) {

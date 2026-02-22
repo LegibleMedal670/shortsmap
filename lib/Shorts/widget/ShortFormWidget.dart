@@ -14,9 +14,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shortsmap/Map/page/MapPage.dart';
 import 'package:shortsmap/Provider/BookmarkProvider.dart';
 import 'package:shortsmap/Provider/PhotoCacheServiceProvider.dart';
+import 'package:shortsmap/Provider/UserSessionProvider.dart';
 import 'package:shortsmap/Service/PhotoCacheService.dart';
 import 'package:shortsmap/Provider/FilterProvider.dart';
-import 'package:shortsmap/Provider/UserDataProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:shortsmap/Widgets/Modal/ShareModal.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -82,14 +82,8 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
   //Supabase client
   final _supabase = Supabase.instance.client;
 
-  final List<String> regionOptions = [
-    'All',
-    '가까운 순',
-    '강남',
-    '홍대',
-    '잠실'
-  ];
-  final List<String> categoryOptions = ['All', '음식점', '카페', '술·안주',];
+  final List<String> regionOptions = ['All', '가까운 순', '강남', '홍대', '잠실'];
+  final List<String> categoryOptions = ['All', '음식점', '카페', '술·안주'];
   final List<String> priceOptions = [
     'All',
     '\$10',
@@ -100,7 +94,6 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
     '\$50~',
   ];
 
-
   Color shortPageWhite = Colors.grey[200] as Color;
 
   late Future<String> _photoUrlFuture;
@@ -109,13 +102,13 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
   void initState() {
     super.initState();
     if (!widget.isEmpty) {
-
       // _photoUrlFuture = Provider.of<PhotoCacheService>(
       //   context,
       //   listen: false,
       // ).getPhotoUrlForPlace(widget.placeId);
 
-      _photoUrlFuture = ref.read(photoCacheServiceProvider)
+      _photoUrlFuture = ref
+          .read(photoCacheServiceProvider)
           .getPhotoUrlForPlace(widget.placeId);
 
       _bookmarkCount = widget.bookmarkCount;
@@ -146,7 +139,6 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
   }
 
   Future<void> _logSeenVideo() async {
-
     final played = await _controller.currentTime;
 
     FirebaseAnalytics.instance.logEvent(
@@ -156,7 +148,6 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
         "watch_duration": played.round(),
       },
     );
-
   }
 
   ///stop + resume
@@ -217,7 +208,6 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
 
       // 업데이트된 리스트 저장
       await preferences.setStringList('seenVideoIds', seenVideoIds);
-
     }
   }
 
@@ -240,7 +230,8 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
 
     // 2) placeId가 비어있지 않을 때만 딥링크 시도
     if (placeId.isNotEmpty) {
-      final deepMapUrl = 'nmap://place?id=$placeId&appname=com.hwsoft.shortsmap';
+      final deepMapUrl =
+          'nmap://place?id=$placeId&appname=com.hwsoft.shortsmap';
       if (await canLaunchUrl(Uri.parse(deepMapUrl))) {
         await launchUrl(
           Uri.parse(deepMapUrl),
@@ -272,8 +263,12 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
     );
 
     final filter = ref.watch(filterProvider);
-
-
+    final userLat = ref.watch(
+      userSessionProvider.select((user) => user.currentLat),
+    );
+    final userLon = ref.watch(
+      userSessionProvider.select((user) => user.currentLon),
+    );
 
     /// TODO: 빈 위젯 등 위젯들 분리
     if (widget.isEmpty) {
@@ -294,29 +289,29 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                     size: 26,
                   ),
                   Container(
-                    padding: EdgeInsets.symmetric(
-                      vertical: 8,
-                      horizontal: 8,
-                    ),
+                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                     color: Colors.transparent,
-                    child: (filter.orderNear == false && filter.category == null && filter.region == null)
-                        ? Text(
-                      '필터 적용하기',
-                      style: TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.w600,
-                        color: shortPageWhite,
-                      ),
-                    )
-                        : Text(
-                      '${filter.orderNear == true ? '가까운 순' : filter.region ?? 'All'} · ${filter.category == null ? 'All' : switchCategoryToKor(filter.category)} ',
-                      // '${filterProvider.filterRegion ?? '대전'} · ${filterProvider.filterCategory ?? '전시'} ',
-                      style: TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.w600,
-                        color: shortPageWhite,
-                      ),
-                    ),
+                    child:
+                        (filter.orderNear == false &&
+                                filter.category == null &&
+                                filter.region == null)
+                            ? Text(
+                              '필터 적용하기',
+                              style: TextStyle(
+                                fontSize: 21,
+                                fontWeight: FontWeight.w600,
+                                color: shortPageWhite,
+                              ),
+                            )
+                            : Text(
+                              '${filter.orderNear == true ? '가까운 순' : filter.region ?? 'All'} · ${filter.category == null ? 'All' : switchCategoryToKor(filter.category)} ',
+                              // '${filterProvider.filterRegion ?? '대전'} · ${filterProvider.filterCategory ?? '전시'} ',
+                              style: TextStyle(
+                                fontSize: 21,
+                                fontWeight: FontWeight.w600,
+                                color: shortPageWhite,
+                              ),
+                            ),
                   ),
                 ],
               ),
@@ -377,8 +372,11 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
               showOptionsModal(context);
             },
             onDoubleTap: () async {
-              if (Provider.of<BookmarkProvider>(context, listen: false,).userId == null)
-              {
+              if (Provider.of<BookmarkProvider>(
+                    context,
+                    listen: false,
+                  ).userId ==
+                  null) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     duration: Duration(milliseconds: 1500),
@@ -388,8 +386,6 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                       label: '로그인',
                       textColor: Color(0xff121212),
                       onPressed: () async {
-
-
                         final played = await _controller.currentTime;
 
                         FirebaseAnalytics.instance.logEvent(
@@ -414,30 +410,45 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                     ),
                   ),
                 );
-              }
-              else {
-
+              } else {
                 final played = await _controller.currentTime;
 
-                if (!Provider.of<BookmarkProvider>(context, listen: false,).isBookmarked(widget.videoId)) {
-
+                if (!Provider.of<BookmarkProvider>(
+                  context,
+                  listen: false,
+                ).isBookmarked(widget.videoId)) {
                   HapticFeedback.lightImpact();
-
 
                   setState(() {
                     _bookmarkCount++;
                   });
 
-                  Provider.of<BookmarkProvider>(context, listen: false,).addBookmark(context, widget.videoId, widget.category, widget.placeId, played.round(), widget.coordinates['lat']!, widget.coordinates['lon']!);
+                  Provider.of<BookmarkProvider>(
+                    context,
+                    listen: false,
+                  ).addBookmark(
+                    context,
+                    widget.videoId,
+                    widget.category,
+                    widget.placeId,
+                    played.round(),
+                    widget.coordinates['lat']!,
+                    widget.coordinates['lon']!,
+                  );
                 } else {
-
                   setState(() {
                     _bookmarkCount--;
                   });
 
-
-                  Provider.of<BookmarkProvider>(context, listen: false,).removeBookmark(context, widget.videoId, widget.placeId, played.round());
-
+                  Provider.of<BookmarkProvider>(
+                    context,
+                    listen: false,
+                  ).removeBookmark(
+                    context,
+                    widget.videoId,
+                    widget.placeId,
+                    played.round(),
+                  );
                 }
               }
             },
@@ -456,15 +467,25 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                       child: Stack(
                         alignment: Alignment.topCenter,
                         children: [
-                          YoutubeValueBuilder( //TODO 동영상 로딩이 좀 느리게 되는데 skeleton을 적용하거나 로딩 시간을 줄여야함
+                          YoutubeValueBuilder(
+                            //TODO 동영상 로딩이 좀 느리게 되는데 skeleton을 적용하거나 로딩 시간을 줄여야함
                             controller: _controller,
                             builder: (context, value) {
-
-                              if (value.hasError){
-                                if ((value.error == YoutubeError.notEmbeddable || value.error == YoutubeError.cannotFindVideo || value.error == YoutubeError.sameAsNotEmbeddable) && !_hasRecordedSeen){
+                              if (value.hasError) {
+                                if ((value.error ==
+                                            YoutubeError.notEmbeddable ||
+                                        value.error ==
+                                            YoutubeError.cannotFindVideo ||
+                                        value.error ==
+                                            YoutubeError.sameAsNotEmbeddable) &&
+                                    !_hasRecordedSeen) {
                                   _hasRecordedSeen = true; // 한 번 기록했음을 표시
                                   // 현재 사용자 UID를 전달하여 recordSeenVideo 실행
-                                  recordSeenVideo(Provider.of<UserDataProvider>(context, listen: false).currentUserUID);
+                                  recordSeenVideo(
+                                    ref
+                                        .read(userSessionProvider)
+                                        .currentUserUID,
+                                  );
                                 }
                               }
 
@@ -472,7 +493,9 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                                   !_hasRecordedSeen) {
                                 _hasRecordedSeen = true; // 한 번 기록했음을 표시
                                 // 현재 사용자 UID를 전달하여 recordSeenVideo 실행
-                                recordSeenVideo(Provider.of<UserDataProvider>(context, listen: false).currentUserUID);
+                                recordSeenVideo(
+                                  ref.read(userSessionProvider).currentUserUID,
+                                );
                               }
 
                               if (value.playerState == PlayerState.ended) {
@@ -599,7 +622,6 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
           SafeArea(
             child: GestureDetector(
               onTap: () {
-
                 FirebaseAnalytics.instance.logEvent(
                   name: "filter_button_click",
                 );
@@ -609,36 +631,31 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.filter_alt,
-                    color: shortPageWhite,
-                    size: 26,
-                  ),
+                  Icon(Icons.filter_alt, color: shortPageWhite, size: 26),
                   Container(
-                    padding: EdgeInsets.symmetric(
-                      vertical: 8,
-                      horizontal: 8,
-                    ),
+                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                     color: Colors.transparent,
                     child:
-                    (filter.orderNear == false && filter.category == null && filter.region == null)
-                      ? Text(
-                        '필터 적용하기',
-                        style: TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.w600,
-                        color: shortPageWhite,
-                        ),
-                      )
-                        : Text(
-                      '${filter.orderNear == true ? '가까운 순' : filter.region ?? 'All'} · ${filter.category == null ? 'All' : switchCategoryToKor(filter.category)} ',
-                      // '${filterProvider.filterRegion ?? '대전'} · ${filterProvider.filterCategory ?? '전시'} ',
-                      style: TextStyle(
-                        fontSize: 21,
-                        fontWeight: FontWeight.w600,
-                        color: shortPageWhite,
-                      ),
-                    ),
+                        (filter.orderNear == false &&
+                                filter.category == null &&
+                                filter.region == null)
+                            ? Text(
+                              '필터 적용하기',
+                              style: TextStyle(
+                                fontSize: 21,
+                                fontWeight: FontWeight.w600,
+                                color: shortPageWhite,
+                              ),
+                            )
+                            : Text(
+                              '${filter.orderNear == true ? '가까운 순' : filter.region ?? 'All'} · ${filter.category == null ? 'All' : switchCategoryToKor(filter.category)} ',
+                              // '${filterProvider.filterRegion ?? '대전'} · ${filterProvider.filterCategory ?? '전시'} ',
+                              style: TextStyle(
+                                fontSize: 21,
+                                fontWeight: FontWeight.w600,
+                                color: shortPageWhite,
+                              ),
+                            ),
                   ),
                 ],
               ),
@@ -705,10 +722,7 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                   //         ).currentUserUID,
                   //       ),
                   // ),
-                  BookmarkButton(
-                    _bookmarkCount.toString(),
-                    widget.videoId,
-                  ),
+                  BookmarkButton(_bookmarkCount.toString(), widget.videoId),
                   // ItemButton(icon: CupertinoIcons.bubble_right, value: '32'),
                   // ItemButton(icon: CupertinoIcons.paperplane, value: 'Share'),
                   // ItemButton(icon: Icons.travel_explore_outlined, value: 'Map'),
@@ -777,12 +791,19 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                           },
                         ),
                         SizedBox(width: 10),
+
                         ///이름
                         Flexible(
                           child: GestureDetector(
                             onTap: () async {
                               final played = await _controller.currentTime;
-                              showInfoModal(context, widget.placeId, played.round());
+                              showInfoModal(
+                                context,
+                                widget.placeId,
+                                played.round(),
+                                userLat: userLat,
+                                userLon: userLon,
+                              );
                             },
                             child: Text(
                               widget.placeName,
@@ -803,7 +824,13 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                         GestureDetector(
                           onTap: () async {
                             final played = await _controller.currentTime;
-                            showInfoModal(context, widget.placeId, played.round());
+                            showInfoModal(
+                              context,
+                              widget.placeId,
+                              played.round(),
+                              userLat: userLat,
+                              userLon: userLon,
+                            );
                           },
                           child: Container(
                             width: 60,
@@ -840,7 +867,9 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                           }),
                       child: AnimatedContainer(
                         color: Colors.transparent,
-                        padding: EdgeInsets.only(top: _isDescriptionExpanded ? 5 : 0),
+                        padding: EdgeInsets.only(
+                          top: _isDescriptionExpanded ? 5 : 0,
+                        ),
                         constraints: BoxConstraints(
                           maxHeight:
                               _isDescriptionExpanded
@@ -1010,7 +1039,9 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                             horizontal: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.black.withAlpha(50), // withValues → withAlpha
+                            color: Colors.black.withAlpha(
+                              50,
+                            ), // withValues → withAlpha
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: Colors.white.withAlpha(80),
@@ -1027,10 +1058,6 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                               SizedBox(width: 5),
                               Text(
                                 (() {
-                                  final userLat =
-                                      Provider.of<UserDataProvider>(context, listen: false).currentLat;
-                                  final userLon =
-                                      Provider.of<UserDataProvider>(context, listen: false).currentLon;
                                   final targetLat = widget.coordinates['lat'];
                                   final targetLon = widget.coordinates['lon'];
 
@@ -1042,17 +1069,21 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                                   }
 
                                   return calculateDistanceTextInKm(
-                                      userLat, userLon, targetLat, targetLon);
+                                    userLat,
+                                    userLon,
+                                    targetLat,
+                                    targetLon,
+                                  );
                                 })(),
                                 style: TextStyle(
                                   color: shortPageWhite,
-                                  fontSize: MediaQuery.of(context).size.width * 0.032,
+                                  fontSize:
+                                      MediaQuery.of(context).size.width * 0.032,
                                 ),
                               ),
                             ],
                           ),
                         ),
-
                       ],
                     ),
                   ],
@@ -1212,11 +1243,11 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
 
   /// 현재 위치와 장소 위치 간의 거리를 km 단위 문자열로 반환 ("2.34 km" 형식)
   String calculateDistanceTextInKm(
-      double lat1,
-      double lon1,
-      double lat2,
-      double lon2,
-      ) {
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
     double distanceInMeters = Geolocator.distanceBetween(
       lat1,
       lon1,
@@ -1228,13 +1259,14 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
     return "${distanceInKm.toStringAsFixed(2)} km";
   }
 
-
   ///More 버튼을 누르면 나오는 ModalBottomSheet
-  void showInfoModal(BuildContext context, String placeId, int duration) {
-    final double? userLat =
-        Provider.of<UserDataProvider>(context, listen: false).currentLat;
-    final double? userLon =
-        Provider.of<UserDataProvider>(context, listen: false).currentLon;
+  void showInfoModal(
+    BuildContext context,
+    String placeId,
+    int duration, {
+    double? userLat,
+    double? userLon,
+  }) {
     final double? locationLat = widget.coordinates['lat'];
     final double? locationLon = widget.coordinates['lon'];
 
@@ -1243,15 +1275,13 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
     //   listen: false,
     // ).getPhotoUrlForPlace(widget.placeId);
 
-    final futurePhotos = ref.read(photoCacheServiceProvider)
+    final futurePhotos = ref
+        .read(photoCacheServiceProvider)
         .getPhotoUrlForPlace(widget.placeId);
 
     FirebaseAnalytics.instance.logEvent(
       name: "show_info_modal",
-      parameters: {
-        "video_id": widget.videoId,
-        "watch_duration": duration,
-      },
+      parameters: {"video_id": widget.videoId, "watch_duration": duration},
     );
 
     showModalBottomSheet(
@@ -1284,24 +1314,27 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                     Center(
                       child: Container(
                         margin: const EdgeInsets.symmetric(vertical: 12),
-                        width: 40, height: 4,
+                        width: 40,
+                        height: 4,
                         decoration: BoxDecoration(
                           color: Colors.grey[400],
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
                     ),
+
                     /// 상단의 프로필 및 기본정보 Row (사진, 매장명, 카테고리, 시간 등)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // FutureBuilder를 사용하여 첫 번째 사진을 CircleAvatar 이미지로 설정
                         FutureBuilder<String>(
-                          future: futurePhotos,  // ← 여기가 바뀌었습니다
+                          future: futurePhotos, // ← 여기가 바뀌었습니다
                           builder: (context, snapshot) {
                             String? imageUrl;
 
-                            if (snapshot.connectionState == ConnectionState.waiting) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
                               return Container(
                                 width: 90,
                                 height: 90,
@@ -1343,8 +1376,10 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                               );
                             }
 
-                            if (snapshot.connectionState == ConnectionState.done) {
-                              if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.done) {
+                              if (snapshot.hasData &&
+                                  snapshot.data!.isNotEmpty) {
                                 imageUrl = snapshot.data!;
                               }
                             }
@@ -1362,13 +1397,19 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                                 padding: const EdgeInsets.all(2.0),
                                 child: CircleAvatar(
                                   radius: 90,
-                                  backgroundImage: imageUrl == null ? null : NetworkImage(imageUrl),
+                                  backgroundImage:
+                                      imageUrl == null
+                                          ? null
+                                          : NetworkImage(imageUrl),
                                   backgroundColor: Colors.black12,
-                                  child: imageUrl == null ? Icon(
-                                    Icons.location_on_outlined,
-                                    color: Colors.black,
-                                    size: 30,
-                                  ) : null,
+                                  child:
+                                      imageUrl == null
+                                          ? Icon(
+                                            Icons.location_on_outlined,
+                                            color: Colors.black,
+                                            size: 30,
+                                          )
+                                          : null,
                                 ),
                               ),
                             );
@@ -1382,7 +1423,8 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                             Text(
                               widget.placeName,
                               style: TextStyle(
-                                fontSize: MediaQuery.of(context).size.width * 0.045,
+                                fontSize:
+                                    MediaQuery.of(context).size.width * 0.045,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
                               ),
@@ -1391,7 +1433,8 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                             Text(
                               widget.category,
                               style: TextStyle(
-                                fontSize: MediaQuery.of(context).size.width * 0.036,
+                                fontSize:
+                                    MediaQuery.of(context).size.width * 0.036,
                                 color: Colors.black54,
                               ),
                             ),
@@ -1402,17 +1445,20 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                                 Icon(
                                   CupertinoIcons.bus,
                                   color: Colors.black26,
-                                  size: MediaQuery.of(context).size.width * 0.045,
+                                  size:
+                                      MediaQuery.of(context).size.width * 0.045,
                                 ),
                                 Text(
                                   (locationLat != null &&
-                                      userLat != null &&
-                                      locationLon != null &&
-                                      userLon != null)
+                                          userLat != null &&
+                                          locationLon != null &&
+                                          userLon != null)
                                       ? ' ${calculateTimeRequired(userLat, userLon, locationLat, locationLon)}분 · ${widget.placeRegion}'
                                       : ' 30분 · ${widget.placeRegion}',
                                   style: TextStyle(
-                                    fontSize: MediaQuery.of(context).size.width * 0.036,
+                                    fontSize:
+                                        MediaQuery.of(context).size.width *
+                                        0.036,
                                     color: Colors.black54,
                                   ),
                                 ),
@@ -1425,12 +1471,15 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                                 Icon(
                                   CupertinoIcons.time,
                                   color: Colors.black26,
-                                  size: MediaQuery.of(context).size.width * 0.045,
+                                  size:
+                                      MediaQuery.of(context).size.width * 0.045,
                                 ),
                                 Text(
                                   ' ${widget.openTime ?? '09:00'} ~ ${widget.closeTime ?? '22:00'}',
                                   style: TextStyle(
-                                    fontSize: MediaQuery.of(context).size.width * 0.036,
+                                    fontSize:
+                                        MediaQuery.of(context).size.width *
+                                        0.036,
                                     color: Colors.black54,
                                   ),
                                 ),
@@ -1442,7 +1491,12 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                         // 공유, 닫기 버튼
                         GestureDetector(
                           onTap: () {
-                            showShareModal(context, widget.placeName, widget.videoId, widget.naverMapLink);
+                            showShareModal(
+                              context,
+                              widget.placeName,
+                              widget.videoId,
+                              widget.naverMapLink,
+                            );
                           },
                           child: Container(
                             width: 40,
@@ -1493,9 +1547,7 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
 
                             FirebaseAnalytics.instance.logEvent(
                               name: "tap_call",
-                              parameters: {
-                                "video_id": widget.videoId,
-                              },
+                              parameters: {"video_id": widget.videoId},
                             );
 
                             if (await canLaunchUrl(phoneUri)) {
@@ -1507,7 +1559,9 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                                   content: Text('지정된 전화번호가 없습니다.'),
                                   behavior: SnackBarBehavior.floating,
                                   margin: EdgeInsets.only(
-                                    bottom: MediaQuery.of(context).size.height * 0.06,
+                                    bottom:
+                                        MediaQuery.of(context).size.height *
+                                        0.06,
                                     left: 20.0,
                                     right: 20.0,
                                   ),
@@ -1544,20 +1598,18 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                         ),
                         GestureDetector(
                           onTap: () async {
-
                             FirebaseAnalytics.instance.logEvent(
                               name: "tap_route",
-                              parameters: {
-                                "video_id": widget.videoId,
-                              },
+                              parameters: {"video_id": widget.videoId},
                             );
 
-                            String deepRouteUrl = 'nmap://route/public?slat=$userLat&slng=$userLon&sname=내위치&dlat=${widget.coordinates['lat']}&dlng=${widget.coordinates['lon']}&dname=${widget.placeName}&appname=com.hwsoft.shortsmap';
+                            String deepRouteUrl =
+                                'nmap://route/public?slat=$userLat&slng=$userLon&sname=내위치&dlat=${widget.coordinates['lat']}&dlng=${widget.coordinates['lon']}&dname=${widget.placeName}&appname=com.hwsoft.shortsmap';
 
-                            String webRouteUrl = 'http://m.map.naver.com/route.nhn?menu=route&sname=내위치&sx=$userLon&sy=$userLat&ename=${widget.placeName}&ex=${widget.coordinates['lon']}&ey=${widget.coordinates['lat']}&pathType=1&showMap=true';
+                            String webRouteUrl =
+                                'http://m.map.naver.com/route.nhn?menu=route&sname=내위치&sx=$userLon&sy=$userLat&ename=${widget.placeName}&ex=${widget.coordinates['lon']}&ey=${widget.coordinates['lat']}&pathType=1&showMap=true';
 
-
-                            if (await canLaunchUrl(Uri.parse(deepRouteUrl))){
+                            if (await canLaunchUrl(Uri.parse(deepRouteUrl))) {
                               await launchUrl(
                                 Uri.parse(deepRouteUrl),
                                 mode: LaunchMode.externalApplication,
@@ -1568,7 +1620,6 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                                 mode: LaunchMode.externalApplication,
                               );
                             }
-
                           },
                           child: Container(
                             width: MediaQuery.of(context).size.width * 0.3,
@@ -1599,11 +1650,13 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                         ),
                         GestureDetector(
                           onTap: () async {
-
                             Navigator.of(sheetContext).pop();
 
-                            if (Provider.of<BookmarkProvider>(context, listen: false,).userId == null)
-                            {
+                            if (Provider.of<BookmarkProvider>(
+                                  context,
+                                  listen: false,
+                                ).userId ==
+                                null) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   duration: Duration(milliseconds: 1500),
@@ -1613,9 +1666,8 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                                     label: '로그인',
                                     textColor: Color(0xff121212),
                                     onPressed: () async {
-
-
-                                      final played = await _controller.currentTime;
+                                      final played =
+                                          await _controller.currentTime;
 
                                       FirebaseAnalytics.instance.logEvent(
                                         name: "login_to_bookmark",
@@ -1627,40 +1679,61 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
 
                                       Navigator.push(
                                         context,
-                                        MaterialPageRoute(builder: (context) => LoginPage()),
+                                        MaterialPageRoute(
+                                          builder: (context) => LoginPage(),
+                                        ),
                                       );
                                     },
                                   ),
                                   behavior: SnackBarBehavior.floating,
                                   margin: EdgeInsets.only(
-                                    bottom: MediaQuery.of(context).size.height * 0.02,
+                                    bottom:
+                                        MediaQuery.of(context).size.height *
+                                        0.02,
                                     left: 20.0,
                                     right: 20.0,
                                   ),
                                 ),
                               );
-                            }
-                            else {
-
+                            } else {
                               final played = await _controller.currentTime;
 
-                              if (!Provider.of<BookmarkProvider>(context, listen: false,).isBookmarked(widget.videoId)) {
-
+                              if (!Provider.of<BookmarkProvider>(
+                                context,
+                                listen: false,
+                              ).isBookmarked(widget.videoId)) {
                                 HapticFeedback.lightImpact();
 
                                 setState(() {
                                   _bookmarkCount++;
                                 });
 
-                                Provider.of<BookmarkProvider>(context, listen: false,).addBookmark(context, widget.videoId, widget.category, widget.placeId, played.round(), widget.coordinates['lat']!, widget.coordinates['lon']!);
+                                Provider.of<BookmarkProvider>(
+                                  context,
+                                  listen: false,
+                                ).addBookmark(
+                                  context,
+                                  widget.videoId,
+                                  widget.category,
+                                  widget.placeId,
+                                  played.round(),
+                                  widget.coordinates['lat']!,
+                                  widget.coordinates['lon']!,
+                                );
                               } else {
-
                                 setState(() {
                                   _bookmarkCount--;
                                 });
 
-                                Provider.of<BookmarkProvider>(context, listen: false,).removeBookmark(context, widget.videoId, widget.placeId, played.round());
-
+                                Provider.of<BookmarkProvider>(
+                                  context,
+                                  listen: false,
+                                ).removeBookmark(
+                                  context,
+                                  widget.videoId,
+                                  widget.placeId,
+                                  played.round(),
+                                );
                               }
                             }
                           },
@@ -1787,16 +1860,12 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                             title: '네이버지도에서 보기',
                             subtitle: widget.address,
                             onTap: () async {
-
                               FirebaseAnalytics.instance.logEvent(
                                 name: "tap_address",
-                                parameters: {
-                                  "video_id": widget.videoId,
-                                },
+                                parameters: {"video_id": widget.videoId},
                               );
 
                               openNaverMap(widget.naverMapLink);
-
                             },
                           ),
                           Divider(height: 2),
@@ -1805,18 +1874,14 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                             title: '예약하러 가기',
                             subtitle: '숙소·액티비티 예약',
                             onTap: () async {
-
                               FirebaseAnalytics.instance.logEvent(
                                 name: "tap_reservation",
-                                parameters: {
-                                  "video_id": widget.videoId,
-                                },
+                                parameters: {"video_id": widget.videoId},
                               );
 
                               // openNaverMap(widget.naverMapLink);
 
                               /// 예약하러 가는 링크 열어주는 함수 만들어서 넣기
-
                             },
                           ),
                           Divider(height: 2),
@@ -1825,18 +1890,14 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                             title: '텍스트후기 보러가기',
                             subtitle: '생생한 텍스트 후기',
                             onTap: () async {
-
                               FirebaseAnalytics.instance.logEvent(
                                 name: "tap_text_review",
-                                parameters: {
-                                  "video_id": widget.videoId,
-                                },
+                                parameters: {"video_id": widget.videoId},
                               );
 
                               // openNaverMap(widget.naverMapLink);
 
                               /// 텍스트후기 보러가는 링크 열어주는 함수 만들어서 넣기
-
                             },
                           ),
                           if (widget.phoneNumber != null)
@@ -1846,12 +1907,9 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                               icon: Icons.phone,
                               title: '전화걸기',
                               onTap: () async {
-
                                 FirebaseAnalytics.instance.logEvent(
                                   name: "tap_call",
-                                  parameters: {
-                                    "video_id": widget.videoId,
-                                  },
+                                  parameters: {"video_id": widget.videoId},
                                 );
 
                                 final Uri phoneUri = Uri(
@@ -1868,7 +1926,9 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                                       content: Text('지정된 전화번호가 없습니다.'),
                                       behavior: SnackBarBehavior.floating,
                                       margin: EdgeInsets.only(
-                                        bottom: MediaQuery.of(context).size.height * 0.06,
+                                        bottom:
+                                            MediaQuery.of(context).size.height *
+                                            0.06,
                                         left: 20.0,
                                         right: 20.0,
                                       ),
@@ -1877,19 +1937,15 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                                 }
                               },
                             ),
-                          if (widget.website != null)
-                            const Divider(height: 2),
+                          if (widget.website != null) const Divider(height: 2),
                           if (widget.website != null)
                             _buildListTile(
                               icon: Icons.language,
                               title: '웹사이트 방문하기',
                               onTap: () async {
-
                                 FirebaseAnalytics.instance.logEvent(
                                   name: "tap_visit_website",
-                                  parameters: {
-                                    "video_id": widget.videoId,
-                                  },
+                                  parameters: {"video_id": widget.videoId},
                                 );
 
                                 await launchUrl(
@@ -1911,12 +1967,9 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                             icon: Icons.verified_outlined,
                             title: '장소 소유자 인증하기',
                             onTap: () async {
-
                               FirebaseAnalytics.instance.logEvent(
                                 name: "tap_place_owner",
-                                parameters: {
-                                  "video_id": widget.videoId,
-                                },
+                                parameters: {"video_id": widget.videoId},
                               );
 
                               await launchUrl(
@@ -1940,7 +1993,12 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
     );
   }
 
-  void showShareModal(BuildContext context, String placeName, String videoId, String naverMapLink) {
+  void showShareModal(
+    BuildContext context,
+    String placeName,
+    String videoId,
+    String naverMapLink,
+  ) {
     showModalBottomSheet(
       backgroundColor: Colors.white,
       context: context,
@@ -1965,17 +2023,16 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
   }
 
   String? switchCategoryToEng(String? category) {
-
     String? switchedCategory;
 
-    switch(category) {
-      case '음식점' :
+    switch (category) {
+      case '음식점':
         switchedCategory = 'Restaurant';
         break;
-      case '카페' :
+      case '카페':
         switchedCategory = 'Cafe';
         break;
-      case '술·안주' :
+      case '술·안주':
         switchedCategory = 'Bar';
         break;
     }
@@ -1986,14 +2043,14 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
   String? switchCategoryToKor(String? category) {
     String? switchedCategory;
 
-    switch(category) {
-      case 'Restaurant' :
+    switch (category) {
+      case 'Restaurant':
         switchedCategory = '음식점';
         break;
-      case 'Cafe' :
+      case 'Cafe':
         switchedCategory = '카페';
         break;
-      case 'Bar' :
+      case 'Bar':
         switchedCategory = '술·안주';
         break;
     }
@@ -2033,11 +2090,13 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                       children: [
                         GestureDetector(
                           onTap: () async {
-
                             Navigator.pop(optionContext);
 
-                            if (Provider.of<BookmarkProvider>(context, listen: false,).userId == null)
-                            {
+                            if (Provider.of<BookmarkProvider>(
+                                  context,
+                                  listen: false,
+                                ).userId ==
+                                null) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   duration: Duration(milliseconds: 1500),
@@ -2047,9 +2106,8 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                                     label: '로그인',
                                     textColor: Color(0xff121212),
                                     onPressed: () async {
-
-
-                                      final played = await _controller.currentTime;
+                                      final played =
+                                          await _controller.currentTime;
 
                                       FirebaseAnalytics.instance.logEvent(
                                         name: "login_to_bookmark",
@@ -2061,42 +2119,61 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
 
                                       Navigator.push(
                                         context,
-                                        MaterialPageRoute(builder: (context) => LoginPage()),
+                                        MaterialPageRoute(
+                                          builder: (context) => LoginPage(),
+                                        ),
                                       );
                                     },
                                   ),
                                   behavior: SnackBarBehavior.floating,
                                   margin: EdgeInsets.only(
-                                    bottom: MediaQuery.of(context).size.height * 0.02,
+                                    bottom:
+                                        MediaQuery.of(context).size.height *
+                                        0.02,
                                     left: 20.0,
                                     right: 20.0,
                                   ),
                                 ),
                               );
-                            }
-                            else {
-
+                            } else {
                               final played = await _controller.currentTime;
 
-                              if (!Provider.of<BookmarkProvider>(context, listen: false,).isBookmarked(widget.videoId)) {
-
+                              if (!Provider.of<BookmarkProvider>(
+                                context,
+                                listen: false,
+                              ).isBookmarked(widget.videoId)) {
                                 HapticFeedback.lightImpact();
-
 
                                 setState(() {
                                   _bookmarkCount++;
                                 });
 
-                                Provider.of<BookmarkProvider>(context, listen: false,).addBookmark(context, widget.videoId, widget.category, widget.placeId, played.round(), widget.coordinates['lat']!, widget.coordinates['lon']!);
+                                Provider.of<BookmarkProvider>(
+                                  context,
+                                  listen: false,
+                                ).addBookmark(
+                                  context,
+                                  widget.videoId,
+                                  widget.category,
+                                  widget.placeId,
+                                  played.round(),
+                                  widget.coordinates['lat']!,
+                                  widget.coordinates['lon']!,
+                                );
                               } else {
-
                                 setState(() {
                                   _bookmarkCount--;
                                 });
 
-
-                                Provider.of<BookmarkProvider>(context, listen: false,).removeBookmark(context, widget.videoId, widget.placeId, played.round());
-
+                                Provider.of<BookmarkProvider>(
+                                  context,
+                                  listen: false,
+                                ).removeBookmark(
+                                  context,
+                                  widget.videoId,
+                                  widget.placeId,
+                                  played.round(),
+                                );
                               }
                             }
                           },
@@ -2180,7 +2257,12 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                         GestureDetector(
                           onTap: () {
                             Navigator.pop(context);
-                            showShareModal(context, widget.placeName, widget.videoId, widget.naverMapLink);
+                            showShareModal(
+                              context,
+                              widget.placeName,
+                              widget.videoId,
+                              widget.naverMapLink,
+                            );
                           },
                           child: Container(
                             color: Colors.transparent,
@@ -2212,7 +2294,6 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
 
   ///영상 필터 ModalBottomSheet
   void showFilterModal(BuildContext context) {
-
     String? selectedRegion;
     String? selectedCategory;
     bool _initialized = false;
@@ -2232,12 +2313,19 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter filterState) {
-
             final filter = ref.read(filterProvider);
 
             if (!_initialized) {
-              selectedRegion   = filter.orderNear ? '가까운 순' : filter.region ?? 'All' ;   // Provider에 정의된 프로퍼티
-              selectedCategory = filter.category == null ? 'All' : switchCategoryToKor(filter.category); // Provider에 정의된 프로퍼티
+              selectedRegion =
+                  filter.orderNear
+                      ? '가까운 순'
+                      : filter.region ?? 'All'; // Provider에 정의된 프로퍼티
+              selectedCategory =
+                  filter.category == null
+                      ? 'All'
+                      : switchCategoryToKor(
+                        filter.category,
+                      ); // Provider에 정의된 프로퍼티
               _initialized = true;
             }
 
@@ -2270,7 +2358,8 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                                 ),
                                 SizedBox(
                                   height:
-                                      MediaQuery.of(context).size.height * 0.015,
+                                      MediaQuery.of(context).size.height *
+                                      0.015,
                                 ),
                                 Wrap(
                                   spacing: 8.0,
@@ -2278,19 +2367,23 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                                   children:
                                       regionOptions.map((region) {
                                         return ChoiceChip(
-
-                                          avatar: (region == '가까운 순')
-                                           ? Icon(Icons.star, color: (selectedRegion == region)
-                                              ? Color(0xff222222)
-                                              : Colors.yellow,
-                                          )
-                                              : null,
+                                          avatar:
+                                              (region == '가까운 순')
+                                                  ? Icon(
+                                                    Icons.star,
+                                                    color:
+                                                        (selectedRegion ==
+                                                                region)
+                                                            ? Color(0xff222222)
+                                                            : Colors.yellow,
+                                                  )
+                                                  : null,
                                           selected: selectedRegion == region,
                                           label: Text(
                                             region,
                                             style: TextStyle(
                                               color:
-                                              (selectedRegion == region)
+                                                  (selectedRegion == region)
                                                       ? Colors.black
                                                       : shortPageWhite,
                                             ),
@@ -2312,7 +2405,8 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                                 ),
                                 SizedBox(
                                   height:
-                                      MediaQuery.of(context).size.height * 0.015,
+                                      MediaQuery.of(context).size.height *
+                                      0.015,
                                 ),
 
                                 Text(
@@ -2333,7 +2427,8 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                                   children:
                                       categoryOptions.map((category) {
                                         return ChoiceChip(
-                                          selected: selectedCategory == category,
+                                          selected:
+                                              selectedCategory == category,
                                           label: Text(
                                             category,
                                             style: TextStyle(
@@ -2415,43 +2510,45 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                     SafeArea(
                       child: GestureDetector(
                         onTap: () async {
-
                           final notifier = ref.read(filterProvider.notifier);
 
                           if (selectedRegion == '가까운 순') {
-
-                            final result = await notifier.setAroundVideoCategory(
-                              (selectedCategory == 'All')
-                                  ? null
-                                  : switchCategoryToEng(selectedCategory),
-                            );
+                            final result = await notifier
+                                .setAroundVideoCategory(
+                                  (selectedCategory == 'All')
+                                      ? null
+                                      : switchCategoryToEng(selectedCategory),
+                                );
 
                             if (result == FilterResult.permissionDenied) {
                               ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Location Permission Denied.")),
-      );
+                                const SnackBar(
+                                  content: Text("Location Permission Denied."),
+                                ),
+                              );
                             } else {
                               FirebaseAnalytics.instance.logEvent(
                                 name: "apply_filter",
                                 parameters: {
                                   "order_near": "true",
                                   "selected_region": 'null',
-                                  "selected_category": selectedCategory == null ? 'All' : selectedCategory == 'All' ? 'All' : selectedCategory!,
+                                  "selected_category":
+                                      selectedCategory == null
+                                          ? 'All'
+                                          : selectedCategory == 'All'
+                                          ? 'All'
+                                          : selectedCategory!,
                                 },
                               );
 
-
                               final updated = ref.read(filterProvider);
-                              await Provider.of<UserDataProvider>(context, listen: false)
+                              await ref
+                                  .read(userSessionProvider.notifier)
                                   .setCurrentLocation(updated.lat, updated.lon);
                             }
-
-
                           } else {
                             notifier.setBasicVideoCategory(
-                              (selectedRegion == 'All')
-                                  ? null
-                                  : selectedRegion,
+                              (selectedRegion == 'All') ? null : selectedRegion,
                               (selectedCategory == 'All')
                                   ? null
                                   : switchCategoryToEng(selectedCategory),
@@ -2461,8 +2558,18 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                               name: "apply_filter",
                               parameters: {
                                 "order_near": "true",
-                                "selected_region": selectedRegion == null ? 'All' : selectedRegion == 'All' ? 'All' : selectedRegion!,
-                                "selected_category": selectedCategory == null ? 'All' : selectedCategory == 'All' ? 'All' : selectedCategory!,
+                                "selected_region":
+                                    selectedRegion == null
+                                        ? 'All'
+                                        : selectedRegion == 'All'
+                                        ? 'All'
+                                        : selectedRegion!,
+                                "selected_category":
+                                    selectedCategory == null
+                                        ? 'All'
+                                        : selectedCategory == 'All'
+                                        ? 'All'
+                                        : selectedCategory!,
                               },
                             );
                           }
@@ -2652,10 +2759,18 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
   }) {
     return ListTile(
       leading: Icon(icon, color: Colors.black),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15)),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
+      ),
       subtitle:
           subtitle != null
-              ? Text(subtitle, style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.035,))
+              ? Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: MediaQuery.of(context).size.width * 0.035,
+                ),
+              )
               : null,
       trailing: const Icon(Icons.chevron_right, size: 26),
       onTap: onTap,
@@ -2725,10 +2840,14 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
 
   Widget BookmarkButton(String value, String videoId) {
     return Consumer<BookmarkProvider>(
-      builder: (BuildContext bookmarkContext, BookmarkProvider bookmarkProvider, Widget? child) {
+      builder: (
+        BuildContext bookmarkContext,
+        BookmarkProvider bookmarkProvider,
+        Widget? child,
+      ) {
         return GestureDetector(
           onTap: () async {
-            if (bookmarkProvider.userId == null){
+            if (bookmarkProvider.userId == null) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   duration: Duration(milliseconds: 1500),
@@ -2738,8 +2857,6 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                     label: '로그인',
                     textColor: Color(0xff121212),
                     onPressed: () async {
-
-
                       final played = await _controller.currentTime;
 
                       FirebaseAnalytics.instance.logEvent(
@@ -2764,28 +2881,39 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                   ),
                 ),
               );
-            }
-            else {
-
+            } else {
               final played = await _controller.currentTime;
 
               if (!bookmarkProvider.isBookmarked(videoId)) {
-
                 HapticFeedback.lightImpact();
 
                 setState(() {
                   _bookmarkCount++;
                 });
 
-                Provider.of<BookmarkProvider>(context, listen: false,).addBookmark(context, widget.videoId, widget.category, widget.placeId, played.round(), widget.coordinates['lat']!, widget.coordinates['lon']!);
+                Provider.of<BookmarkProvider>(
+                  context,
+                  listen: false,
+                ).addBookmark(
+                  context,
+                  widget.videoId,
+                  widget.category,
+                  widget.placeId,
+                  played.round(),
+                  widget.coordinates['lat']!,
+                  widget.coordinates['lon']!,
+                );
               } else {
-
                 setState(() {
                   _bookmarkCount--;
                 });
 
-                bookmarkProvider.removeBookmark(context, videoId, widget.placeId, played.round());
-
+                bookmarkProvider.removeBookmark(
+                  context,
+                  videoId,
+                  widget.placeId,
+                  played.round(),
+                );
               }
             }
           },
@@ -2808,11 +2936,11 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                     ),
                   ),
                   child: Icon(
-                      bookmarkProvider.isBookmarked(videoId)
-                          ? CupertinoIcons.bookmark_fill
-                          : CupertinoIcons.bookmark,
-                      size: 45,
-                      color: shortPageWhite,
+                    bookmarkProvider.isBookmarked(videoId)
+                        ? CupertinoIcons.bookmark_fill
+                        : CupertinoIcons.bookmark,
+                    size: 45,
+                    color: shortPageWhite,
                   ),
                 ),
                 const SizedBox(height: 5),
@@ -2837,7 +2965,6 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                     ),
                   ),
                 ),
-
               ],
             ),
           ),
