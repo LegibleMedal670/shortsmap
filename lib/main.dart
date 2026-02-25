@@ -9,14 +9,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as riv;
-import 'package:provider/provider.dart';
-import 'package:shortsmap/Provider/BookmarkProvider.dart';
 import 'package:shortsmap/Provider/UserSessionProvider.dart';
 import 'package:shortsmap/Welcome/SplashScreen.dart';
 import 'package:shortsmap/env.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shortsmap/Map/provider/MarkerProvider.dart';
-
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -82,34 +78,26 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        // ChangeNotifierProvider(create: (_) => FilterProvider()),
-        // ChangeNotifierProvider.value(value: widget.userDataProvider),
-        // ChangeNotifierProvider(create: (_) => PhotoCacheProvider(apiKey: Env.googlePlaceAPIKey)),
-        ChangeNotifierProvider(create: (_) => MarkerDataProvider(bookmarkProvider: widget.bookmarkProvider)),
+    return MaterialApp(
+      navigatorObservers: [
+        FirebaseAnalyticsObserver(analytics: analytics),
       ],
-      child: MaterialApp(
-        navigatorObservers: [
-          FirebaseAnalyticsObserver(analytics: analytics),
-        ],
-        debugShowCheckedModeBanner: false,
-        title: 'Shorts',
-        theme: ThemeData(
-          splashColor: Colors.transparent,
-          highlightColor: Colors.transparent,
-          primaryColor: Colors.black,
-          bottomSheetTheme: BottomSheetThemeData(
-              dragHandleColor: Colors.grey[400],
-              dragHandleSize: const Size(50, 5)),
-          useMaterial3: false,
-        ),
-        builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(context)
-                .copyWith(textScaler: TextScaler.noScaling),
-            child: child!),
-        home: const SplashScreen(),
+      debugShowCheckedModeBanner: false,
+      title: 'Shorts',
+      theme: ThemeData(
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        primaryColor: Colors.black,
+        bottomSheetTheme: BottomSheetThemeData(
+            dragHandleColor: Colors.grey[400],
+            dragHandleSize: const Size(50, 5)),
+        useMaterial3: false,
       ),
+      builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: TextScaler.noScaling),
+          child: child!),
+      home: const SplashScreen(),
     );
   }
 }
