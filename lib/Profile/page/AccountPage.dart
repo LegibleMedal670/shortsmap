@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:provider/provider.dart' as prov;
 import 'package:shortsmap/Profile/page/ProfilePage.dart';
 import 'package:shortsmap/Profile/page/WithdrawPage.dart';
-import 'package:shortsmap/Provider/BookmarkProvider.dart';
 import 'package:shortsmap/Provider/UserSessionProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -288,10 +286,6 @@ class AccountPage extends ConsumerWidget {
                       onPressed: () async {
                         await Supabase.instance.client.auth.signOut();
                         ref.read(userSessionProvider.notifier).logout();
-                        prov.Provider.of<BookmarkProvider>(
-                          context,
-                          listen: false,
-                        ).updateLoginStatus(false, null);
                         Navigator.of(context).pop();
                         Navigator.pushAndRemoveUntil(
                           context,

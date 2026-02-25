@@ -2,27 +2,25 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:in_app_review/in_app_review.dart';
-import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shortsmap/Profile/page/AccountPage.dart';
-import 'package:shortsmap/Provider/BookmarkProvider.dart';
 import 'package:shortsmap/Provider/UserSessionProvider.dart';
 import 'package:shortsmap/Welcome/LoginPage.dart';
 import 'package:shortsmap/Widgets/BottomNavBar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart' as riv;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // 공통으로 사용하는 기본 텍스트/아이콘 색상
 const Color primaryTextColor = Color(0xFF121212);
 
-class ProfilePage extends riv.ConsumerStatefulWidget {
+class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
   @override
-  riv.ConsumerState<ProfilePage> createState() => _ProfilePageState();
+  ConsumerState<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends riv.ConsumerState<ProfilePage> {
+class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   int _step = 0;
   bool _hasRated = true;
@@ -181,7 +179,7 @@ class _ProfilePageState extends riv.ConsumerState<ProfilePage> {
                     ),
                   ),
                   /// 로그인/로그아웃
-                  riv.Consumer(
+                  Consumer(
                     builder: (context, ref, child) {
 
                       final isLoggedIn = ref.watch(
@@ -446,7 +444,6 @@ class _ProfilePageState extends riv.ConsumerState<ProfilePage> {
                         await Supabase.instance.client.auth.signOut();
                         Navigator.of(context).pop();
                         ref.read(userSessionProvider.notifier).logout();
-                        Provider.of<BookmarkProvider>(context, listen: false).updateLoginStatus(false, null);
                       },
                     ),
                   ),

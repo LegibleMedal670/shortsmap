@@ -252,6 +252,162 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
     }
   }
 
+  Future<void> _toggleBookmarkStatus() async {
+
+    final isLoggedIn = ref.read(userSessionProvider).isLoggedIn;
+
+    HapticFeedback.lightImpact();
+
+    final played = await _controller.currentTime;
+    if (!mounted) return;
+
+    if (!isLoggedIn) {
+
+      FirebaseAnalytics.instance.logEvent(
+        name: "login_to_bookmark",
+        parameters: {
+          "video_id": widget.videoId,
+          "watch_duration": played.round(),
+        },
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          duration: Duration(milliseconds: 1500),
+          backgroundColor: Colors.lightBlueAccent,
+          content: Text('북마크하기 위해 로그인 해주세요'),
+          action: SnackBarAction(
+            label: '로그인',
+            textColor: Color(0xff121212),
+            onPressed: () async {
+              final played = await _controller.currentTime;
+              if (!mounted) return;
+
+              FirebaseAnalytics.instance.logEvent(
+                name: "login_to_bookmark",
+                parameters: {
+                  "video_id": widget.videoId,
+                  "watch_duration": played.round(),
+                },
+              );
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => LoginPage()),
+              );
+            },
+          ),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.only(
+            bottom: MediaQuery.of(context).size.height * 0.02,
+            left: 20.0,
+            right: 20.0,
+          ),
+        ),
+      );
+    } else {
+      final isBookmarked = ref.read(bookmarkProvider.notifier).isBookmarked(widget.videoId);
+
+      if (!isBookmarked) {
+        final result = await ref.read(bookmarkProvider.notifier).addBookmark(widget.videoId, widget.category, widget.placeId, played.round());
+        if (!mounted) return;
+
+        if (result == BookmarkMutationResult.ok) {
+
+          setState(() {
+            _bookmarkCount++;
+          });
+
+          // 저장 되었음을 표시해주는 스낵바 TODO ( UI 조정 필요 )
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              duration: Duration(milliseconds: 1500),
+              backgroundColor: Colors.lightBlueAccent,
+              content: Text('북마크에 저장되었어요'),
+              action: SnackBarAction(
+                label: '보러 가기',
+                textColor: Color(0xff121212),
+                onPressed: () {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MapPage(placeId: widget.placeId, videoId: widget.videoId, placeLat: widget.coordinates['lat']!, placeLng: widget.coordinates['lon']!,),
+                    ),
+                        (route) => false,
+                  );
+                },
+              ),
+              behavior: SnackBarBehavior.floating,
+              margin: EdgeInsets.only(
+                bottom: MediaQuery.of(context).size.height * 0.02,
+                left: 20.0,
+                right: 20.0,
+              ),
+            ),
+          );
+        } else if (result == BookmarkMutationResult.fail) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              duration: Duration(milliseconds: 1500),
+              backgroundColor: Colors.redAccent,
+              content: Text('북마크 도중 알 수 없는 에러가 발생했습니다'),
+              behavior: SnackBarBehavior.floating,
+              margin: EdgeInsets.only(
+                bottom: MediaQuery.of(context).size.height * 0.02,
+                left: 20.0,
+                right: 20.0,
+              ),
+            ),
+          );
+
+          print('Bookmark Error : ${ref.read(bookmarkProvider).errorMessage}');
+        }
+      } else {
+        final result = await ref.read(bookmarkProvider.notifier).removeBookmark(widget.videoId, played.round());
+        if (!mounted) return;
+
+        if (result == BookmarkMutationResult.ok) {
+          setState(() {
+            _bookmarkCount--;
+          });
+
+          // 삭제 되었음을 알려주는 스낵바 TODO ( UI 조정 필요 )
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              duration: Duration(milliseconds: 1500),
+              backgroundColor: Colors.lightBlueAccent,
+              content: Text('북마크에서 삭제되었어요'),
+              behavior: SnackBarBehavior.floating,
+              margin: EdgeInsets.only(
+                bottom: MediaQuery.of(context).size.height * 0.02,
+                left: 20.0,
+                right: 20.0,
+              ),
+            ),
+          );
+
+        } else if (result == BookmarkMutationResult.fail) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.redAccent,
+              duration: Duration(milliseconds: 1500),
+              content: Text('북마크 취소 도중 알 수 없는 에러가 발생했습니다'),
+              behavior: SnackBarBehavior.floating,
+              margin: EdgeInsets.only(
+                bottom: MediaQuery.of(context).size.height * 0.02,
+                left: 20.0,
+                right: 20.0,
+              ),
+            ),
+          );
+
+          print('Bookmark Error : ${ref.read(bookmarkProvider).errorMessage}');
+        }
+      }
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(
@@ -371,87 +527,7 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
             onLongPress: () {
               showOptionsModal(context);
             },
-            onDoubleTap: () async {
-              if (Provider.of<BookmarkProvider>(
-                    context,
-                    listen: false,
-                  ).userId ==
-                  null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    duration: Duration(milliseconds: 1500),
-                    backgroundColor: Colors.lightBlueAccent,
-                    content: Text('북마크하기 위해 로그인 해주세요'),
-                    action: SnackBarAction(
-                      label: '로그인',
-                      textColor: Color(0xff121212),
-                      onPressed: () async {
-                        final played = await _controller.currentTime;
-
-                        FirebaseAnalytics.instance.logEvent(
-                          name: "login_to_bookmark",
-                          parameters: {
-                            "video_id": widget.videoId,
-                            "watch_duration": played.round(),
-                          },
-                        );
-
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => LoginPage()),
-                        );
-                      },
-                    ),
-                    behavior: SnackBarBehavior.floating,
-                    margin: EdgeInsets.only(
-                      bottom: MediaQuery.of(context).size.height * 0.02,
-                      left: 20.0,
-                      right: 20.0,
-                    ),
-                  ),
-                );
-              } else {
-                final played = await _controller.currentTime;
-
-                if (!Provider.of<BookmarkProvider>(
-                  context,
-                  listen: false,
-                ).isBookmarked(widget.videoId)) {
-                  HapticFeedback.lightImpact();
-
-                  setState(() {
-                    _bookmarkCount++;
-                  });
-
-                  Provider.of<BookmarkProvider>(
-                    context,
-                    listen: false,
-                  ).addBookmark(
-                    context,
-                    widget.videoId,
-                    widget.category,
-                    widget.placeId,
-                    played.round(),
-                    widget.coordinates['lat']!,
-                    widget.coordinates['lon']!,
-                  );
-                } else {
-                  setState(() {
-                    _bookmarkCount--;
-                  });
-
-                  Provider.of<BookmarkProvider>(
-                    context,
-                    listen: false,
-                  ).removeBookmark(
-                    context,
-                    widget.videoId,
-                    widget.placeId,
-                    played.round(),
-                  );
-                }
-              }
-            },
+            onDoubleTap : _toggleBookmarkStatus,
             child: SafeArea(
               child: Container(
                 width: MediaQuery.of(context).size.width,
@@ -1649,93 +1725,10 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: () async {
+                          onTap: () async{
                             Navigator.of(sheetContext).pop();
 
-                            if (Provider.of<BookmarkProvider>(
-                                  context,
-                                  listen: false,
-                                ).userId ==
-                                null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  duration: Duration(milliseconds: 1500),
-                                  backgroundColor: Colors.lightBlueAccent,
-                                  content: Text('북마크하기 위해 로그인 해주세요'),
-                                  action: SnackBarAction(
-                                    label: '로그인',
-                                    textColor: Color(0xff121212),
-                                    onPressed: () async {
-                                      final played =
-                                          await _controller.currentTime;
-
-                                      FirebaseAnalytics.instance.logEvent(
-                                        name: "login_to_bookmark",
-                                        parameters: {
-                                          "video_id": widget.videoId,
-                                          "watch_duration": played.round(),
-                                        },
-                                      );
-
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => LoginPage(),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  behavior: SnackBarBehavior.floating,
-                                  margin: EdgeInsets.only(
-                                    bottom:
-                                        MediaQuery.of(context).size.height *
-                                        0.02,
-                                    left: 20.0,
-                                    right: 20.0,
-                                  ),
-                                ),
-                              );
-                            } else {
-                              final played = await _controller.currentTime;
-
-                              if (!Provider.of<BookmarkProvider>(
-                                context,
-                                listen: false,
-                              ).isBookmarked(widget.videoId)) {
-                                HapticFeedback.lightImpact();
-
-                                setState(() {
-                                  _bookmarkCount++;
-                                });
-
-                                Provider.of<BookmarkProvider>(
-                                  context,
-                                  listen: false,
-                                ).addBookmark(
-                                  context,
-                                  widget.videoId,
-                                  widget.category,
-                                  widget.placeId,
-                                  played.round(),
-                                  widget.coordinates['lat']!,
-                                  widget.coordinates['lon']!,
-                                );
-                              } else {
-                                setState(() {
-                                  _bookmarkCount--;
-                                });
-
-                                Provider.of<BookmarkProvider>(
-                                  context,
-                                  listen: false,
-                                ).removeBookmark(
-                                  context,
-                                  widget.videoId,
-                                  widget.placeId,
-                                  played.round(),
-                                );
-                              }
-                            }
+                            await _toggleBookmarkStatus();
                           },
                           child: Container(
                             width: MediaQuery.of(context).size.width * 0.3,
@@ -2092,90 +2085,7 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
                           onTap: () async {
                             Navigator.pop(optionContext);
 
-                            if (Provider.of<BookmarkProvider>(
-                                  context,
-                                  listen: false,
-                                ).userId ==
-                                null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  duration: Duration(milliseconds: 1500),
-                                  backgroundColor: Colors.lightBlueAccent,
-                                  content: Text('북마크하기 위해 로그인 해주세요'),
-                                  action: SnackBarAction(
-                                    label: '로그인',
-                                    textColor: Color(0xff121212),
-                                    onPressed: () async {
-                                      final played =
-                                          await _controller.currentTime;
-
-                                      FirebaseAnalytics.instance.logEvent(
-                                        name: "login_to_bookmark",
-                                        parameters: {
-                                          "video_id": widget.videoId,
-                                          "watch_duration": played.round(),
-                                        },
-                                      );
-
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => LoginPage(),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  behavior: SnackBarBehavior.floating,
-                                  margin: EdgeInsets.only(
-                                    bottom:
-                                        MediaQuery.of(context).size.height *
-                                        0.02,
-                                    left: 20.0,
-                                    right: 20.0,
-                                  ),
-                                ),
-                              );
-                            } else {
-                              final played = await _controller.currentTime;
-
-                              if (!Provider.of<BookmarkProvider>(
-                                context,
-                                listen: false,
-                              ).isBookmarked(widget.videoId)) {
-                                HapticFeedback.lightImpact();
-
-                                setState(() {
-                                  _bookmarkCount++;
-                                });
-
-                                Provider.of<BookmarkProvider>(
-                                  context,
-                                  listen: false,
-                                ).addBookmark(
-                                  context,
-                                  widget.videoId,
-                                  widget.category,
-                                  widget.placeId,
-                                  played.round(),
-                                  widget.coordinates['lat']!,
-                                  widget.coordinates['lon']!,
-                                );
-                              } else {
-                                setState(() {
-                                  _bookmarkCount--;
-                                });
-
-                                Provider.of<BookmarkProvider>(
-                                  context,
-                                  listen: false,
-                                ).removeBookmark(
-                                  context,
-                                  widget.videoId,
-                                  widget.placeId,
-                                  played.round(),
-                                );
-                              }
-                            }
+                            await _toggleBookmarkStatus();
                           },
                           child: Container(
                             color: Colors.transparent,
@@ -2839,137 +2749,65 @@ class _ShortFormWidgetState extends riv.ConsumerState<ShortFormWidget> {
   }
 
   Widget BookmarkButton(String value, String videoId) {
-    return Consumer<BookmarkProvider>(
-      builder: (
-        BuildContext bookmarkContext,
-        BookmarkProvider bookmarkProvider,
-        Widget? child,
-      ) {
-        return GestureDetector(
-          onTap: () async {
-            if (bookmarkProvider.userId == null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  duration: Duration(milliseconds: 1500),
-                  backgroundColor: Colors.lightBlueAccent,
-                  content: Text('북마크하기 위해 로그인 해주세요'),
-                  action: SnackBarAction(
-                    label: '로그인',
-                    textColor: Color(0xff121212),
-                    onPressed: () async {
-                      final played = await _controller.currentTime;
+    final isBookmarked = ref.watch(
+      bookmarkProvider.select(
+        (state) => state.bookmarks.any((bookmark) => bookmark.videoId == videoId),
+      ),
+    );
 
-                      FirebaseAnalytics.instance.logEvent(
-                        name: "login_to_bookmark",
-                        parameters: {
-                          "video_id": widget.videoId,
-                          "watch_duration": played.round(),
-                        },
-                      );
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => LoginPage()),
-                      );
-                    },
-                  ),
-                  behavior: SnackBarBehavior.floating,
-                  margin: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).size.height * 0.02,
-                    left: 20.0,
-                    right: 20.0,
-                  ),
+    return GestureDetector(
+      onTap: _toggleBookmarkStatus,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        margin: EdgeInsets.only(right: 5),
+        color: Colors.transparent,
+        child: Column(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                // 배경을 투명하게 두되, 가운데부터 투명해지는 RadialGradient 적용
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.black.withValues(alpha: 0.3), // 중앙이 좀 더 어두운 영역
+                    Colors.transparent, // 가장자리로 갈수록 투명
+                  ],
+                  center: Alignment.center,
+                  radius: 0.6, // 0 ~ 1 사이에서 조절 (값을 높이면 더 넓게 퍼짐)
                 ),
-              );
-            } else {
-              final played = await _controller.currentTime;
-
-              if (!bookmarkProvider.isBookmarked(videoId)) {
-                HapticFeedback.lightImpact();
-
-                setState(() {
-                  _bookmarkCount++;
-                });
-
-                Provider.of<BookmarkProvider>(
-                  context,
-                  listen: false,
-                ).addBookmark(
-                  context,
-                  widget.videoId,
-                  widget.category,
-                  widget.placeId,
-                  played.round(),
-                  widget.coordinates['lat']!,
-                  widget.coordinates['lon']!,
-                );
-              } else {
-                setState(() {
-                  _bookmarkCount--;
-                });
-
-                bookmarkProvider.removeBookmark(
-                  context,
-                  videoId,
-                  widget.placeId,
-                  played.round(),
-                );
-              }
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            margin: EdgeInsets.only(right: 5),
-            color: Colors.transparent,
-            child: Column(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    // 배경을 투명하게 두되, 가운데부터 투명해지는 RadialGradient 적용
-                    gradient: RadialGradient(
-                      colors: [
-                        Colors.black.withValues(alpha: 0.3), // 중앙이 좀 더 어두운 영역
-                        Colors.transparent, // 가장자리로 갈수록 투명
-                      ],
-                      center: Alignment.center,
-                      radius: 0.6, // 0 ~ 1 사이에서 조절 (값을 높이면 더 넓게 퍼짐)
-                    ),
-                  ),
-                  child: Icon(
-                    bookmarkProvider.isBookmarked(videoId)
-                        ? CupertinoIcons.bookmark_fill
-                        : CupertinoIcons.bookmark,
-                    size: 45,
-                    color: shortPageWhite,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Container(
-                  decoration: BoxDecoration(
-                    // 배경을 투명하게 두되, 가운데부터 투명해지는 RadialGradient 적용
-                    gradient: RadialGradient(
-                      colors: [
-                        Colors.black.withValues(alpha: 0.3), // 중앙이 좀 더 어두운 영역
-                        Colors.transparent, // 가장자리로 갈수록 투명
-                      ],
-                      center: Alignment.center,
-                      radius: 0.6, // 0 ~ 1 사이에서 조절 (값을 높이면 더 넓게 퍼짐)
-                    ),
-                  ),
-                  child: Text(
-                    value,
-                    style: TextStyle(
-                      color: shortPageWhite,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
+              ),
+              child: Icon(
+                isBookmarked
+                    ? CupertinoIcons.bookmark_fill
+                    : CupertinoIcons.bookmark,
+                size: 45,
+                color: shortPageWhite,
+              ),
             ),
-          ),
-        );
-      },
+            const SizedBox(height: 5),
+            Container(
+              decoration: BoxDecoration(
+                // 배경을 투명하게 두되, 가운데부터 투명해지는 RadialGradient 적용
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.black.withValues(alpha: 0.3), // 중앙이 좀 더 어두운 영역
+                    Colors.transparent, // 가장자리로 갈수록 투명
+                  ],
+                  center: Alignment.center,
+                  radius: 0.6, // 0 ~ 1 사이에서 조절 (값을 높이면 더 넓게 퍼짐)
+                ),
+              ),
+              child: Text(
+                value,
+                style: TextStyle(
+                  color: shortPageWhite,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

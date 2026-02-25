@@ -43,7 +43,6 @@ Future<void> main() async {
 
   /// Supabase 초기화 후 현재 로그인 상태 확인
   final currentUser = Supabase.instance.client.auth.currentUser;
-  final bookmarkProvider = BookmarkProvider();
   final container = riv.ProviderContainer();
 
   if (currentUser != null) {
@@ -53,7 +52,6 @@ Future<void> main() async {
       currentUser.email!,
       currentUser.appMetadata['provider']!,
     );
-    bookmarkProvider.updateLoginStatus(true, currentUser.id);
   }
 
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
@@ -67,16 +65,12 @@ Future<void> main() async {
     return true;
   };
 
-  runApp(riv.UncontrolledProviderScope(container: container, child: MyApp( bookmarkProvider: bookmarkProvider,)));
+  runApp(riv.UncontrolledProviderScope(container: container, child: MyApp()));
 }
 
 class MyApp extends StatefulWidget {
 
-  /// main에서 초기화한 프로바이더를 그대로 이용하기 위해
-
-  final BookmarkProvider bookmarkProvider;
-
-  const MyApp({super.key, required this.bookmarkProvider,});
+  const MyApp({super.key});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -93,7 +87,6 @@ class _MyAppState extends State<MyApp> {
         // ChangeNotifierProvider(create: (_) => FilterProvider()),
         // ChangeNotifierProvider.value(value: widget.userDataProvider),
         // ChangeNotifierProvider(create: (_) => PhotoCacheProvider(apiKey: Env.googlePlaceAPIKey)),
-        ChangeNotifierProvider.value(value: widget.bookmarkProvider),
         ChangeNotifierProvider(create: (_) => MarkerDataProvider(bookmarkProvider: widget.bookmarkProvider)),
       ],
       child: MaterialApp(

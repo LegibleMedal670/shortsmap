@@ -3,25 +3,23 @@ import 'dart:io';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart' as riv;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:provider/provider.dart';
-import 'package:shortsmap/Provider/BookmarkProvider.dart';
 import 'package:shortsmap/Provider/UserSessionProvider.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:crypto/crypto.dart';
 
 
-class LoginPage extends riv.ConsumerStatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  riv.ConsumerState<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends riv.ConsumerState<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
 
   final _supabase = Supabase.instance.client;
 
@@ -79,7 +77,6 @@ class _LoginPageState extends riv.ConsumerState<LoginPage> {
           final String loginProvider = _supabase.auth.currentUser!.appMetadata['provider']!;
           ref.read(userSessionProvider.notifier).login(uid, loginId, loginProvider);
 
-          Provider.of<BookmarkProvider>(context, listen: false).updateLoginStatus(true, uid);
 
           FirebaseAnalytics.instance.logLogin(loginMethod: 'Google');
 
@@ -151,8 +148,6 @@ class _LoginPageState extends riv.ConsumerState<LoginPage> {
         final String loginProvider = user.appMetadata['provider'] ?? 'apple';
 
         ref.read(userSessionProvider.notifier).login(uid, loginId, loginProvider);
-
-        Provider.of<BookmarkProvider>(context, listen: false).updateLoginStatus(true, uid);
 
         FirebaseAnalytics.instance.logLogin(loginMethod: 'Apple');
 

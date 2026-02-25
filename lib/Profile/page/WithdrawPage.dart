@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart' as riv;
-import 'package:provider/provider.dart';
-import 'package:shortsmap/Provider/BookmarkProvider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shortsmap/Provider/UserSessionProvider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'ProfilePage.dart';
 
-class WithdrawPage extends riv.ConsumerStatefulWidget {
+class WithdrawPage extends ConsumerStatefulWidget {
   const WithdrawPage({Key? key}) : super(key: key);
 
   @override
-  riv.ConsumerState<WithdrawPage> createState() => _WithdrawPageState();
+  ConsumerState<WithdrawPage> createState() => _WithdrawPageState();
 }
 
-class _WithdrawPageState extends riv.ConsumerState<WithdrawPage> {
+class _WithdrawPageState extends ConsumerState<WithdrawPage> {
   bool _agreed = false;
 
   @override
@@ -169,7 +167,6 @@ class _WithdrawPageState extends riv.ConsumerState<WithdrawPage> {
           const SnackBar(content: Text('계정이 성공적으로 삭제되었습니다.')),
         );
         ref.read(userSessionProvider.notifier).logout();
-        Provider.of<BookmarkProvider>(context, listen: false).updateLoginStatus(false, null);
         Navigator.of(context).pop();
         Navigator.pushAndRemoveUntil(
           context,

@@ -1,227 +1,150 @@
+import 'dart:async';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:flutter/material.dart';
 import 'package:shortsmap/Map/model/BookmarkLocationData.dart';
-import 'package:shortsmap/Map/page/MapPage.dart';
-import 'package:shortsmap/Welcome/LoginPage.dart';
+import 'package:shortsmap/Provider/UserSessionProvider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class BookmarkProvider with ChangeNotifier {
-  List<BookmarkLocationData> _bookmarks = [];
-  bool _isLoggedIn = false;
-  String? _userId;
 
-  List<BookmarkLocationData> get bookmarks => _bookmarks;
+part 'BookmarkProvider.g.dart';
 
-  String? get userId => _userId;
+enum BookmarkMutationResult {
+  ok,
+  loginRequired,
+  fail,
+}
 
-  void updateLoginStatus(bool isLoggedIn, [String? userId]) {
-    _isLoggedIn = isLoggedIn;
-    if (_isLoggedIn && userId != null) {
-      loadBookmarks(userId);
-      _userId = userId;
-    } else {
-      _bookmarks.clear();
-      _userId = null;
-      notifyListeners();
+class BookmarkState {
+  final List<BookmarkLocationData> bookmarks;
+  final String? errorMessage;
+
+  const BookmarkState({
+    this.bookmarks = const [],
+    this.errorMessage,
+  });
+
+  BookmarkState copyWith({
+    List<BookmarkLocationData>? bookmarks,
+    String? errorMessage,
+  }) {
+    return BookmarkState(
+      bookmarks: bookmarks ?? this.bookmarks,
+      errorMessage: errorMessage,
+    );
+  }
+}
+
+@Riverpod(keepAlive: true)
+class Bookmark extends _$Bookmark {
+  @override
+  BookmarkState build() {
+
+    //빌드시에 초기화
+    final uid = ref.read(userSessionProvider).currentUserUID;
+
+    if (uid != null) {
+      //로그인된 유저가 있으면 비동기로 북마크 불러옴
+      unawaited(_loadBookmarks(uid));
     }
+
+    //uid 변화 리스닝 -> 바뀌면 북마크 정보 수정
+    ref.listen<String?>(
+      userSessionProvider.select((u) => u.currentUserUID),
+          (prev, next) {
+        if (prev == next) return;
+
+        if (next == null) {
+          state = const BookmarkState(); // 로그아웃: 즉시 초기화
+          return;
+        }
+
+        unawaited(_loadBookmarks(next)); // 로그인/세션복구: 자동 로드
+      },
+    );
+
+    return const BookmarkState();
   }
 
-  Future<void> loadBookmarks(String userId) async {
-    if (!_isLoggedIn) return;
-    final response = await Supabase.instance.client.rpc('get_user_bookmarks', params: {'_user_id': userId});
-    _bookmarks = (response as List).map((e) => BookmarkLocationData.fromMap(e)).toList();
-    notifyListeners();
-  }
-
-  Future<void> addBookmark(BuildContext context, String videoId, String category, String placeId, int watchDuration, double lat, double lng) async {
-    if (!_isLoggedIn) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          duration: Duration(milliseconds: 1500),
-          backgroundColor: Colors.lightBlueAccent,
-          content: Text('북마크하기 위해 로그인 해주세요'),
-          action: SnackBarAction(
-            label: '로그인',
-            textColor: Color(0xff121212),
-            onPressed: () async {
-
-
-              FirebaseAnalytics.instance.logEvent(
-                name: "login_to_bookmark",
-                parameters: {
-                  "video_id": videoId,
-                  "watch_duration": watchDuration,
-                },
-              );
-
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => LoginPage()),
-              );
-            },
-          ),
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.only(
-            bottom: MediaQuery.of(context).size.height * 0.02,
-            left: 20.0,
-            right: 20.0,
-          ),
-        ),
-      );
-    } else {
-      try{
-        await Supabase.instance.client.from('bookmarks').insert({
-          'user_id': userId,
-          'video_id': videoId,
-          'category': category,
-          'bookmarked_at': DateTime.now().toIso8601String(),
-          'place_id': placeId,
-        });
-
-        await loadBookmarks(userId!);
-
-        FirebaseAnalytics.instance.logEvent(
-          name: "bookmark_save",
-          parameters: {
-            "video_id": videoId,
-            "watch_duration": watchDuration,
-          },
-        );
-
-        // 저장 되었음을 표시해주는 스낵바 TODO ( UI 조정 필요 )
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            duration: Duration(milliseconds: 1500),
-            backgroundColor: Colors.lightBlueAccent,
-            content: Text('북마크에 저장되었어요'),
-            action: SnackBarAction(
-              label: '보러 가기',
-              textColor: Color(0xff121212),
-              onPressed: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => MapPage(placeId: placeId, videoId: videoId, placeLat: lat, placeLng: lng,),
-                  ),
-                      (route) => false,
-                );
-              },
-            ),
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.only(
-              bottom: MediaQuery.of(context).size.height * 0.02,
-              left: 20.0,
-              right: 20.0,
-            ),
-          ),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            duration: Duration(milliseconds: 1500),
-            backgroundColor: Colors.redAccent,
-            content: Text('북마크 도중 알 수 없는 에러가 발생했습니다'),
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.only(
-              bottom: MediaQuery.of(context).size.height * 0.02,
-              left: 20.0,
-              right: 20.0,
-            ),
-          ),
-        );
-        print('Insert 에러: $e');
-      }
-    }
-  }
-
-  Future<void> removeBookmark(BuildContext context, String videoId, String placeId, int watchDuration) async {
-    if (!_isLoggedIn) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          duration: Duration(milliseconds: 1500),
-          backgroundColor: Colors.lightBlueAccent,
-          content: Text('북마크하기 위해 로그인 해주세요'),
-          action: SnackBarAction(
-            label: '로그인',
-            textColor: Color(0xff121212),
-            onPressed: () async {
-
-
-              FirebaseAnalytics.instance.logEvent(
-                name: "login_to_bookmark",
-                parameters: {
-                  "video_id": videoId,
-                  "watch_duration": watchDuration,
-                },
-              );
-
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => LoginPage()),
-              );
-            },
-          ),
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.only(
-            bottom: MediaQuery.of(context).size.height * 0.02,
-            left: 20.0,
-            right: 20.0,
-          ),
-        ),
-      );
-    } else {
-
-      try{
-        await Supabase.instance.client.from('bookmarks').delete().match({
-          'user_id': userId!,
-          'video_id': videoId,
-        });
-
-        FirebaseAnalytics.instance.logEvent(
-          name: "bookmark_delete",
-          parameters: {
-            "video_id": videoId,
-            "watch_duration": watchDuration,
-          },
-        );
-
-        await loadBookmarks(userId!);
-
-        // 삭제 되었음을 알려주는 스낵바 TODO ( UI 조정 필요 )
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            duration: Duration(milliseconds: 1500),
-            backgroundColor: Colors.lightBlueAccent,
-            content: Text('북마크에서 삭제되었어요'),
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.only(
-              bottom: MediaQuery.of(context).size.height * 0.02,
-              left: 20.0,
-              right: 20.0,
-            ),
-          ),
-        );
-      } catch(e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.redAccent,
-            duration: Duration(milliseconds: 1500),
-            content: Text('북마크 취소 도중 알 수 없는 에러가 발생했습니다'),
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.only(
-              bottom: MediaQuery.of(context).size.height * 0.02,
-              left: 20.0,
-              right: 20.0,
-            ),
-          ),
-        );
-        print('Delete 에러: $e');
-      }
-    }
-  }
-
+  // 북마크 여부 확인용 bool. state에 있는 리스트에 있는지 여부
   bool isBookmarked(String videoId) {
-    if (!_isLoggedIn) return false;
-    return _bookmarks.any((bookmark) => bookmark.videoId == videoId);
+    return state.bookmarks.any((b) => b.videoId == videoId);
   }
+
+  // 북마크를 서버에서 불러옴. 에러가 있으면 에러메시지를 업데이트
+  Future<void> _loadBookmarks(String uid) async {
+    try {
+      final response = await Supabase.instance.client.rpc(
+        'get_user_bookmarks',
+        params: {'_user_id': uid},
+      );
+
+      final bookmarks = (response as List)
+          .map((e) => BookmarkLocationData.fromMap(e))
+          .toList();
+
+      state = state.copyWith(bookmarks: bookmarks, errorMessage: null);
+    } catch (e) {
+      state = state.copyWith(errorMessage: e.toString());
+    }
+  }
+
+  // 북마크를 추가함. 원래는 context, lat, lng를 받아와서 UI를 띄워주고 '바로가기'를 누르면 MapPage로 이동 + 해당 좌표로 카메라 이동했었는데 이제는 UI작업을 분리할거라서 해당 인자 삭제
+  Future<BookmarkMutationResult> addBookmark(String videoId, String category, String placeId, int watchDuration) async {
+    final uid = ref.read(userSessionProvider).currentUserUID;
+    if (uid == null) return BookmarkMutationResult.loginRequired;
+
+    try {
+      await Supabase.instance.client.from('bookmarks').insert({
+        'user_id': uid,
+        'video_id': videoId,
+        'category': category,
+        'bookmarked_at': DateTime.now().toIso8601String(),
+        'place_id': placeId,
+      });
+
+      await _loadBookmarks(uid);
+
+      await FirebaseAnalytics.instance.logEvent(
+        name: 'bookmark_save',
+        parameters: {
+          'video_id': videoId,
+          'watch_duration': watchDuration,
+        },
+      );
+
+      return BookmarkMutationResult.ok;
+    } catch (e) {
+      state = state.copyWith(errorMessage: e.toString());
+      return BookmarkMutationResult.fail;
+    }
+  }
+
+  //북마크를 삭제해줌. 원래는 context를 받아 스낵바를 띄워줬는데, 이제 분리할거라 해당 인자 삭제
+  Future<BookmarkMutationResult> removeBookmark(String videoId, int watchDuration) async {
+    final uid = ref.read(userSessionProvider).currentUserUID;
+    if (uid == null) return BookmarkMutationResult.loginRequired;
+
+    try {
+      await Supabase.instance.client.from('bookmarks').delete().match({
+          'user_id': uid,
+          'video_id': videoId,
+        });
+
+      FirebaseAnalytics.instance.logEvent(
+        name: "bookmark_delete",
+        parameters: {
+          "video_id": videoId,
+          "watch_duration": watchDuration,
+        }
+      );
+
+      await _loadBookmarks(uid);
+
+      return BookmarkMutationResult.ok;
+    } catch (e){
+      state = state.copyWith(errorMessage: e.toString());
+      return BookmarkMutationResult.fail;
+    }
+  }
+
 }
