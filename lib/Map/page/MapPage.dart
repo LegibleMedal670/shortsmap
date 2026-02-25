@@ -73,9 +73,14 @@ class _MapPageState extends riv.ConsumerState<MapPage> {
     super.initState();
 
     if (widget.placeId != null) {
-      ref.read(markerDataProvider.notifier).setSelectedLocation =
-          widget.placeId;
-      ref.read(markerDataProvider.notifier).setSelectedVideoId = widget.videoId;
+      // Riverpod state 변경은 build/initState 동기 구간을 피해서 실행
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(markerDataProvider.notifier).setSelectedLocation =
+            widget.placeId;
+        ref.read(markerDataProvider.notifier).setSelectedVideoId =
+            widget.videoId;
+      });
 
       _initialCameraPosition = CameraPosition(
         target: LatLng(widget.placeLat!, widget.placeLng!),
